@@ -2,14 +2,215 @@
 
 #include <igl/boundary_loop.h>
 #include <igl/doublearea.h>
+#include <igl/grad.h>
+#include <igl/cat.h>
+#include <igl/local_basis.h>
 #include <igl/predicates/predicates.h>
 #include <igl/write_triangle_mesh.h>
 #include <Eigen/Core>
-#include "spdlog/spdlog.h"
 #include "energy.h"
 #include "SYMDIR_NEW.h"
 
 namespace SymDir {
+
+std::vector<int> compose(const std::vector<int>& right_f, const std::vector<int>& left_f)
+{
+    int domain_size = left_f.size();
+    std::vector<int> composition(domain_size);
+    for (int i = 0; i < domain_size; ++i)
+    {
+        composition[i] = right_f[left_f[i]];
+    }
+
+    return composition;
+}
+
+bool is_invariant(const std::vector<int>& label, const std::vector<int>& permutation)
+{
+    int domain_size = permutation.size();
+    for (int i = 0; i < domain_size; ++i)
+    {
+        if (label[permutation[i]] != label[i]) return false;
+    }
+
+    return true;
+}
+
+bool is_one_sided_inverse(const std::vector<int>& right_f, const std::vector<int>& left_f)
+{
+    int domain_size = left_f.size();
+    for (int i = 0; i < domain_size; ++i)
+    {
+        if (right_f[left_f[i]] != i) return false;
+    }
+
+    return true;
+}
+
+bool are_vectors_equal(const std::vector<int>& f, const std::vector<int>& g)
+{
+    if (f.size() != g.size()) return false;
+    int domain_size = f.size();
+    for (int i = 0; i < domain_size; ++i)
+    {
+        if (f[i] != g[i]) return false;
+    }
+
+    return true;
+}
+
+int Tuple::vid(const Mesh& m) const
+{
+    return (is_reversed) ? m.from[hij] : m.to[hij];
+}
+
+int Tuple::fid(const Mesh& m) const
+{
+    return m.he2f[hij];
+}
+
+int Tuple::eid(const Mesh& m) const
+{
+    return m.he2e[hij];
+}
+
+Tuple Tuple::switch_vertex(const Mesh& m) const
+{
+    return Tuple(hij, !is_reversed);
+}
+
+Tuple Tuple::switch_face(const Mesh& m) const
+{
+    return Tuple(m.opposite[hij], !is_reversed);
+}
+
+Tuple Tuple::switch_edge(const Mesh& m) const
+{
+    if (is_reversed)
+    {
+        return Tuple(m.prev[hij], !is_reversed);
+    }
+    else
+    {
+        return Tuple(m.next[hij], !is_reversed);
+    }
+}
+
+std::vector<Tuple> Mesh::get_vertices() const
+{
+    int num_vertices = out.size();
+    std::vector<Tuple> vertices;
+    vertices.reserve(num_vertices);
+    for (int vi = 0; vi < num_vertices; ++vi)
+    {
+        vertices.push_back(tuple_from_vertex(vi));
+    }
+    
+    return vertices;
+}
+
+std::vector<Tuple> Mesh::get_faces() const
+{
+    int num_faces = f2he.size();
+    std::vector<Tuple> faces;
+    faces.reserve(num_faces);
+    for (int fijk = 0; fijk < num_faces; ++fijk)
+    {
+        faces.push_back(tuple_from_face(fijk));
+    }
+
+    return faces;
+}
+
+std::vector<Tuple> Mesh::get_edges() const
+{
+    int num_edges = e2he.size();
+    std::vector<Tuple> edges;
+    edges.reserve(num_edges);
+    for (int eij = 0; eij < num_edges; ++eij)
+    {
+        edges.push_back(Tuple(e2he[eij]));
+    }
+
+    return edges;
+}
+
+std::vector<Tuple> Mesh::get_one_ring_tris_for_vertex(const Tuple& t) const
+{
+    int hij = (t.is_reversed) ? prev[t.hij] : t.hij;
+    std::vector<Tuple> tris;
+    tris.reserve(12);
+    int hik = hij;
+    do {
+        tris.push_back(tuple_from_face(he2f[hik]));
+        hik = opposite[next[hik]];
+    } while ((hik != hij) && (hik >= 0));
+    if ((hik < 0) && (opposite[hij] >= 0))
+    {
+        hik = prev[opposite[hij]];
+        do {
+            tris.push_back(tuple_from_face(he2f[hik]));
+            if (opposite[hik] < 0) break;
+            hik = prev[opposite[hik]];
+        } while (hik != hij);
+    }
+
+    return tris;
+}
+
+std::array<Tuple, 3> Mesh::oriented_tri_vertices(const Tuple& t) const
+{
+    int hij = t.hij;
+    int hjk = next[hij];
+    int hki = next[hjk];
+    return {Tuple(hij), Tuple(hjk), Tuple(hki)};
+    //int hij = t.hij;
+    //int hjk = (t.is_reversed) ? prev[hij] : next[hij];
+    //int hki = (t.is_reversed) ? prev[hjk] : next[hjk];
+
+    //return {Tuple(hij, t.is_reversed), Tuple(hjk, t.is_reversed), Tuple(hki, t.is_reversed)};
+}
+
+void view_sparse_matrix(const Eigen::SparseMatrix<double>& A)
+{
+    for (int k = 0; k < A.outerSize(); ++k)
+    {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(A, k); it; ++it)
+        {
+            spdlog::info("{}, {} -> {}", it.row(), it.col(), it.value());
+        }
+    }
+}
+
+void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::SparseMatrix<double>& grad_op)
+{
+    Eigen::MatrixXd F1, F2, F3;
+    igl::local_basis(V, F, F1, F2, F3);
+
+    Eigen::SparseMatrix<double> G;
+    igl::grad(V, F, G, false);
+
+    auto face_proj = [](Eigen::MatrixXd& F) {
+        std::vector<Eigen::Triplet<double>> IJV;
+        int f_num = F.rows();
+        for (int i = 0; i < F.rows(); i++) {
+            IJV.push_back(Eigen::Triplet<double>(i, i, F(i, 0)));
+            IJV.push_back(Eigen::Triplet<double>(i, i + f_num, F(i, 1)));
+            IJV.push_back(Eigen::Triplet<double>(i, i + 2 * f_num, F(i, 2)));
+        }
+        Eigen::SparseMatrix<double> P(f_num, 3 * f_num);
+        P.setFromTriplets(IJV.begin(), IJV.end());
+        return P;
+    };
+
+    Eigen::SparseMatrix<double> Dx = face_proj(F1) * G;
+    Eigen::SparseMatrix<double> Dy = face_proj(F2) * G;
+
+    Eigen::SparseMatrix<double> hstack = igl::cat(1, Dx, Dy);
+    Eigen::SparseMatrix<double> empty(hstack.rows(), hstack.cols());
+
+    grad_op = igl::cat(1, igl::cat(2, hstack, empty), igl::cat(2, empty, hstack));
+}
 
 /*
 bool ExtremeOpt::has_degenerate_tris(const std::vector<Tuple>& tris) const

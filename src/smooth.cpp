@@ -570,6 +570,7 @@ double ExtremeOpt::smooth_global(int steps)
 		  newton = -solver.solve(rhs);
 	 	  newton = Q2 * newton;
 		  double newton_decr = newton.dot(grad);
+		  std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
 		  std::cout << "projected gradient is " << newton_decr << std::endl;
 		  if (solver.info() == Eigen::Success && newton_decr < 0)
 		  {

@@ -200,10 +200,11 @@ int main(int argc, char** argv)
 
     Eigen::MatrixXi new_F;
     Eigen::MatrixXd new_V, new_uv;
-    ExtremeOpt extremeopt;
+    ExtremeOpt extremeopt(V, F);
     extremeopt.m_params = param;
     
     extremeopt.create_mesh(V, F, uv);
+    //extremeopt.view();
 
     if (extremeopt.m_params.with_cons)
     {

@@ -60,11 +60,13 @@ struct DiffScalarBase {
 	/// @}
 	// ======================================================================
 
-	static __thread size_t m_variableCount;
+	//static __thread size_t m_variableCount;
+	inline static size_t m_variableCount=0;
 };
 
 #define DECLARE_DIFFSCALAR_BASE() \
-	__thread size_t DiffScalarBase::m_variableCount = 0
+	//size_t DiffScalarBase::m_variableCount = 0
+	//__thread size_t DiffScalarBase::m_variableCount = 0
 
 /**
  * \brief Automatic differentiation scalar with first-order derivatives

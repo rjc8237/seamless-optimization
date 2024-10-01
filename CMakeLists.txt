@@ -15,13 +15,15 @@ include(nlohmann_json)
 include(libigl)
 include(eigen)
 include(spdlog)
+include(polyscope)
 igl_include(predicates)
 
 add_library(SymmetricDirichletLib
-    src/opt.cpp
     src/energy.cpp
-    src/smooth.cpp
     src/ExtremeOpt.cpp
+    src/opt.cpp
+    src/rref.cpp
+    src/smooth.cpp
     src/SYMDIR_NEW.cpp
 )
 target_include_directories(SymmetricDirichletLib PUBLIC include)
@@ -31,6 +33,7 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
     spdlog::spdlog
+    polyscope
 )
 
 

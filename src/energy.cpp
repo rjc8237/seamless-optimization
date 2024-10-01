@@ -1,4 +1,5 @@
 #include "energy.h"
+#include "spdlog/spdlog.h"
 
 // From AutoDiff
 namespace jakob
@@ -69,6 +70,9 @@ namespace SymDir{
             Eigen::Matrix<Scalar, 4, 4> local_hessian;
             Eigen::Matrix<Scalar, 1, 4> local_grad;
             energy += jakob::gradient_and_hessian_from_J(J, local_grad, local_hessian) * area(i) / total_area;
+            SPDLOG_TRACE("total area is {}", total_area);
+            SPDLOG_TRACE("jacobian is {}, {}, {}, {}", J[0], J[1], J[2], J[3]);
+            SPDLOG_TRACE("local gradient is {}, {},...", local_grad[0], local_grad[1]);
 
             local_grad *= area(i) / total_area;
             total_grad.row(i) = local_grad;
