@@ -134,10 +134,10 @@ int main(int argc, char** argv)
     //ZoneScopedN("extreme_opt_main");
 
     CLI::App app{argv[0]};
-    std::string input_dir = "./objs";
-    std::string output_dir = "./test_out";
-    std::string input_json = "../config/config.json";
-    std::string model = "eight";
+    std::string input_dir = "../data";
+    std::string output_dir = "./";
+    std::string input_json = "../data/example.json";
+    std::string model = "";
     Parameters param;
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-m,--model", model, "Input model name.");
