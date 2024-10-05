@@ -44,3 +44,11 @@ target_link_libraries(symmetric_dirichlet
     SymmetricDirichletLib
     CLI11::CLI11
 )
+
+add_executable(view_mesh
+    app/view_mesh.cpp
+)
+target_link_libraries(view_mesh
+    SymmetricDirichletLib
+    CLI11::CLI11
+)

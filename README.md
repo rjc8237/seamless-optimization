@@ -37,3 +37,5 @@ The core method is `bin/symmetric_dirichlet`. This executable takes the followin
 |`--model` | mesh name|
 |`--output` | (optional) output directory|
 |`--json` | (optional) path to configuration json|
+
+The viewer method `bin/view_mesh` takes the same input and model arguments and opens a Polyscope viewer. This viewer should be modified to add seamless edge viewing.
