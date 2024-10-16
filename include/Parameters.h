@@ -7,6 +7,8 @@ struct Parameters
     std::string model_name;
     bool save_meshes = false;
 
+    bool do_feature_alignment = true;
+
     int max_iters = 500;
     int smooth_only_iters = 100;
     bool do_newton = false;

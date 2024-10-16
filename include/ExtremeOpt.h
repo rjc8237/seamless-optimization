@@ -167,14 +167,14 @@ public:
             int hji = opposite[hij];
             if (hji < 0)
             {
-                e2he[edge_count] = hij;
+                e2he.push_back(hij);
                 he2e[hij] = edge_count;
                 ++edge_count;
             }
             else
             {
                 if (hij < hji) continue; // only process once
-                e2he[edge_count] = hij;
+                e2he.push_back(hij);
                 he2e[hij] = edge_count;
                 he2e[hji] = edge_count;
                 ++edge_count;

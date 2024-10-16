@@ -248,6 +248,7 @@ int main(int argc, char** argv)
     param.Lp = config["Lp"];
     param.save_meshes = config["save_meshes"];
     param.model_name = model;
+    param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
 
     json opt_log;
     opt_log["model_name"] = model;

@@ -73,7 +73,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
             {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"max_grad", max_grad}});
 
     
-        double grad_thres = 1e-5;
+        double grad_thres = 1e-4;
         if (max_grad < grad_thres) {
             spdlog::info(
                 "Reach target gradient({}), optimization succeed!",
