@@ -162,7 +162,7 @@ public:
         // build edge identification
         int edge_count = 0;
         e2he.reserve(num_halfedges);
-        for (int hij; hij < num_halfedges; ++hij)
+        for (int hij = 0; hij < num_halfedges; ++hij)
         {
             int hji = opposite[hij];
             if (hji < 0)
@@ -171,12 +171,14 @@ public:
                 he2e[hij] = edge_count;
                 ++edge_count;
             }
-
-            if (hij < hji) continue; // only process once
-            e2he[edge_count] = hij;
-            he2e[hij] = edge_count;
-            he2e[hji] = edge_count;
-            ++edge_count;
+            else
+            {
+                if (hij < hji) continue; // only process once
+                e2he[edge_count] = hij;
+                he2e[hij] = edge_count;
+                he2e[hji] = edge_count;
+                ++edge_count;
+            }
         }
 
         if (!is_valid_mesh())
@@ -336,6 +338,9 @@ public:
     std::vector<VertexAttributes> vertex_attrs;
     std::vector<FaceAttributes> face_attrs;
     std::vector<EdgeAttributes> edge_attrs;
+    Eigen::MatrixXi EE;
+    Eigen::MatrixXi FE;
+    std::vector<int> FE_alignments;
 
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }
@@ -343,6 +348,7 @@ public:
     void do_optimization(json& opt_log);
 
     void export_EE(Eigen::MatrixXi& EE);
+    void export_FE(Eigen::MatrixXi& FE);
     void export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv);
 
     double get_quality();
@@ -371,7 +377,7 @@ public:
         polyscope::registerSurfaceMesh("mesh", V, F);
         polyscope::show();
     }
-
+    
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?

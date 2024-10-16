@@ -15,9 +15,11 @@ using namespace SymDir;
 
 double check_constraints(
     const Eigen::MatrixXi& EE,
+    const Eigen::MatrixXi& FE,
     const Eigen::MatrixXd& uv,
     const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double> Aeq)
+    Eigen::SparseMatrix<double>& Aeq,
+    std::vector<int>& FE_alignments)
 {
     int N = uv.rows();
     int c = 0;
@@ -32,7 +34,7 @@ double check_constraints(
     }
     double ret = 0;
     std::set<std::pair<int, int>> added_e;
-    Aeq.resize(2 * m, uv.rows() * 2);
+    Aeq.resize(2 * m + FE.rows(), uv.rows() * 2);
     for (int i = 0; i < EE.rows(); i++) {
         int A2 = EE(i, 0);
         int B2 = EE(i, 1);
@@ -74,7 +76,36 @@ double check_constraints(
         Aeq.coeffRef(c + 1, D2 + N) += -r_mat[r](1, 1);
         c = c + 2;
     }
+    
+    // feature edge constraints
+    
+    for (int i = 0; i < FE.rows(); ++i) {
+        int v1 = FE(i, 0);
+        int v2 = FE(i, 1);
+        auto e0 = std::make_pair(v1, v2);
 
+        bool constrained = false;
+        Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
+        // constrain u or v depending on initial position
+        if (-1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
+            Aeq.coeffRef(c, v1) = -1;
+            Aeq.coeffRef(c, v2) = 1;
+            c += 1;
+            constrained = true;
+            FE_alignments[i] = 0;
+        }
+        else if (-1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
+            Aeq.coeffRef(c, v1 + N) = -1;
+            Aeq.coeffRef(c, v2 + N) = 1;
+            c += 1;
+            constrained = true;
+            FE_alignments[i] = 1;
+        }
+        if (!constrained)
+        {
+            std::cout << "Feature edge not aligned on u or v\n";
+        }
+    }
     Eigen::VectorXd flat_uv = Eigen::Map<const Eigen::VectorXd>(uv.data(), uv.size());
     auto res = Aeq * flat_uv;
     ret = res.cwiseAbs().maxCoeff();
@@ -128,6 +159,26 @@ void transform_EE(
     }
 }
 
+void transform_FE(
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXi& FE_v,
+    std::vector<std::vector<int>>& FE_e)
+{
+    FE_e.resize(FE_v.rows());
+    for (int i = 0; i < FE_v.rows(); i++) {
+        std::vector<int> one_row;
+        int v0 = FE_v(i, 0), v1 = FE_v(i, 1);
+        int fid, eid;
+        if (find_edge_in_F(F, v0, v1, fid, eid)) {
+            one_row.push_back(fid);
+            one_row.push_back(eid);
+        } else {
+            std::cout << "Something Wrong in transform_FE: edge not found in F" << std::endl;
+        }
+        FE_e[i] = one_row;
+    }
+}
+
 
 int main(int argc, char** argv)
 {
@@ -164,8 +215,20 @@ int main(int argc, char** argv)
         EE_in >> EE(i, 0) >> EE(i, 1) >> EE(i, 2) >> EE(i, 3);
     }
     spdlog::info("Input EE size {}", EE.rows());
+
+    // Loading the feature edge constraints
+    Eigen::MatrixXi FE;
+    int FE_rows;
+    std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
+    FE_in >> FE_rows;
+    FE.resize(FE_rows, 2);
+    for (int i = 0; i < FE.rows(); i++) {
+        FE_in >> FE(i, 0) >> FE(i, 1);
+    }
+    spdlog::info("Input FE size {}", FE.rows());
     Eigen::SparseMatrix<double> Aeq;
-    double cons_residual = check_constraints(EE, uv, F, Aeq);
+    std::vector<int> FE_alignments(FE.rows());
+    double cons_residual = check_constraints(EE, FE, uv, F, Aeq, FE_alignments);
     spdlog::info("Initial constraints error {}", cons_residual);
 
     std::ifstream js_in(input_json);
@@ -210,6 +273,8 @@ int main(int argc, char** argv)
     {
         std::vector<std::vector<int>> EE_e;
         transform_EE(F, EE, EE_e);
+        std::vector<std::vector<int>> FE_e;
+        transform_FE(F, FE, FE_e);
         extremeopt.init_constraints(EE_e);
         // assert(extremeopt.check_mesh_connectivity_validity());
         std::cout << "check constraints inside wmtk" << std::endl;
@@ -218,6 +283,9 @@ int main(int argc, char** argv)
         } else {
             std::cout << "fails" << std::endl;
         }
+        extremeopt.EE = EE;
+        extremeopt.FE = FE;
+        extremeopt.FE_alignments = FE_alignments;
     }
 
     extremeopt.do_optimization(opt_log);
@@ -234,6 +302,9 @@ int main(int argc, char** argv)
 
     extremeopt.export_mesh(V, F, uv);
 
+    cons_residual = check_constraints(EE, FE, uv, F, Aeq, FE_alignments);
+    spdlog::info("Final constraints error {}", cons_residual);
+
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
     igl::writeOBJ(output_dir + "/" + model + "_out.obj", V, F, V, F, uv, F);
@@ -241,6 +312,7 @@ int main(int argc, char** argv)
     if (extremeopt.m_params.with_cons)
     {
         std::ofstream EE_out(output_dir + "/EE/" + model + "_EE.txt");
+        EE_out << EE.rows() << std::endl;
         EE_out << EE << std::endl;
     }
 

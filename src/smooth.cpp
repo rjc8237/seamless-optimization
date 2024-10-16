@@ -53,9 +53,11 @@ void addCustomOps(Executor& e)
 */
 void buildAeq(
     const Eigen::MatrixXi& EE,
+    const Eigen::MatrixXi& FE,
     const Eigen::MatrixXd& uv,
     const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double>& Aeq)
+    Eigen::SparseMatrix<double>& Aeq,
+    const std::vector<int>& FE_alignments)
 {
     int N = uv.rows();
     int c = 0;
@@ -68,7 +70,7 @@ void buildAeq(
 
     std::set<std::pair<int, int>> added_e;
 
-    Aeq.resize(2 * m + n_fix_dof, uv.rows() * 2);
+    Aeq.resize(2 * m + n_fix_dof + FE.rows(), uv.rows() * 2);
     int A2, B2, C2, D2;
     for (int i = 0; i < EE.rows(); i++) {
         int A2 = EE(i, 0);
@@ -130,6 +132,31 @@ void buildAeq(
     std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
     Aeq.coeffRef(c, l[(min_u_diff_id + 1) % l.size()]) = 1;
     c = c + 1;
+
+    std::set<std::pair<int, int>> added_fe;
+    // feature edge constraints
+    std::cout << FE_alignments.size() << std::endl;
+    for (int i = 0; i < FE.rows(); ++i) {
+        int v1 = FE(i, 0);
+        int v2 = FE(i, 1);
+        auto e0 = std::make_pair(v1, v2);
+        if (added_fe.find(e0) != added_fe.end()) continue;
+        added_fe.insert(e0);
+        
+        Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
+
+        // constrain u or v depending on initial position
+        if (FE_alignments[i] == 0) {
+            Aeq.coeffRef(c, v1) = -1;
+            Aeq.coeffRef(c, v2) = 1;
+            c += 1;
+        }
+        else if (FE_alignments[i] == 1) {
+            Aeq.coeffRef(c, v1 + N) = -1;
+            Aeq.coeffRef(c, v2 + N) = 1;
+            c += 1;
+        }
+    }
 }
 
 void buildkkt(
@@ -495,13 +522,15 @@ double ExtremeOpt::smooth_global(int steps)
     export_mesh(V, F, uv);
     Eigen::MatrixXi EE;
     export_EE(EE);
+    Eigen::MatrixXi FE;
+    export_FE(FE);
 
     Eigen::VectorXd area;
     Eigen::SparseMatrix<double> G;
     igl::doublearea(V, F, area);
     get_grad_op(V, F, G);
     Eigen::SparseMatrix<double> Aeq;
-    buildAeq(EE, uv, F, Aeq);
+    buildAeq(EE, FE, uv, F, Aeq, FE_alignments);
     Eigen::SparseMatrix<double> AeqT = Aeq.transpose();
 
     auto compute_energy = [G, area](Eigen::MatrixXd aaa) {

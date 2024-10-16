@@ -458,6 +458,7 @@ void ExtremeOpt::export_mesh_vtu(const std::string& dir, const std::string& file
 
 void ExtremeOpt::export_EE(Eigen::MatrixXi& EE)
 {
+    /*
     EE.resize(0, 0);
     for (auto& loc : get_edges()) {
         if (is_boundary_edge(loc)) {
@@ -467,6 +468,13 @@ void ExtremeOpt::export_EE(Eigen::MatrixXi& EE)
                 edge_attrs[loc.eid(*this)].pair.switch_vertex(*this).vid(*this);
         }
     }
+    */
+    EE = this->EE;
+}
+
+void ExtremeOpt::export_FE(Eigen::MatrixXi& FE)
+{
+    FE = this->FE;
 }
 
 void ExtremeOpt::write_obj(const std::string& path)
@@ -773,6 +781,7 @@ bool ExtremeOpt::check_constraints(double eps)
     bool flag = true;
     for (auto t_e : all_edges) {
         if (!this->is_boundary_edge(t_e)) continue;
+        std::cout << "Checking boundary edge\n";
         auto t_e_pair = edge_attrs[t_e.eid(*this)].pair;
         int v0 = t_e.vid(*this);
         int v1 = t_e.switch_vertex(*this).vid(*this);
