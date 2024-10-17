@@ -24,6 +24,7 @@ double check_constraints(
     int N = uv.rows();
     int c = 0;
     int m = EE.rows() / 2;
+    int fes = FE.rows();
 
     std::vector<std::vector<int>> bds;
     igl::boundary_loop(F, bds);
@@ -34,7 +35,7 @@ double check_constraints(
     }
     double ret = 0;
     std::set<std::pair<int, int>> added_e;
-    Aeq.resize(2 * m + FE.rows(), uv.rows() * 2);
+    Aeq.resize(2 * m + fes, uv.rows() * 2);
     for (int i = 0; i < EE.rows(); i++) {
         int A2 = EE(i, 0);
         int B2 = EE(i, 1);
@@ -78,32 +79,34 @@ double check_constraints(
     }
     
     // feature edge constraints
-    
-    for (int i = 0; i < FE.rows(); ++i) {
-        int v1 = FE(i, 0);
-        int v2 = FE(i, 1);
-        auto e0 = std::make_pair(v1, v2);
+    if (fes > 0)
+    {
+        for (int i = 0; i < FE.rows(); ++i) {
+            int v1 = FE(i, 0);
+            int v2 = FE(i, 1);
+            auto e0 = std::make_pair(v1, v2);
 
-        bool constrained = false;
-        Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
-        // constrain u or v depending on initial position
-        if (-1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
-            Aeq.coeffRef(c, v1) = -1;
-            Aeq.coeffRef(c, v2) = 1;
-            c += 1;
-            constrained = true;
-            FE_alignments[i] = 0;
-        }
-        else if (-1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
-            Aeq.coeffRef(c, v1 + N) = -1;
-            Aeq.coeffRef(c, v2 + N) = 1;
-            c += 1;
-            constrained = true;
-            FE_alignments[i] = 1;
-        }
-        if (!constrained)
-        {
-            std::cout << "Feature edge not aligned on u or v\n";
+            bool constrained = false;
+            Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
+            // constrain u or v depending on initial position
+            if (-1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
+                Aeq.coeffRef(c, v1) = -1;
+                Aeq.coeffRef(c, v2) = 1;
+                c += 1;
+                constrained = true;
+                FE_alignments[i] = 0;
+            }
+            else if (-1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
+                Aeq.coeffRef(c, v1 + N) = -1;
+                Aeq.coeffRef(c, v2 + N) = 1;
+                c += 1;
+                constrained = true;
+                FE_alignments[i] = 1;
+            }
+            if (!constrained)
+            {
+                std::cout << "Feature edge not aligned on u or v\n";
+            }
         }
     }
     Eigen::VectorXd flat_uv = Eigen::Map<const Eigen::VectorXd>(uv.data(), uv.size());
@@ -216,21 +219,6 @@ int main(int argc, char** argv)
     }
     spdlog::info("Input EE size {}", EE.rows());
 
-    // Loading the feature edge constraints
-    Eigen::MatrixXi FE;
-    int FE_rows;
-    std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
-    FE_in >> FE_rows;
-    FE.resize(FE_rows, 2);
-    for (int i = 0; i < FE.rows(); i++) {
-        FE_in >> FE(i, 0) >> FE(i, 1);
-    }
-    spdlog::info("Input FE size {}", FE.rows());
-    Eigen::SparseMatrix<double> Aeq;
-    std::vector<int> FE_alignments(FE.rows());
-    double cons_residual = check_constraints(EE, FE, uv, F, Aeq, FE_alignments);
-    spdlog::info("Initial constraints error {}", cons_residual);
-
     std::ifstream js_in(input_json);
     json config = json::parse(js_in);
     
@@ -249,6 +237,27 @@ int main(int argc, char** argv)
     param.save_meshes = config["save_meshes"];
     param.model_name = model;
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
+
+    std::vector<int> FE_alignments;
+    Eigen::MatrixXi FE(0, 0);
+    if (param.do_feature_alignment)
+    {
+        // Loading the feature edge constraints
+        int FE_rows;
+        std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
+        FE_in >> FE_rows;
+        FE.resize(FE_rows, 2);
+        for (int i = 0; i < FE.rows(); i++) {
+            FE_in >> FE(i, 0) >> FE(i, 1);
+        }
+        spdlog::info("Input FE size {}", FE.rows());
+        
+        FE_alignments.resize(FE.rows());
+    }
+    
+    Eigen::SparseMatrix<double> Aeq;
+    double cons_residual = check_constraints(EE, FE, uv, F, Aeq, FE_alignments);
+    spdlog::info("Initial constraints error {}", cons_residual);
 
     json opt_log;
     opt_log["model_name"] = model;

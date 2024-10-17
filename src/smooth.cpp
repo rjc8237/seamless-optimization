@@ -63,15 +63,23 @@ void buildAeq(
     int N = uv.rows();
     int c = 0;
     int m = EE.rows() / 2;
+    int fes = FE.rows();
 
     std::vector<std::vector<int>> bds;
     igl::boundary_loop(F, bds);
 
-    int n_fix_dof = 3;
+    int n_fix_dof;
+    if (fes > 0) {
+        n_fix_dof = 2;
+    }
+    else
+    {
+        n_fix_dof = 3;
+    }
 
     std::set<std::pair<int, int>> added_e;
 
-    Aeq.resize(2 * m + n_fix_dof + FE.rows(), uv.rows() * 2);
+    Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
     int A2, B2, C2, D2;
     for (int i = 0; i < EE.rows(); i++) {
         int A2 = EE(i, 0);
@@ -114,7 +122,7 @@ void buildAeq(
         Aeq.coeffRef(c + 1, D2 + N) += -r_mat[r](1, 1);
         c = c + 2;
     }
-
+    
     double min_u_diff = 1e10;
     int min_u_diff_id = 0;
     auto l = bds[0];
@@ -130,32 +138,35 @@ void buildAeq(
     Aeq.coeffRef(c, l[min_u_diff_id]) = 1;
     Aeq.coeffRef(c + 1, l[min_u_diff_id] + N) = 1;
     c = c + 2;
-    std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
-    Aeq.coeffRef(c, l[(min_u_diff_id + 1) % l.size()]) = 1;
-    c = c + 1;
+    
+    if (fes == 0) {
+        std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
+        Aeq.coeffRef(c, l[(min_u_diff_id + 1) % l.size()]) = 1;
+        c = c + 1;
+    }
+    else {
+        std::set<std::pair<int, int>> added_fe;
+        // feature edge constraints
+        for (int i = 0; i < fes; ++i) {
+            int v1 = FE(i, 0);
+            int v2 = FE(i, 1);
+            auto e0 = std::make_pair(v1, v2);
+            if (added_fe.find(e0) != added_fe.end()) continue;
+            added_fe.insert(e0);
+            
+            Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
 
-    std::set<std::pair<int, int>> added_fe;
-    // feature edge constraints
-    std::cout << FE_alignments.size() << std::endl;
-    for (int i = 0; i < FE.rows(); ++i) {
-        int v1 = FE(i, 0);
-        int v2 = FE(i, 1);
-        auto e0 = std::make_pair(v1, v2);
-        if (added_fe.find(e0) != added_fe.end()) continue;
-        added_fe.insert(e0);
-        
-        Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
-
-        // constrain u or v depending on initial position
-        if (FE_alignments[i] == 0) {
-            Aeq.coeffRef(c, v1) = -1;
-            Aeq.coeffRef(c, v2) = 1;
-            c += 1;
-        }
-        else if (FE_alignments[i] == 1) {
-            Aeq.coeffRef(c, v1 + N) = -1;
-            Aeq.coeffRef(c, v2 + N) = 1;
-            c += 1;
+            // constrain u or v depending on initial position
+            if (FE_alignments[i] == 0) {
+                Aeq.coeffRef(c, v1) = -1;
+                Aeq.coeffRef(c, v2) = 1;
+                c += 1;
+            }
+            else if (FE_alignments[i] == 1) {
+                Aeq.coeffRef(c, v1 + N) = -1;
+                Aeq.coeffRef(c, v2 + N) = 1;
+                c += 1;
+            }
         }
     }
 }
