@@ -155,7 +155,7 @@ public:
         {
             int vi = from[hij];
             int vj = to[hij];
-            int hji = vv2he.coeffRef(vj, vi) - 1; // return to 0 indexing
+            int hji = vv2he.coeff(vj, vi) - 1; // return to 0 indexing
             opposite[hij] = hji;
         }
 

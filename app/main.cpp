@@ -26,8 +26,8 @@ double check_constraints(
     int m = EE.rows() / 2;
     int fes = FE.rows();
 
-    std::vector<std::vector<int>> bds;
-    igl::boundary_loop(F, bds);
+    //std::vector<std::vector<int>> bds;
+    //igl::boundary_loop(F, bds);
 
     // if there are no constraints then the constraint error should be 0?
     if (m == 0) {
@@ -35,7 +35,9 @@ double check_constraints(
     }
     double ret = 0;
     std::set<std::pair<int, int>> added_e;
-    Aeq.resize(2 * m + fes, uv.rows() * 2);
+    typedef Eigen::Triplet<double> Trip;
+    std::vector<Trip> trips;
+    trips.reserve(12 * EE.rows());
     for (int i = 0; i < EE.rows(); i++) {
         int A2 = EE(i, 0);
         int B2 = EE(i, 1);
@@ -62,19 +64,19 @@ double check_constraints(
         r_mat[2] << 1, 0, 0, 1;
         r_mat[3] << 0, -1, 1, 0;
 
-        Aeq.coeffRef(c, A2) += 1;
-        Aeq.coeffRef(c, B2) += -1;
-        Aeq.coeffRef(c + 1, A2 + N) += 1;
-        Aeq.coeffRef(c + 1, B2 + N) += -1;
+        trips.push_back(Trip(c, A2, 1));
+        trips.push_back(Trip(c, B2, -1));
+        trips.push_back(Trip(c + 1, A2 + N, 1));
+        trips.push_back(Trip(c + 1, B2 + N, -1));
 
-        Aeq.coeffRef(c, C2) += r_mat[r](0, 0);
-        Aeq.coeffRef(c, D2) += -r_mat[r](0, 0);
-        Aeq.coeffRef(c, C2 + N) += r_mat[r](0, 1);
-        Aeq.coeffRef(c, D2 + N) += -r_mat[r](0, 1);
-        Aeq.coeffRef(c + 1, C2) += r_mat[r](1, 0);
-        Aeq.coeffRef(c + 1, D2) += -r_mat[r](1, 0);
-        Aeq.coeffRef(c + 1, C2 + N) += r_mat[r](1, 1);
-        Aeq.coeffRef(c + 1, D2 + N) += -r_mat[r](1, 1);
+        trips.push_back(Trip(c, C2, r_mat[r](0, 0)));
+        trips.push_back(Trip(c, D2, -r_mat[r](0, 0)));
+        trips.push_back(Trip(c, C2 + N, r_mat[r](0, 1)));
+        trips.push_back(Trip(c, D2 + N, -r_mat[r](0, 1)));
+        trips.push_back(Trip(c + 1, C2, r_mat[r](1, 0)));
+        trips.push_back(Trip(c + 1, D2, -r_mat[r](1, 0)));
+        trips.push_back(Trip(c + 1, C2 + N, r_mat[r](1, 1)));
+        trips.push_back(Trip(c + 1, D2 + N, -r_mat[r](1, 1)));
         c = c + 2;
     }
     
@@ -90,15 +92,15 @@ double check_constraints(
             Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
             // constrain u or v depending on initial position
             if (-1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
-                Aeq.coeffRef(c, v1) = -1;
-                Aeq.coeffRef(c, v2) = 1;
+                trips.push_back(Trip(c, v1, -1));
+                trips.push_back(Trip(c, v2, 1));
                 c += 1;
                 constrained = true;
                 FE_alignments[i] = 0;
             }
             else if (-1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
-                Aeq.coeffRef(c, v1 + N) = -1;
-                Aeq.coeffRef(c, v2 + N) = 1;
+                trips.push_back(Trip(c, v1 + N, -1));
+                trips.push_back(Trip(c, v2 + N, 1));
                 c += 1;
                 constrained = true;
                 FE_alignments[i] = 1;
@@ -109,6 +111,9 @@ double check_constraints(
             }
         }
     }
+
+    Aeq.resize(2 * m + fes, uv.rows() * 2);
+    Aeq.setFromTriplets(trips.begin(), trips.end());
     Eigen::VectorXd flat_uv = Eigen::Map<const Eigen::VectorXd>(uv.data(), uv.size());
     auto res = Aeq * flat_uv;
     ret = res.cwiseAbs().maxCoeff();
@@ -264,12 +269,12 @@ int main(int argc, char** argv)
     opt_log["args"] = config;
     std::ofstream js_out(output_dir + "/" + model + ".json");
 
-    std::vector<std::vector<int>> bds;
-    igl::boundary_loop(F, bds);
-    std::cout << "#bd loops:" << bds.size() << std::endl;
-    int Nv_bds = 0;
-    for (auto bd : bds) Nv_bds += bd.size();
-    spdlog::info("Boundary size: {}", Nv_bds);
+    //std::vector<std::vector<int>> bds;
+    //igl::boundary_loop(F, bds);
+    //std::cout << "#bd loops:" << bds.size() << std::endl;
+    //int Nv_bds = 0;
+    //for (auto bd : bds) Nv_bds += bd.size();
+    //spdlog::info("Boundary size: {}", Nv_bds);
 
     Eigen::MatrixXi new_F;
     Eigen::MatrixXd new_V, new_uv;
