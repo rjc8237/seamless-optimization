@@ -2,6 +2,7 @@
 #include "spdlog/spdlog.h"
 #include "ExtremeOpt.h"
 #include "polyscope/curve_network.h"
+#include "MeshCutter.h"
 
 #include <igl/read_triangle_mesh.h>
 #include <CLI/CLI.hpp>
@@ -33,9 +34,9 @@ int main(int argc, char** argv)
 
     std::string input_file = input_dir + "/" + model + "_" + suffix + ".obj";
     // Loading the input mesh
-    Eigen::MatrixXd V, uv;
-    Eigen::MatrixXi F;
-    igl::readOBJ(input_file, V, uv, uv, F, F, F);
+    Eigen::MatrixXd V, uv, N;
+    Eigen::MatrixXi F, FT, FN;
+    igl::readOBJ(input_file, V, uv, N, F, FT, FN);
     spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uv.rows());
 
     // Loading the seamless boundary constraints
@@ -53,14 +54,17 @@ int main(int argc, char** argv)
     int FE_rows;
     std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
     FE_in >> FE_rows;
-    FE.resize(FE_rows, 2);
+    FE.resize(FE_rows, 3);
     for (int i = 0; i < FE.rows(); i++) {
-        FE_in >> FE(i, 0) >> FE(i, 1);
+        FE_in >> FE(i, 0) >> FE(i, 1) >> FE(i, 2);
     }
     spdlog::info("Input FE size {}", FE.rows());
 
-    ExtremeOpt extremeopt(V, F);
-    extremeopt.create_mesh(V, F, uv);
+    //MeshCutter meshcutter(V, uv, F, FT);
+    //auto [V_cut, _] = meshcutter.cut_mesh();
+
+    ExtremeOpt extremeopt(V, FT);
+    extremeopt.create_mesh(V, FT, uv);
     //extremeopt.view();
     view(extremeopt, EE, FE);
 

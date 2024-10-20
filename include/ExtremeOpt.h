@@ -340,7 +340,6 @@ public:
     std::vector<EdgeAttributes> edge_attrs;
     Eigen::MatrixXi EE;
     Eigen::MatrixXi FE;
-    std::vector<int> FE_alignments;
 
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }

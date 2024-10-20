@@ -25,6 +25,7 @@ add_library(SymmetricDirichletLib
     src/rref.cpp
     src/smooth.cpp
     src/SYMDIR_NEW.cpp
+    src/MeshCutter.cpp
 )
 target_include_directories(SymmetricDirichletLib PUBLIC include)
 target_link_libraries(SymmetricDirichletLib PUBLIC

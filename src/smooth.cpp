@@ -57,8 +57,7 @@ void buildAeq(
     const Eigen::MatrixXi& FE,
     const Eigen::MatrixXd& uv,
     const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double>& Aeq,
-    const std::vector<int>& FE_alignments)
+    Eigen::SparseMatrix<double>& Aeq)
 {
     int N = uv.rows();
     int c = 0;
@@ -78,6 +77,9 @@ void buildAeq(
     }
 
     std::set<std::pair<int, int>> added_e;
+    typedef Eigen::Triplet<double> Trip;
+    std::vector<Trip> trips;
+    trips.reserve(12 * EE.rows());
 
     Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
     int A2, B2, C2, D2;
@@ -107,19 +109,19 @@ void buildAeq(
         r_mat[2] << 1, 0, 0, 1;
         r_mat[3] << 0, -1, 1, 0;
 
-        Aeq.coeffRef(c, A2) += 1;
-        Aeq.coeffRef(c, B2) += -1;
-        Aeq.coeffRef(c + 1, A2 + N) += 1;
-        Aeq.coeffRef(c + 1, B2 + N) += -1;
+        trips.push_back(Trip(c, A2, 1));
+        trips.push_back(Trip(c, B2, -1));
+        trips.push_back(Trip(c + 1, A2 + N, 1));
+        trips.push_back(Trip(c + 1, B2 + N, -1));
 
-        Aeq.coeffRef(c, C2) += r_mat[r](0, 0);
-        Aeq.coeffRef(c, D2) += -r_mat[r](0, 0);
-        Aeq.coeffRef(c, C2 + N) += r_mat[r](0, 1);
-        Aeq.coeffRef(c, D2 + N) += -r_mat[r](0, 1);
-        Aeq.coeffRef(c + 1, C2) += r_mat[r](1, 0);
-        Aeq.coeffRef(c + 1, D2) += -r_mat[r](1, 0);
-        Aeq.coeffRef(c + 1, C2 + N) += r_mat[r](1, 1);
-        Aeq.coeffRef(c + 1, D2 + N) += -r_mat[r](1, 1);
+        trips.push_back(Trip(c, C2, r_mat[r](0, 0)));
+        trips.push_back(Trip(c, D2, -r_mat[r](0, 0)));
+        trips.push_back(Trip(c, C2 + N, r_mat[r](0, 1)));
+        trips.push_back(Trip(c, D2 + N, -r_mat[r](0, 1)));
+        trips.push_back(Trip(c + 1, C2, r_mat[r](1, 0)));
+        trips.push_back(Trip(c + 1, D2, -r_mat[r](1, 0)));
+        trips.push_back(Trip(c + 1, C2 + N, r_mat[r](1, 1)));
+        trips.push_back(Trip(c + 1, D2 + N, -r_mat[r](1, 1)));
         c = c + 2;
     }
     
@@ -135,13 +137,13 @@ void buildAeq(
     }
 
     std::cout << "fix " << l[min_u_diff_id] << std::endl;
-    Aeq.coeffRef(c, l[min_u_diff_id]) = 1;
-    Aeq.coeffRef(c + 1, l[min_u_diff_id] + N) = 1;
+    trips.push_back(Trip(c, l[min_u_diff_id], 1));
+    trips.push_back(Trip(c + 1, l[min_u_diff_id] + N, 1));
     c = c + 2;
     
     if (fes == 0) {
         std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
-        Aeq.coeffRef(c, l[(min_u_diff_id + 1) % l.size()]) = 1;
+        trips.push_back(Trip(c, l[(min_u_diff_id + 1) % l.size()], 1));
         c = c + 1;
     }
     else {
@@ -157,18 +159,20 @@ void buildAeq(
             Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
 
             // constrain u or v depending on initial position
-            if (FE_alignments[i] == 0) {
-                Aeq.coeffRef(c, v1) = -1;
-                Aeq.coeffRef(c, v2) = 1;
+            if (FE(i, 2) == 0) {
+                trips.push_back(Trip(c, v1, -1));
+                trips.push_back(Trip(c, v2, 1));
                 c += 1;
             }
-            else if (FE_alignments[i] == 1) {
-                Aeq.coeffRef(c, v1 + N) = -1;
-                Aeq.coeffRef(c, v2 + N) = 1;
+            else if (FE(i, 2) == 1) {
+                trips.push_back(Trip(c, v1 + N, -1));
+                trips.push_back(Trip(c, v2 + N, 1));
                 c += 1;
             }
         }
     }
+    Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
+    Aeq.setFromTriplets(trips.begin(), trips.end());
 }
 
 void buildkkt(
@@ -235,7 +239,7 @@ double ExtremeOpt::smooth_global(int steps)
     igl::doublearea(V, F, area);
     get_grad_op(V, F, G);
     Eigen::SparseMatrix<double> Aeq;
-    buildAeq(EE, FE, uv, F, Aeq, FE_alignments);
+    buildAeq(EE, FE, uv, F, Aeq);
     Eigen::SparseMatrix<double> AeqT = Aeq.transpose();
 
     auto compute_energy = [G, area](Eigen::MatrixXd aaa) {

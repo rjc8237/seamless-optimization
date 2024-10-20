@@ -1,6 +1,7 @@
 #include <spdlog/common.h>
 #include "spdlog/spdlog.h"
 #include "ExtremeOpt.h"
+#include "MeshCutter.h"
 
 #include <igl/PI.h>
 #include <igl/boundary_loop.h>
@@ -18,8 +19,7 @@ double check_constraints(
     const Eigen::MatrixXi& FE,
     const Eigen::MatrixXd& uv,
     const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double>& Aeq,
-    std::vector<int>& FE_alignments)
+    Eigen::SparseMatrix<double>& Aeq)
 {
     int N = uv.rows();
     int c = 0;
@@ -91,19 +91,17 @@ double check_constraints(
             bool constrained = false;
             Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
             // constrain u or v depending on initial position
-            if (-1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
+            if (FE(i, 2) == 0 && -1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
                 trips.push_back(Trip(c, v1, -1));
                 trips.push_back(Trip(c, v2, 1));
                 c += 1;
                 constrained = true;
-                FE_alignments[i] = 0;
             }
-            else if (-1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
+            else if (FE(i, 2) == 1 && -1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
                 trips.push_back(Trip(c, v1 + N, -1));
                 trips.push_back(Trip(c, v2 + N, 1));
                 c += 1;
                 constrained = true;
-                FE_alignments[i] = 1;
             }
             if (!constrained)
             {
@@ -197,6 +195,7 @@ int main(int argc, char** argv)
     std::string output_dir = "./";
     std::string input_json = "../data/example.json";
     std::string model = "";
+    std::string feature_edges_filename = "";
     Parameters param;
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-m,--model", model, "Input model name.");
@@ -206,23 +205,12 @@ int main(int argc, char** argv)
     CLI11_PARSE(app, argc, argv);
 
 
-    std::string input_file = input_dir + "/" + model + "_init.obj";
+    std::string input_file = input_dir + "/" + model + ".obj";
     // Loading the input mesh
-    Eigen::MatrixXd V, uv;
-    Eigen::MatrixXi F;
-    igl::readOBJ(input_file, V, uv, uv, F, F, F);
-    spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uv.rows());
-
-    // Loading the seamless boundary constraints
-    Eigen::MatrixXi EE;
-    int EE_rows;
-    std::ifstream EE_in(input_dir + "/EE/" + model + "_EE.txt");
-    EE_in >> EE_rows;
-    EE.resize(EE_rows, 4);
-    for (int i = 0; i < EE.rows(); i++) {
-        EE_in >> EE(i, 0) >> EE(i, 1) >> EE(i, 2) >> EE(i, 3);
-    }
-    spdlog::info("Input EE size {}", EE.rows());
+	Eigen::MatrixXd V_init, uv, N;
+	Eigen::MatrixXi F_init, F, FN;
+	igl::readOBJ(input_file, V_init, uv, N, F_init, F, FN);
+    spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V_init.rows(), uv.rows());
 
     std::ifstream js_in(input_json);
     json config = json::parse(js_in);
@@ -243,25 +231,20 @@ int main(int argc, char** argv)
     param.model_name = model;
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
 
-    std::vector<int> FE_alignments;
+	MeshCutter meshcutter(V_init, uv, F_init, F);
+
+	auto [V, EE] = meshcutter.cut_mesh();
+
     Eigen::MatrixXi FE(0, 0);
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
-        int FE_rows;
-        std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
-        FE_in >> FE_rows;
-        FE.resize(FE_rows, 2);
-        for (int i = 0; i < FE.rows(); i++) {
-            FE_in >> FE(i, 0) >> FE(i, 1);
-        }
-        spdlog::info("Input FE size {}", FE.rows());
-        
-        FE_alignments.resize(FE.rows());
+        Eigen::MatrixXi FE_init{ meshcutter.load_feature_edges(input_file) };
+        FE = meshcutter.reindex_feature_edges(FE_init);
     }
     
     Eigen::SparseMatrix<double> Aeq;
-    double cons_residual = check_constraints(EE, FE, uv, F, Aeq, FE_alignments);
+    double cons_residual = check_constraints(EE, FE, uv, F, Aeq);
     spdlog::info("Initial constraints error {}", cons_residual);
 
     json opt_log;
@@ -289,7 +272,9 @@ int main(int argc, char** argv)
         std::vector<std::vector<int>> EE_e;
         transform_EE(F, EE, EE_e);
         std::vector<std::vector<int>> FE_e;
-        transform_FE(F, FE, FE_e);
+        if (extremeopt.m_params.do_feature_alignment) {
+            transform_FE(F, FE, FE_e);
+        }
         extremeopt.init_constraints(EE_e);
         // assert(extremeopt.check_mesh_connectivity_validity());
         std::cout << "check constraints inside wmtk" << std::endl;
@@ -300,7 +285,6 @@ int main(int argc, char** argv)
         }
         extremeopt.EE = EE;
         extremeopt.FE = FE;
-        extremeopt.FE_alignments = FE_alignments;
     }
 
     extremeopt.do_optimization(opt_log);
@@ -317,18 +301,27 @@ int main(int argc, char** argv)
 
     extremeopt.export_mesh(V, F, uv);
 
-    cons_residual = check_constraints(EE, FE, uv, F, Aeq, FE_alignments);
+    cons_residual = check_constraints(EE, FE, uv, F, Aeq);
     spdlog::info("Final constraints error {}", cons_residual);
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
-    igl::writeOBJ(output_dir + "/" + model + "_out.obj", V, F, V, F, uv, F);
+    igl::writeOBJ(output_dir + "/" + model + "_out.obj", V, F_init, N, FN, uv, F);
     
     if (extremeopt.m_params.with_cons)
     {
         std::ofstream EE_out(output_dir + "/EE/" + model + "_EE.txt");
         EE_out << EE.rows() << std::endl;
         EE_out << EE << std::endl;
+        EE_out.close();
+
+        if (extremeopt.m_params.do_feature_alignment)
+        {
+        std::ofstream FE_out(output_dir + "/FE/" + model + "_FE.txt");
+        FE_out << FE.rows() << std::endl;
+        FE_out << FE << std::endl;
+        FE_out.close();
+        }
     }
 
     js_out << std::setw(4) << opt_log << std::endl;
