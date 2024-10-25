@@ -166,6 +166,7 @@ void buildAeq(
         }
     
         std::set<std::pair<int, int>> added_fe;
+
         // feature edge constraints
         for (int i = 0; i < fes; ++i) {
             int v1 = FE(i, 0);
@@ -330,8 +331,7 @@ double ExtremeOpt::smooth_global(int steps)
 			mat = Q2T * ((hessian + a*id) * Q2);
 		  }
 
-		  //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-		  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+		  Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
 		  solver.compute(mat);
 		  newton = -solver.solve(rhs);
 	 	  newton = Q2 * newton;
