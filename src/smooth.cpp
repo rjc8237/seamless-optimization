@@ -1,4 +1,5 @@
 #include <igl/boundary_loop.h>
+#include <igl/facet_components.h>
 #include <igl/predicates/predicates.h>
 #include <igl/writeOBJ.h>
 #include "ExtremeOpt.h"
@@ -67,9 +68,18 @@ void buildAeq(
     std::vector<std::vector<int>> bds;
     igl::boundary_loop(F, bds);
 
+    // get face components
+    Eigen::VectorXi C;
+    int num_components = igl::facet_components(F, C);
+    std::vector<int> component_faces(num_components);
+    for (int f = 0; f < F.rows(); ++f)
+    {
+        component_faces[C[f]] = f;
+    }
+
     int n_fix_dof;
     if (fes > 0) {
-        n_fix_dof = 2;
+        n_fix_dof = 2 * num_components;
     }
     else
     {
@@ -125,35 +135,47 @@ void buildAeq(
         c = c + 2;
     }
     
-    double min_u_diff = 1e10;
-    int min_u_diff_id = 0;
-    auto l = bds[0];
-    for (int i = 0; i < l.size(); i++) {
-        double u_diff = abs(uv(l[i], 0) - uv(l[(i + 1) % l.size()], 0));
-        if (u_diff < min_u_diff) {
-            min_u_diff = u_diff;
-            min_u_diff_id = i;
-        }
-    }
 
-    std::cout << "fix " << l[min_u_diff_id] << std::endl;
-    trips.push_back(Trip(c, l[min_u_diff_id], 1));
-    trips.push_back(Trip(c + 1, l[min_u_diff_id] + N, 1));
-    c = c + 2;
-    
     if (fes == 0) {
+        double min_u_diff = 1e10;
+        int min_u_diff_id = 0;
+        auto l = bds[0];
+        for (int i = 0; i < l.size(); i++) {
+            double u_diff = abs(uv(l[i], 0) - uv(l[(i + 1) % l.size()], 0));
+            if (u_diff < min_u_diff) {
+                min_u_diff = u_diff;
+                min_u_diff_id = i;
+            }
+        }
+        std::cout << "fix " << l[min_u_diff_id] << std::endl;
+        trips.push_back(Trip(c, l[min_u_diff_id], 1));
+        trips.push_back(Trip(c + 1, l[min_u_diff_id] + N, 1));
+
         std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
         trips.push_back(Trip(c, l[(min_u_diff_id + 1) % l.size()], 1));
         c = c + 1;
     }
     else {
+        for (int ci = 0; ci < num_components; ++ci)
+        {
+            int f = component_faces[ci];
+            int vi = F(f, 0);
+            trips.push_back(Trip(c, vi, 1));
+            trips.push_back(Trip(c + 1, vi + N, 1));
+            c = c + 2;
+        }
+    
         std::set<std::pair<int, int>> added_fe;
         // feature edge constraints
         for (int i = 0; i < fes; ++i) {
             int v1 = FE(i, 0);
             int v2 = FE(i, 1);
             auto e0 = std::make_pair(v1, v2);
-            if (added_fe.find(e0) != added_fe.end()) continue;
+            if (added_fe.find(e0) != added_fe.end())
+            {
+                spdlog::warn("Edge added twice");
+                continue;
+            }
             added_fe.insert(e0);
             
             Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
@@ -168,6 +190,10 @@ void buildAeq(
                 trips.push_back(Trip(c, v1 + N, -1));
                 trips.push_back(Trip(c, v2 + N, 1));
                 c += 1;
+            }
+            else
+            {
+                spdlog::error("Feature edge does not have a tag");
             }
         }
     }
@@ -262,7 +288,7 @@ double ExtremeOpt::smooth_global(int steps)
         rhs.setZero();
         rhs.topRows(grad.rows()) << -grad;
         // solve the system
-        Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+        Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
         solver.analyzePattern(kkt);
         solver.factorize(kkt);
         newton = solver.solve(rhs);
@@ -281,7 +307,7 @@ double ExtremeOpt::smooth_global(int steps)
         Q2T = Q2.transpose();
         std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
                   << std::endl;
-        hessian = Q2T * hessian * Q2;
+        //hessian = Q2T * hessian * Q2;
         Eigen::VectorXd rhs = Q2T* grad;
 
 		// Compute corrected descent direction
@@ -291,24 +317,27 @@ double ExtremeOpt::smooth_global(int steps)
 		  Eigen::SparseMatrix<double> mat;
 		  if (a == 0)
 		  {
-			mat = hessian; // Use newton step
+			//mat = hessian; // Use newton step
+            mat = Q2T * hessian * Q2;
 		  }
 		  else 
 		  {     
 			// Create identity
-			Eigen::SparseMatrix<double> id(rhs.rows(), rhs.rows());
+			Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
 			id.setIdentity();
 			
 			// Create matrix with correction
-			mat = hessian + a*id;
+			mat = Q2T * ((hessian + a*id) * Q2);
 		  }
 
-		  Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+		  //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+		  Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
 		  solver.compute(mat);
 		  newton = -solver.solve(rhs);
 	 	  newton = Q2 * newton;
 		  double newton_decr = newton.dot(grad);
 		  std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+		  std::cout << "newton norm is " << newton.dot(newton) << std::endl;
 		  std::cout << "projected gradient is " << newton_decr << std::endl;
 		  if (solver.info() == Eigen::Success && newton_decr < 0)
 		  {

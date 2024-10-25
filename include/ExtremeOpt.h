@@ -136,7 +136,6 @@ public:
 
                 // face data
                 he2f[hjk] = fijk;
-                f2he[fijk] = hjk;
 
                 // vertex data
                 from[hjk] = vj;
@@ -144,6 +143,9 @@ public:
                 out[vk] = hki;
                 vv2he_triplets.push_back(Trip(vj, vk, hjk + 1)); // offset to 1 indexing
             }
+
+            // set face halfedge to point to F(fijk, 0)
+            f2he[fijk] = (3 * fijk) + 1;
         }
 
         // Create vertex  maps

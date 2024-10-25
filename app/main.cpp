@@ -276,6 +276,8 @@ int main(int argc, char** argv)
             transform_FE(F, FE, FE_e);
         }
         extremeopt.init_constraints(EE_e);
+        extremeopt.EE = EE;
+        extremeopt.FE = FE;
         // assert(extremeopt.check_mesh_connectivity_validity());
         std::cout << "check constraints inside wmtk" << std::endl;
         if (extremeopt.check_constraints()) {
@@ -283,8 +285,8 @@ int main(int argc, char** argv)
         } else {
             std::cout << "fails" << std::endl;
         }
-        extremeopt.EE = EE;
-        extremeopt.FE = FE;
+        //extremeopt.EE = EE;
+        //extremeopt.FE = FE;
     }
 
     extremeopt.do_optimization(opt_log);
@@ -306,7 +308,7 @@ int main(int argc, char** argv)
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
-    igl::writeOBJ(output_dir + "/" + model + "_out.obj", V, F_init, N, FN, uv, F);
+    igl::writeOBJ(output_dir + "/" + model + "_out.obj", V_init, F_init, N, FN, uv, F);
     
     if (extremeopt.m_params.with_cons)
     {

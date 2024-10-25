@@ -40,31 +40,31 @@ int main(int argc, char** argv)
     spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uv.rows());
 
     // Loading the seamless boundary constraints
-    Eigen::MatrixXi EE;
-    int EE_rows;
-    std::ifstream EE_in(input_dir + "/EE/" + model + "_EE.txt");
-    EE_in >> EE_rows;
-    EE.resize(EE_rows, 4);
-    for (int i = 0; i < EE.rows(); i++) {
-        EE_in >> EE(i, 0) >> EE(i, 1) >> EE(i, 2) >> EE(i, 3);
-    }
-    spdlog::info("Input EE size {}", EE.rows());
+    //Eigen::MatrixXi EE;
+    //int EE_rows;
+    //std::ifstream EE_in(input_dir + "/EE/" + model + "_EE.txt");
+    //EE_in >> EE_rows;
+    //EE.resize(EE_rows, 4);
+    //for (int i = 0; i < EE.rows(); i++) {
+    //    EE_in >> EE(i, 0) >> EE(i, 1) >> EE(i, 2) >> EE(i, 3);
+    //}
+    //spdlog::info("Input EE size {}", EE.rows());
 
     Eigen::MatrixXi FE;
     int FE_rows;
-    std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
-    FE_in >> FE_rows;
-    FE.resize(FE_rows, 3);
-    for (int i = 0; i < FE.rows(); i++) {
-        FE_in >> FE(i, 0) >> FE(i, 1) >> FE(i, 2);
-    }
+    //std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
+    //FE_in >> FE_rows;
+    //FE.resize(FE_rows, 3);
+    //for (int i = 0; i < FE.rows(); i++) {
+    //    FE_in >> FE(i, 0) >> FE(i, 1) >> FE(i, 2);
+    //}
     spdlog::info("Input FE size {}", FE.rows());
 
-    //MeshCutter meshcutter(V, uv, F, FT);
-    //auto [V_cut, _] = meshcutter.cut_mesh();
+    MeshCutter meshcutter(V, uv, F, FT);
+    auto [V_cut, EE] = meshcutter.cut_mesh();
 
-    ExtremeOpt extremeopt(V, FT);
-    extremeopt.create_mesh(V, FT, uv);
+    ExtremeOpt extremeopt(V_cut, FT);
+    extremeopt.create_mesh(V_cut, FT, uv);
     //extremeopt.view();
     view(extremeopt, EE, FE);
 

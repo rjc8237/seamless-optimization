@@ -164,10 +164,18 @@ Eigen::MatrixXi MeshCutter::reindex_feature_edges(const Eigen::MatrixXi& FE) {
 	for (auto [v1, v2] : feature_edges) {
 		Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
 		// constrain u or v depending on initial position
-		if (-1e-12 < e_ab[0] && e_ab[0] < 1e-12) {
+		//if (-1e-12 < e_ab[0] && e_ab[0] < 1e-12) {
+		//	FE_reindex.row(r) << v1, v2, 0;
+		//}
+		//else if (-1e-12 < e_ab[1] && e_ab[1] < 1e-12) {
+		//	FE_reindex.row(r) << v1, v2, 1;
+		//}
+
+		// constrain u or v depending on initial position
+		if (std::abs(e_ab[0]) < std::abs(e_ab[1])) {
 			FE_reindex.row(r) << v1, v2, 0;
 		}
-		else if (-1e-12 < e_ab[1] && e_ab[1] < 1e-12) {
+		else {
 			FE_reindex.row(r) << v1, v2, 1;
 		}
 		++r;
