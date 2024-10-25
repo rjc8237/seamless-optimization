@@ -150,6 +150,7 @@ void buildAeq(
         std::cout << "fix " << l[min_u_diff_id] << std::endl;
         trips.push_back(Trip(c, l[min_u_diff_id], 1));
         trips.push_back(Trip(c + 1, l[min_u_diff_id] + N, 1));
+        c = c + 2;
 
         std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
         trips.push_back(Trip(c, l[(min_u_diff_id + 1) % l.size()], 1));
