@@ -91,13 +91,13 @@ double check_constraints(
             bool constrained = false;
             Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
             // constrain u or v depending on initial position
-            if (FE(i, 2) == 0 && -1e-7 < e_ab[0] && e_ab[0] < 1e-7) {
+            if (FE(i, 2) == 0 && (std::abs(e_ab[0]) < std::abs(e_ab[1]))) {
                 trips.push_back(Trip(c, v1, -1));
                 trips.push_back(Trip(c, v2, 1));
                 c += 1;
                 constrained = true;
             }
-            else if (FE(i, 2) == 1 && -1e-7 < e_ab[1] && e_ab[1] < 1e-7) {
+            else if (FE(i, 2) == 1 && (std::abs(e_ab[0]) >= std::abs(e_ab[1]))) {
                 trips.push_back(Trip(c, v1 + N, -1));
                 trips.push_back(Trip(c, v2 + N, 1));
                 c += 1;
