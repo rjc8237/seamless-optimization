@@ -2,6 +2,7 @@
 #include <igl/facet_components.h>
 #include <igl/predicates/predicates.h>
 #include <igl/writeOBJ.h>
+#include <algorithm>
 #include "ExtremeOpt.h"
 #include "energy.h"
 #include "rref.h"
@@ -53,6 +54,20 @@ void addCustomOps(Executor& e)
 
 */
 
+std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
+{
+    std::vector<int> component_vertices(N, -1);
+    for (int f = 0; f < F.rows(); ++f)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            int vi = F(f, i);
+            component_vertices[vi] = C[f];
+        }
+    }
+    return component_vertices;
+}
+
 void buildAeq(
     const Eigen::MatrixXi& EE,
     const Eigen::MatrixXi& FE,
@@ -72,18 +87,20 @@ void buildAeq(
     Eigen::VectorXi C;
     int num_components = igl::facet_components(F, C);
     std::vector<int> component_faces(num_components);
+    std::vector<int> component_vertices{ propagate_component_labels(F, C, N) };
     for (int f = 0; f < F.rows(); ++f)
     {
         component_faces[C[f]] = f;
     }
 
     int n_fix_dof;
-    if (fes > 0) {
+    if (fes > 0) 
+    {
         n_fix_dof = 2 * num_components;
     }
     else
     {
-        n_fix_dof = 3;
+        n_fix_dof = 3 * num_components;
     }
 
     std::set<std::pair<int, int>> added_e;
@@ -134,38 +151,50 @@ void buildAeq(
         trips.push_back(Trip(c + 1, D2 + N, -r_mat[r](1, 1)));
         c = c + 2;
     }
-    
 
-    if (fes == 0) {
-        double min_u_diff = 1e10;
-        int min_u_diff_id = 0;
-        auto l = bds[0];
-        for (int i = 0; i < l.size(); i++) {
-            double u_diff = abs(uv(l[i], 0) - uv(l[(i + 1) % l.size()], 0));
-            if (u_diff < min_u_diff) {
-                min_u_diff = u_diff;
-                min_u_diff_id = i;
-            }
+    std::vector<double> min_u_diffs(num_components, 1e10);
+    std::vector<int> min_u_diff_ids(num_components, -1);
+
+    auto l = bds[0];
+    for (int i = 0; i < l.size(); i++) {
+        double u_diff = abs(uv(l[i], 0) - uv(l[(i + 1) % l.size()], 0));
+        int component = component_vertices[l[i]];
+        if (u_diff < min_u_diffs[component]) {
+            min_u_diffs[component] = u_diff;
+            min_u_diff_ids[component] = i;
         }
-        std::cout << "fix " << l[min_u_diff_id] << std::endl;
+    }
+
+    for (int ci = 0; ci < num_components; ++ci)
+    {
+        int min_u_diff_id = min_u_diff_ids[ci];
+        if (min_u_diff_id == -1)
+        {
+            n_fix_dof -= 2;
+            continue;
+        }
+        spdlog::info("for component {}, fixing {}", ci, l[min_u_diff_id]);
         trips.push_back(Trip(c, l[min_u_diff_id], 1));
         trips.push_back(Trip(c + 1, l[min_u_diff_id] + N, 1));
         c = c + 2;
-
-        std::cout << "fix " << l[(min_u_diff_id + 1) % l.size()] << std::endl;
-        trips.push_back(Trip(c, l[(min_u_diff_id + 1) % l.size()], 1));
-        c = c + 1;
     }
-    else {
+    // fix rotation
+    if (fes == 0)
+    {
         for (int ci = 0; ci < num_components; ++ci)
         {
-            int f = component_faces[ci];
-            int vi = F(f, 0);
-            trips.push_back(Trip(c, vi, 1));
-            trips.push_back(Trip(c + 1, vi + N, 1));
-            c = c + 2;
+            int min_u_diff_id = min_u_diff_ids[ci];
+            if (min_u_diff_id == -1)
+            {
+                n_fix_dof -= 1;
+                continue;
+            }
+            spdlog::info("for component {}, fixing rotation {}", ci, l[(min_u_diff_id + 1) % l.size()]);
+            trips.push_back(Trip(c, l[(min_u_diff_id + 1) % l.size()], 1));
+            c = c + 1;
         }
-    
+    }
+    else {
         std::set<std::pair<int, int>> added_fe;
 
         // feature edge constraints
