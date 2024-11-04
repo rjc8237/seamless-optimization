@@ -9,6 +9,7 @@
 #include "spdlog/spdlog.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
+#include "polyscope/curve_network.h"
 
 using json = nlohmann::json;
 
@@ -340,14 +341,22 @@ public:
     std::vector<VertexAttributes> vertex_attrs;
     std::vector<FaceAttributes> face_attrs;
     std::vector<EdgeAttributes> edge_attrs;
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
     Eigen::MatrixXi EE;
     Eigen::MatrixXi FE;
+    Eigen::SparseMatrix<double> G;
+    Eigen::SparseMatrix<double> Aeq, AeqT;
+    Eigen::SparseMatrix<double> Q2, Q2T;
+    Eigen::VectorXd area;
 
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
+    double compute_energy(Eigen::MatrixXd aaa);
 
+    void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
     void export_FE(Eigen::MatrixXi& FE);
     void export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv);
@@ -356,7 +365,7 @@ public:
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
 
-    double smooth_global(int steps);
+    double smooth_global();
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
 
@@ -376,6 +385,8 @@ public:
         polyscope::init();
         polyscope::registerPointCloud("vertices", V);
         polyscope::registerSurfaceMesh("mesh", V, F);
+        polyscope::registerCurveNetwork("features", V, FE.leftCols(2))
+        ->addEdgeScalarQuantity("alignment", FE.col(2));
         polyscope::show();
     }
     

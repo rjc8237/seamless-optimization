@@ -235,16 +235,19 @@ int main(int argc, char** argv)
 
 	auto [V, EE] = meshcutter.cut_mesh();
 
+    Eigen::MatrixXi FE_full(0, 0);
     Eigen::MatrixXi FE(0, 0);
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
         Eigen::MatrixXi FE_init{ meshcutter.load_feature_edges(input_file) };
-        FE = meshcutter.reindex_feature_edges(FE_init);
+        FE_full = meshcutter.reindex_feature_edges(FE_init);
+        //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
+        FE = FE_full;
     }
     
     Eigen::SparseMatrix<double> Aeq;
-    double cons_residual = check_constraints(EE, FE, uv, F, Aeq);
+    double cons_residual = check_constraints(EE, FE_full, uv, F, Aeq);
     spdlog::info("Initial constraints error {}", cons_residual);
 
     json opt_log;
@@ -265,7 +268,6 @@ int main(int argc, char** argv)
     extremeopt.m_params = param;
     
     extremeopt.create_mesh(V, F, uv);
-    //extremeopt.view();
 
     if (extremeopt.m_params.with_cons)
     {
@@ -288,6 +290,7 @@ int main(int argc, char** argv)
         //extremeopt.EE = EE;
         //extremeopt.FE = FE;
     }
+    //extremeopt.view();
 
     extremeopt.do_optimization(opt_log);
 
@@ -303,7 +306,7 @@ int main(int argc, char** argv)
 
     extremeopt.export_mesh(V, F, uv);
 
-    cons_residual = check_constraints(EE, FE, uv, F, Aeq);
+    cons_residual = check_constraints(EE, FE_full, uv, F, Aeq);
     spdlog::info("Final constraints error {}", cons_residual);
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);

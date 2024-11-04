@@ -388,6 +388,20 @@ void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Matr
     }
 }
 
+void ExtremeOpt::export_uv(Eigen::MatrixXd& uv)
+{
+    uv = Eigen::MatrixXd::Zero(vert_capacity(), 2);
+    for (auto& t : get_vertices()) {
+        auto i = t.vid(*this);
+        auto muv = uv.row(i) = vertex_attrs[i].pos;
+
+        if (!muv.array().isFinite().all()) {
+            spdlog::warn("muv {} is not finite: {}", i, fmt::join(muv, ","));
+            ;
+        }
+    }
+}
+
 /*
 void ExtremeOpt::export_mesh_vtu(const std::string& dir, const std::string& filename)
 {

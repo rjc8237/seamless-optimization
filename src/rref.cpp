@@ -4,6 +4,8 @@
 #include <Eigen/Core>
 #include <igl/list_to_matrix.h>
 #include <igl/Timer.h>
+#include "spdlog/spdlog.h"
+#include "spdlog/fmt/ostr.h"
 
 Eigen::VectorXi get_seq(int start, int end)
 {
@@ -172,10 +174,13 @@ void elim_constr(
     const Eigen::SparseMatrix<double> &C,
     Eigen::SparseMatrix<double> &T_out)
 {
+    spdlog::debug("eliminating constraints for {}x{} matrix", C.rows(), C.cols());
     int nvars = C.cols();
     std::vector<int> dep_list, indep_list;
     Eigen::SparseMatrix<double> R;
     rref(C, R, dep_list);
+    spdlog::debug("reduced matrix is {}x{}", R.rows(), R.cols());
+    spdlog::debug("Final row has norm {}", R.row(R.rows() - 1).norm());
 
     // matlab code: indep = setdiff(1:nvars, dep);
     int k = 0;
@@ -190,18 +195,22 @@ void elim_constr(
             k++;
         }
     }
+    spdlog::debug("{} independent and {} dependent constraints", indep_list.size(), dep_list.size());
     // std::cout << nvars << " dep: " << dep_list.size() << " indep: " << indep_list.size() << std::endl;
     Eigen::VectorXi dep, indep;
     igl::list_to_matrix(dep_list, dep);
     igl::list_to_matrix(indep_list, indep);
+    spdlog::debug("independent constraints are {}", indep.transpose().head(10));
+    spdlog::debug("dependent constraints are {}", dep.transpose().head(10));
     Eigen::VectorXi all_rows = get_seq(0, R.rows() - 1);
+    int num_dep = dep_list.size();
     // std::cout << "dep list:" << dep << std::endl;
     // std::cout << "indep list:" << indep << std::endl;
 
     // matlab code: T = [-R(:,indep); speye(size(indep,2),size(indep,2))];
     Eigen::SparseMatrix<double> R_ind;
     igl::slice(R, all_rows, indep, R_ind);
-    Eigen::SparseMatrix<double> T(R_ind.rows() + indep_list.size(), indep_list.size());
+    Eigen::SparseMatrix<double> T(num_dep + indep_list.size(), indep_list.size());
     T.reserve(R_ind.nonZeros() + indep.size());
     for (Eigen::Index c = 0; c < T.cols(); ++c)
     {
@@ -209,9 +218,10 @@ void elim_constr(
 
         for (typename Eigen::SparseMatrix<double>::InnerIterator itR_ind(R_ind, c); itR_ind; ++itR_ind)
         {
+            if (itR_ind.row() >= num_dep) continue;
             T.insertBack(itR_ind.row(), c) = -itR_ind.value();
         }
-        T.insertBack(c + R_ind.rows(), c) = 1;
+        T.insertBack(c + num_dep, c) = 1;
     }
     T.finalize();
 
@@ -232,6 +242,8 @@ void elim_constr(
     igl::slice(T, dep_indep_rev, 1, T_out);
     // slice_into_sparse(T_out, dep_indep, all_cols_T, T);
     // std::cout << "T output:\n" << T_out <<  std::endl;
+
+    spdlog::debug("test q2 on R: {}", (R * T_out * Eigen::VectorXd::Random(T_out.cols())).norm());
 }
 
 

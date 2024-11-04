@@ -1,5 +1,5 @@
 {
-    "max_iters": 5,
+    "max_iters": 50,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
     "do_newton": true,
