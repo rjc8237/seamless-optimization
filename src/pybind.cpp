@@ -7,13 +7,13 @@
 #include "MeshCutter.h"
 #include "Parameters.h"
 #include "pybind11_json.hpp"
+#include "main_helper.h"
 
 using namespace SymDir;
 
 #ifdef PYBIND
 #ifndef MULTIPRECISION
 
-namespace py = pybind11;
 using json = nlohmann::json;
 
 // wrap as Python module
@@ -25,7 +25,7 @@ PYBIND11_MODULE(symdir_py, m)
     pybind11::call_guard<pybind11::scoped_ostream_redirect, pybind11::scoped_estream_redirect>
         default_call_guard;
 
-    py::class_<Mesh>(m, "Mesh")
+    pybind11::class_<Mesh>(m, "Mesh")
         .def(py::init<>())
         .def(py::init<const Eigen::MatrixXd&, Eigen::MatrixXi&>());
 
@@ -38,7 +38,9 @@ PYBIND11_MODULE(symdir_py, m)
         .def("do_optimization", &ExtremeOpt::do_optimization)
         .def("init_constraints", &ExtremeOpt::init_constraints)
         .def("check_constraints", &ExtremeOpt::check_constraints)
-        .def_readwrite("m_params", &ExtremeOpt::m_params);
+        .def_readwrite("m_params", &ExtremeOpt::m_params)
+        .def_readwrite("EE", &ExtremeOpt::EE)
+        .def_readwrite("FE", &ExtremeOpt::FE);
 
     pybind11::class_<MeshCutter>(m, "MeshCutter")
         .def(pybind11::init<const Eigen::MatrixXd&,
@@ -49,7 +51,7 @@ PYBIND11_MODULE(symdir_py, m)
         .def("load_feature_edges", &MeshCutter::load_feature_edges)
         .def("reindex_feature_edges", &MeshCutter::reindex_feature_edges);
 
-    py::class_<Parameters>(m, "Parameters")
+    pybind11::class_<Parameters>(m, "Parameters")
         .def(py::init<>())
         .def_readwrite("model_name", &Parameters::model_name)
         .def_readwrite("save_meshes", &Parameters::save_meshes)
@@ -66,6 +68,18 @@ PYBIND11_MODULE(symdir_py, m)
         .def_readwrite("do_projection", &Parameters::do_projection)
         .def_readwrite("use_max_energy", &Parameters::use_max_energy)
         .def_readwrite("Lp", &Parameters::Lp);
+    
+    m.def("check_constraints", &check_constraints);
+    m.def("transform_EE", &transform_EE);
+    m.def("transform_FE", &transform_FE);
+
+    m.def("export_mesh", [](ExtremeOpt &extremeopt) {
+        Eigen::MatrixXd V;
+        Eigen::MatrixXi F;
+        Eigen::MatrixXd uv;
+        extremeopt.export_mesh(V, F, uv);
+        return std::make_tuple(V, F, uv);
+    });
 }
 
 #endif

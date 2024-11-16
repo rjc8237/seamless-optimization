@@ -11,9 +11,24 @@ import penner
 import symdir_py as symdir
 import igl
 import optimization_scripts.script_util as script_util
+import json
+import contextlib
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+@contextlib.contextmanager
+def redirect_stderr():
+    # Save the original stderr file descriptor
+    original_stderr_fd = sys.stderr.fileno()
+    # Create a new file descriptor that points to /dev/null
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull, original_stderr_fd)
+    try:
+        yield
+    finally:
+        # Restore the original stderr file descriptor
+        os.dup2(devnull, original_stderr_fd)
+        os.close(devnull)
 
 def run_one(args, fname):
     # Get mesh and test name
@@ -32,7 +47,8 @@ def run_one(args, fname):
     logger.info("Running symmetric dirichlet on {}".format(fmesh))
 
     try:
-        V, uv, _, F, FT, _ = igl.read_obj(os.path.join(args['input_dir'], name + '_output', fmesh))
+        with redirect_stderr():
+            V, uv, _, F, FT, _ = igl.read_obj(os.path.join(args['input_dir'], name + '_output', fmesh))
     except:
         logger.info("Could not open mesh data")
         return
@@ -40,8 +56,22 @@ def run_one(args, fname):
     # cut the mesh
     meshcutter = symdir.MeshCutter(V, uv, F, FT)
     V_cut, EE = meshcutter.cut_mesh()
-    FE_init = meshcutter.load_feature_edges(os.path.join(args['input_dir'], name + '_output', fmesh))
-    FE = meshcutter.reindex_feature_edges(FE_init)
+    if args['do_feature_alignment']:
+        FE_init = meshcutter.load_feature_edges(os.path.join(args['input_dir'], name + '_output', fmesh))
+        if FE_init.size == 0:
+            args['do_feature_alignment'] = False
+        FE = meshcutter.reindex_feature_edges(FE_init)
+    else:
+        FE = np.array([])
+
+    opt_log = {}
+    opt_log['model_name'] = name
+    opt_log['config'] = args
+
+    cons_residual = symdir.check_constraints(EE, FE, uv, FT)
+    print("Initial constraints error", cons_residual)
+    opt_log['init_residual'] = cons_residual
+
 
     alg_params = symdir.Parameters()
     alg_params.model_name = name
@@ -60,34 +90,44 @@ def run_one(args, fname):
     alg_params.use_max_energy = args['use_max_energy']
     alg_params.Lp = args['Lp']
 
-    # Additional print statements to verify correct assignments
 
-    opt_log = {}
-    opt_log['model_name'] = name
-    #opt_log['config'] = alg_params
+
 
     extremeopt = symdir.ExtremeOpt(V_cut, FT)
     extremeopt.create_mesh(V_cut, FT, uv)
     extremeopt.m_params = alg_params
+    
+    EE_e = symdir.transform_EE(FT, EE)
+    FE_e = symdir.transform_FE(FT, FE)
 
-    extremeopt.init_constraints(EE, FE)
+    extremeopt.init_constraints(EE_e)
+    extremeopt.EE = EE
+    extremeopt.FE = FE
+
 
     if extremeopt.check_constraints(1e-7):
         print("initial constraints satisfied")
+        opt_log['init_cons_satisfied'] = True
     else:
         print("initial constraints are not satisfied")
+        opt_log['init_cons_satisfied'] = False
     
     extremeopt.do_optimization(opt_log)
 
     logger.info("check constraints inside wmtk")
     if extremeopt.check_constraints(1e-7):
         print("constraints satisfied")
+        opt_log['final_cons_satisfied'] = True
     else:
         print("constraints are not satisfied")
+        opt_log['final_cons_satisfied'] = False
     
-    extremeopt.export_mesh(V, FT, uv)
+    
+    V, FT, uv = symdir.export_mesh(extremeopt)
 
-    extremeopt.export_EE(EE)
+    cons_residual = symdir.check_constraints(EE, FE, uv, FT)
+    print("final constraints error", cons_residual)
+    opt_log['final_residual'] = cons_residual
 
     uv_mesh_path = os.path.join(output_dir, name + '_out.obj')
     logger.info("Saving optimized mesh at {}".format(uv_mesh_path))
@@ -95,9 +135,14 @@ def run_one(args, fname):
 
     # save form to output file
     output_path = os.path.join(output_dir, name + '_EE.txt')
-    np.savetxt(output_path, EE)
+    np.savetxt(output_path, EE, fmt='%d')
     output_path = os.path.join(output_dir, name + '_FE.txt')
-    np.savetxt(output_path, FE)
+    np.savetxt(output_path, FE, fmt='%d')
+
+    with open(os.path.join(output_dir, name + '_symdir_log.json'), 'w') as file:
+        json.dump(opt_log, file, indent=4)
+
+
 
 def run_many(args):
     script_util.run_many(run_one, args)
