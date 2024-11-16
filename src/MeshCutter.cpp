@@ -188,23 +188,26 @@ Eigen::MatrixXi MeshCutter::reindex_feature_edges(const Eigen::MatrixXi& FE) {
 		}
 		++r;
 	}
-	return remove_cycles_and_duplicates(FE, FE_reindex);
+	return FE_reindex;
+	//return remove_cycles_and_duplicates(FE, FE_reindex);
 }
 
 Eigen::MatrixXi MeshCutter::remove_cycles_and_duplicates(const Eigen::MatrixXi& FE, const Eigen::MatrixXi& FE_reindex) {
 	Eigen::MatrixXi FE_new(0, 3);
 
-	SymDir::UnionFind uf_u{ static_cast<int>(V.rows()) };
-	SymDir::UnionFind uf_v{ static_cast<int>(V.rows()) };
+	//SymDir::UnionFind uf_u{ static_cast<int>(V.rows()) };
+	//SymDir::UnionFind uf_v{ static_cast<int>(V.rows()) };
+	SymDir::UnionFind uf{ static_cast<int>(V.rows()) };
 
 	int r = 0;
 	// Look for edge cycles in original indexing, since reindexed edges could be disjoint even though they describe the same edge
+	spdlog::info("reducing {} feature edges", FE.rows());
 	for (int i = 0; i < FE.rows(); ++i)
 	{
 		int first = FE(i, 0);
 		int second = FE(i, 1);
 		int alignment = FE_reindex(i, 2);
-		SymDir::UnionFind& uf { (alignment == 0) ? uf_u : uf_v };
+		//SymDir::UnionFind& uf { (alignment == 0) ? uf_u : uf_v };
 		if (uf.find_set(first) != uf.find_set(second)) {
             uf.union_sets(first, second);
             FE_new.conservativeResize(r + 1, 3);
@@ -217,6 +220,7 @@ Eigen::MatrixXi MeshCutter::remove_cycles_and_duplicates(const Eigen::MatrixXi& 
             spdlog::info("Cycle detected, skipping edge ({}, {})", first, second);
         }
 	}
+	spdlog::info("{} independent feature edges", FE_new.rows());
 	return FE_new;
 }
 
