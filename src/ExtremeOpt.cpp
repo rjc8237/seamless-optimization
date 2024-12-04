@@ -944,9 +944,11 @@ void ExtremeOpt::init_matchings_feature_edges(
     Eigen::VectorXi& mark,
     Eigen::VectorXi& seen_components)
 {
-
+    Eigen::MatrixXd uv;
+    export_uv(uv);
     for (int ci = 0; ci < num_components; ++ci)
     {
+        int offset = 0;
         int vi = min_u_diff_ids[ci];
         int vj = min_u_diff_next_ids[ci];
         int hij = vv2he.coeff(vi, vj) - 1;
@@ -954,6 +956,10 @@ void ExtremeOpt::init_matchings_feature_edges(
         if (seen_components[C[fijk]] || mark[fijk])
         {
             continue;
+        }
+        if (uv(vi, 0) < uv(vj, 0)) 
+        {
+            offset = 2;
         }
         Eigen::VectorXd dij = input_V.row(vj) - input_V.row(vi);
         double min = (frame_field.row(fijk) - dij).norm();
@@ -967,6 +973,7 @@ void ExtremeOpt::init_matchings_feature_edges(
                 matchings[fijk] = i;
             }
         }
+        matchings[fijk] += offset;
         d.push_back(fijk);
         mark[fijk] = 1;
         seen_components[C[fijk]] = 1;
@@ -1088,7 +1095,7 @@ void ExtremeOpt::check_cross_field_alignment()
         if (FE(i, 2) == 0)
         {
             Eigen::VectorXd diff = PD1.row(fijk) - dij;
-            //std::cout << diff << '\n';
+            std::cout << diff << '\n';
         }
     }
 }
