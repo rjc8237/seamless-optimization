@@ -25,10 +25,12 @@ int main(int argc, char** argv)
     std::string output_dir = "./";
     std::string input_json = "../data/example.json";
     std::string model = "";
+    std::string field = "";
     std::string feature_edges_filename = "";
     Parameters param;
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-m,--model", model, "Input model name.");
+    app.add_option("-f,--field", field, "Input frame field");
     app.add_option("-j,--json", input_json, "Input arguments.");
     app.add_option("-o,--output", output_dir, "Output dir.");
 
@@ -65,18 +67,16 @@ int main(int argc, char** argv)
 
 	auto [V, EE] = meshcutter.cut_mesh();
 
-    Eigen::MatrixXi FE_full(0, 0);
     Eigen::MatrixXi FE(0, 0);
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
         Eigen::MatrixXi FE_init{ meshcutter.load_feature_edges(input_file) };
-        FE_full = meshcutter.reindex_feature_edges(FE_init);
+        FE = meshcutter.reindex_feature_edges(FE_init);
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
-        FE = FE_full;
     }
     
-    double cons_residual = check_constraints(EE, FE_full, uv, F);
+    double cons_residual = check_constraints(EE, FE, uv, F);
     spdlog::info("Initial constraints error {}", cons_residual);
 
     json opt_log;
@@ -119,7 +119,7 @@ int main(int argc, char** argv)
         //extremeopt.FE = FE;
     }
     //extremeopt.view();
-
+    extremeopt.comb_matchings(field);
     extremeopt.do_optimization(opt_log);
 
     if (extremeopt.m_params.with_cons)
@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 
     extremeopt.export_mesh(V, F, uv);
 
-    cons_residual = check_constraints(EE, FE_full, uv, F);
+    cons_residual = check_constraints(EE, FE, uv, F);
     spdlog::info("Final constraints error {}", cons_residual);
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);

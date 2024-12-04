@@ -115,6 +115,7 @@ public:
         he2e.resize(num_halfedges);
         f2he.resize(num_faces);
         out.resize(num_vertices);
+        vv2he.resize(num_vertices, num_vertices);
 
         // iterate over faces to build halfedge connectivity
         typedef Eigen::Triplet<int> Trip;
@@ -150,7 +151,6 @@ public:
         }
 
         // Create vertex  maps
-        Eigen::SparseMatrix<int> vv2he(num_vertices, num_vertices);
         vv2he.setFromTriplets(vv2he_triplets.begin(), vv2he_triplets.end());
 
         // build opposite mapping
@@ -316,6 +316,8 @@ public:
     std::vector<int> from;
     std::vector<int> he2e;
     std::vector<int> e2he;
+    Eigen::SparseMatrix<int> vv2he;
+    
 };
 
 class ExtremeOpt : public Mesh
@@ -349,12 +351,19 @@ public:
     Eigen::SparseMatrix<double> Aeq, AeqT;
     Eigen::SparseMatrix<double> Q2, Q2T;
     Eigen::VectorXd area;
+    Eigen::VectorXi matchings;
+    Eigen::MatrixXd PD1;
+    Eigen::MatrixXd PD2;
+    std::vector<double> min_u_diffs;
+    std::vector<int> min_u_diff_ids;
+    std::vector<int> min_u_diff_next_ids;
+    int num_components;
 
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
-    double compute_energy(Eigen::MatrixXd aaa);
+    double compute_energy(Eigen::MatrixXd aaa, double lambda);
 
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
@@ -389,7 +398,54 @@ public:
         ->addEdgeScalarQuantity("alignment", FE.col(2));
         polyscope::show();
     }
+
+    std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N);
+
+    std::tuple<
+    Eigen::MatrixXd, 
+    Eigen::VectorXd, 
+    Eigen::MatrixXi> load_reference_field(std::string_view ffield_file);
+
+    Eigen::VectorXd rotate_vector(
+                    const Eigen::VectorXd& V,
+                    double angle,
+                    const Eigen::VectorXd& B1,
+                    const Eigen::VectorXd& B2);
     
+    void init_matchings_feature_edges(
+                    const Eigen::MatrixXd& frame_field,
+                    const Eigen::MatrixXd& B1,
+                    const Eigen::MatrixXd& B2,
+                    const Eigen::VectorXi& C,
+                    std::deque<int>& d, 
+                    Eigen::VectorXi& mark,
+                    Eigen::VectorXi& seen_components);
+
+    void init_matchings_boundary_edges(
+                    const Eigen::MatrixXd& frame_field,
+                    const Eigen::MatrixXd& B1,
+                    const Eigen::MatrixXd& B2,
+                    const Eigen::VectorXi& C,
+                    std::deque<int>& d, 
+                    Eigen::VectorXi& mark,
+                    Eigen::VectorXi& seen_components);
+
+    std::tuple<std::deque<int>, Eigen::VectorXi> initialize_matchings(
+    const Eigen::MatrixXd frame_field, 
+    const Eigen::MatrixXd B1,
+    const Eigen::MatrixXd B2);
+    
+    void comb_matchings(std::string_view ffield_file);
+    
+    void check_cross_field_alignment();
+
+    double get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    Eigen::VectorXd& grad,
+    Eigen::SparseMatrix<double>& hessian,
+    double lambda,
+    bool get_hessian);
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?

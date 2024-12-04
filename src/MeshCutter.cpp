@@ -12,6 +12,7 @@
 #include <Eigen/Dense>
 #include <unordered_set>
 #include "union_find.h"
+#include <tuple>
 
 MeshCutter::MeshCutter(const Eigen::MatrixXd& V,
 	const Eigen::MatrixXd& uv,
@@ -84,7 +85,7 @@ Eigen::MatrixXi MeshCutter::load_feature_edges(std::string_view fe_filename) {
 		exit(EXIT_FAILURE);
 	}
 
-
+	
 	Eigen::MatrixXi FE(0, 2);
 	std::string line{};
 	std::getline(inf, line);
@@ -109,7 +110,7 @@ Eigen::MatrixXi MeshCutter::load_feature_edges(std::string_view fe_filename) {
 
 Eigen::MatrixXi MeshCutter::reindex_feature_edges(const Eigen::MatrixXi& FE) {
 	std::unordered_map<int, int> fe_to_f;
-	std::vector<std::array<int, 2>> feature_edges;
+	std::vector<std::array<int, 3>> feature_edges;
 	for (int i = 0; i < FE.rows(); ++i) {
 		bool found = false;
 		for (int f = 0; f < F.rows(); ++f) {
@@ -153,11 +154,11 @@ Eigen::MatrixXi MeshCutter::reindex_feature_edges(const Eigen::MatrixXi& FE) {
 			int uvi_opp = FT(f_opp, (TTi(f, p) + 1) % 3);
 			int uvj_opp = FT(f_opp, TTi(f, p));
 			if ((FE(i, 0) == F(f, p)) && (FE(i, 1) == F(f, q))) {
-				feature_edges.push_back({ uvi, uvj });
+				feature_edges.push_back({ uvi, uvj, f });
 				break;
 			}
 			else if ((FE(i, 1) == F(f, p)) && (FE(i, 0) == F(f, q))) {
-				feature_edges.push_back({ uvj_opp, uvi_opp });
+				feature_edges.push_back({ uvj_opp, uvi_opp, f });
 				break;
 			}
 		}
@@ -169,7 +170,7 @@ Eigen::MatrixXi MeshCutter::reindex_feature_edges(const Eigen::MatrixXi& FE) {
 	}
 	Eigen::MatrixXi FE_reindex(feature_edges.size(), 3);
 	int r = 0;
-	for (auto [v1, v2] : feature_edges) {
+	for (auto [v1, v2, f] : feature_edges) {
 		Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
 		// constrain u or v depending on initial position
 		//if (-1e-12 < e_ab[0] && e_ab[0] < 1e-12) {

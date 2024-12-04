@@ -10,6 +10,14 @@ using json = nlohmann::json;
 
 using namespace SymDir;
 
+glm::vec3 BEIGE(0.867, 0.765, 0.647);
+glm::vec3 BLACK_BROWN(0.125, 0.118, 0.125);
+glm::vec3 TAN(0.878, 0.663, 0.427);
+glm::vec3 MUSTARD(0.890, 0.706, 0.282);
+glm::vec3 FOREST_GREEN(0.227, 0.420, 0.208);
+glm::vec3 TEAL(0., 0.375, 0.5);
+glm::vec3 DARK_TEAL(0., 0.5*0.375, 0.5*0.5);
+
 void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE);
 void transform_EE(
     const Eigen::MatrixXi& F,
@@ -24,8 +32,10 @@ int main(int argc, char** argv)
     CLI::App app{argv[0]};
     std::string input_dir = "../data";
     std::string model = "";
+    std::string ffield = "";
     std::string suffix = "";
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
+    app.add_option("-f,--field", ffield, "Input frame field");
     app.add_option("-m,--model", model, "Input model name.");
     app.add_option("-s,--suffix", suffix, "Input model suffix.");
 
@@ -50,21 +60,38 @@ int main(int argc, char** argv)
     //}
     //spdlog::info("Input EE size {}", EE.rows());
 
-    Eigen::MatrixXi FE;
-    int FE_rows;
     //std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
-    //FE_in >> FE_rows;
-    //FE.resize(FE_rows, 3);
-    //for (int i = 0; i < FE.rows(); i++) {
-    //    FE_in >> FE(i, 0) >> FE(i, 1) >> FE(i, 2);
+    //if (!FE_in.is_open()) {
+    //    return -1;
     //}
-    spdlog::info("Input FE size {}", FE.rows());
+    //std::vector<Eigen::Vector3i> rows;
+    //int a, b, c;
+
+    // Read data line by line
+    //while (FE_in >> a >> b >> c) {
+    //    rows.emplace_back(a, b, c);
+    //}
+    //FE_in.close();
+    //int FE_rows = rows.size();
+
+    //Eigen::MatrixXi FE(FE_rows, 3);
+
+    //for (int i = 0; i < FE_rows; ++i) {
+    //    FE.row(i) = rows[i];
+    //}
+    //spdlog::info("Input FE size {}", FE.rows());
 
     MeshCutter meshcutter(V, uv, F, FT);
     auto [V_cut, EE] = meshcutter.cut_mesh();
+    Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(input_file);
+    Eigen::MatrixXi FE = meshcutter.reindex_feature_edges(FE_i);
 
     ExtremeOpt extremeopt(V_cut, FT);
     extremeopt.create_mesh(V_cut, FT, uv);
+    extremeopt.EE = EE;
+    extremeopt.FE = FE;
+    extremeopt.m_params.do_feature_alignment = true;
+    extremeopt.comb_matchings(ffield);
     //extremeopt.view();
     view(extremeopt, EE, FE);
 
@@ -159,6 +186,16 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);
     polyscope::registerCurveNetwork("feature edges", V_feature, edges_feature);
     mesh->addVertexParameterizationQuantity("Seamless parameterization", uv);
+    mesh->addFaceVectorQuantity("field_1", extremeopt.PD1)
+        ->setVectorColor(FOREST_GREEN)
+        ->setVectorRadius(0.0005)
+        ->setVectorLengthScale(0.005)
+        ->setEnabled(true);
+    mesh->addFaceVectorQuantity("field_2", extremeopt.PD2)
+        ->setVectorColor(BLACK_BROWN)
+        ->setVectorRadius(0.0005)
+        ->setVectorLengthScale(0.005)
+        ->setEnabled(true);
     //mesh->addFaceScalarQuantity("seamless", f_scalar);
     //mesh->addEdgeScalarQuantity("seamless", e_scalar);
     polyscope::show();
