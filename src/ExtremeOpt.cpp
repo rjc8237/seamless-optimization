@@ -1006,8 +1006,8 @@ void ExtremeOpt::comb_matchings(std::string_view ffield_file)
             fjil = he2f[opposite[hij]];
         }
     }
-    Eigen::VectorXd u_angles = (matchings.cast<double>().array() + 1) * (igl::PI / 2.0);
-    Eigen::VectorXd v_angles = (matchings.cast<double>().array() + 2) * (igl::PI / 2.0);
+    Eigen::VectorXd u_angles = (matchings.cast<double>().array()) * (igl::PI / 2.0);
+    Eigen::VectorXd v_angles = (matchings.cast<double>().array() + 1) * (igl::PI / 2.0);
     PD1 = igl::rotate_vectors(frame_field, u_angles, B1, B2);
     PD2 = igl::rotate_vectors(frame_field, v_angles, B1, B2);
     check_cross_field_alignment();
