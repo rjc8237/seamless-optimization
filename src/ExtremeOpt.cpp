@@ -315,7 +315,6 @@ void ExtremeOpt::create_mesh(
     igl::boundary_loop(F, bds);
 
     // get face components
-    Eigen::VectorXi C;
     num_components = igl::facet_components(F, C);
     std::vector<int> component_faces(num_components);
     std::vector<int> component_vertices{ propagate_component_labels(F, C, uv.rows()) };
@@ -935,17 +934,21 @@ Eigen::VectorXd ExtremeOpt::rotate_vector(
     return norm*cos(a) * B1 + norm*sin(a) * B2;
 }
 
-void ExtremeOpt::init_matchings_feature_edges(
-    const Eigen::MatrixXd& frame_field,
-    const Eigen::MatrixXd& B1,
-    const Eigen::MatrixXd& B2,
-    const Eigen::VectorXi& C,
-    std::deque<int>& d, 
-    Eigen::VectorXi& mark,
-    Eigen::VectorXi& seen_components)
-{
+std::tuple<std::deque<int>, Eigen::VectorXi> ExtremeOpt::initialize_matchings(
+    const Eigen::MatrixXd frame_field, 
+    const Eigen::MatrixXd B1,
+    const Eigen::MatrixXd B2)
+{   
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
     Eigen::MatrixXd uv;
-    export_uv(uv);
+    export_mesh(V, F, uv);
+
+    Eigen::VectorXi seen_components = Eigen::VectorXi::Constant(num_components, 0);
+    matchings = Eigen::VectorXi::Constant(F.rows(), 0);
+    std::deque<int> d;
+    Eigen::VectorXi mark = Eigen::VectorXi::Constant(F.rows(), 0);
+
     for (int ci = 0; ci < num_components; ++ci)
     {
         int vi = min_u_diff_ids[ci];
@@ -956,11 +959,12 @@ void ExtremeOpt::init_matchings_feature_edges(
         {
             continue;
         }
-        Eigen::VectorXd dij = input_V.row(vj) - input_V.row(vi);
-        double min = (frame_field.row(fijk) - dij).norm();
+        Eigen::VectorXd dij = V.row(vj) - V.row(vi);
+        dij.normalize();
+        double min = (frame_field.row(fijk) - dij.transpose()).norm();
         for (int i = 1; i < 4; ++i)
         {
-            auto rot_dfijk = rotate_vector(frame_field.row(fijk), i * (igl::PI / 2.0), B1.row(fijk), B2.row(fijk));
+            Eigen::VectorXd rot_dfijk = rotate_vector(frame_field.row(fijk), i * (igl::PI / 2.0), B1.row(fijk), B2.row(fijk));
             double curr_diff = (rot_dfijk - dij).norm();
             if (curr_diff < min)
             {
@@ -972,73 +976,6 @@ void ExtremeOpt::init_matchings_feature_edges(
         mark[fijk] = 1;
         seen_components[C[fijk]] = 1;
     }
-}
-
-void ExtremeOpt::init_matchings_boundary_edges(
-    const Eigen::MatrixXd& frame_field,
-    const Eigen::MatrixXd& B1,
-    const Eigen::MatrixXd& B2,
-    const Eigen::VectorXi& C,
-    std::deque<int>& d, 
-    Eigen::VectorXi& mark,
-    Eigen::VectorXi& seen_components)
-{
-    std::vector<std::vector<int>> bds;
-    igl::boundary_loop(input_F, bds);
-    for (const auto& l : bds)
-    {
-        for (int i = 0; i < l.size(); ++i)
-        {
-            int vi = l[i];
-            int vj = l[(i + 1) % l.size()];
-            int hij = vv2he.coeff(vi, vj) - 1;
-            int fijk = he2f[hij];
-            if (seen_components[C[fijk]] || mark[fijk])
-            {
-                continue;
-            }
-            Eigen::VectorXd dij = input_V.row(vj) - input_V.row(vi);
-            double min = (frame_field.row(fijk) - dij).norm();
-            for (int i = 1; i < 4; ++i)
-            {
-                auto rot_dfijk = rotate_vector(frame_field.row(fijk), i * (igl::PI / 2.0), B1.row(fijk), B2.row(fijk));
-                double curr_diff = (rot_dfijk - dij).norm();
-                if (curr_diff < min)
-                {
-                    min = curr_diff;
-                    matchings[fijk] = i;
-                }
-            }
-            d.push_back(fijk);
-            mark[fijk] = 1;
-            seen_components[C[fijk]] = 1;
-        }
-    }
-}
-
-std::tuple<std::deque<int>, Eigen::VectorXi> ExtremeOpt::initialize_matchings(
-    const Eigen::MatrixXd frame_field, 
-    const Eigen::MatrixXd B1,
-    const Eigen::MatrixXd B2)
-{   
-    Eigen::VectorXi C;
-    int num_components = igl::facet_components(input_F, C);
-    Eigen::VectorXi seen_components = Eigen::VectorXi::Constant(num_components, 0);
-
-    matchings = Eigen::VectorXi::Constant(input_F.rows(), 0);
-    std::deque<int> d;
-    Eigen::VectorXi mark = Eigen::VectorXi::Constant(input_F.rows(), 0);
-
-    if (m_params.do_feature_alignment)
-    {
-        init_matchings_feature_edges(frame_field, B1, B2, C, d, mark, seen_components);
-    }
-    else
-    {
-        init_matchings_boundary_edges(frame_field, B1, B2, C, d, mark, seen_components);
-    }
-
-    
     return { d, mark };
 }
 
@@ -1069,9 +1006,8 @@ void ExtremeOpt::comb_matchings(std::string_view ffield_file)
             fjil = he2f[opposite[hij]];
         }
     }
-    Eigen::VectorXd u_angles = matchings.cast<double>().array() * (igl::PI / 2.0);
-    Eigen::VectorXi v_matchings = matchings.array() + 1;
-    Eigen::VectorXd v_angles = v_matchings.cast<double>().array() * (igl::PI / 2.0);
+    Eigen::VectorXd u_angles = (matchings.cast<double>().array() + 1) * (igl::PI / 2.0);
+    Eigen::VectorXd v_angles = (matchings.cast<double>().array() + 2) * (igl::PI / 2.0);
     PD1 = igl::rotate_vectors(frame_field, u_angles, B1, B2);
     PD2 = igl::rotate_vectors(frame_field, v_angles, B1, B2);
     check_cross_field_alignment();
@@ -1086,10 +1022,11 @@ void ExtremeOpt::check_cross_field_alignment()
         int hij = vv2he.coeff(vi, vj) - 1;
         int fijk = he2f[hij];
         Eigen::VectorXd dij = input_V.row(vj) - input_V.row(vi);
+        dij.normalize();
         if (FE(i, 2) == 0)
         {
-            Eigen::VectorXd diff = PD1.row(fijk) - dij;
-            std::cout << diff << '\n';
+            Eigen::VectorXd diff = PD1.row(fijk) - dij.transpose();
+            std::cout << "vector " << diff.transpose() << '\n';
         }
     }
 }

@@ -3,6 +3,7 @@
 #include "ExtremeOpt.h"
 #include "polyscope/curve_network.h"
 #include "MeshCutter.h"
+#include <igl/grad.h>
 
 #include <igl/read_triangle_mesh.h>
 #include <CLI/CLI.hpp>
@@ -17,6 +18,8 @@ glm::vec3 MUSTARD(0.890, 0.706, 0.282);
 glm::vec3 FOREST_GREEN(0.227, 0.420, 0.208);
 glm::vec3 TEAL(0., 0.375, 0.5);
 glm::vec3 DARK_TEAL(0., 0.5*0.375, 0.5*0.5);
+glm::vec3 BLUE(0., 0., 1.);
+glm::vec3 RED(1., 0., 0.);
 
 void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE);
 void transform_EE(
@@ -104,6 +107,14 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     Eigen::MatrixXi F;
     Eigen::MatrixXd uv;
     extremeopt.export_mesh(V, F, uv);
+
+    Eigen::SparseMatrix<double> G;
+    igl::grad(V, F, G);
+
+    Eigen::MatrixXd Guv = G * uv;
+
+    Eigen::MatrixXd G_u = Eigen::Map<const Eigen::MatrixXd>(Guv.col(0).data(), F.rows(), 3);
+    Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
     
     Eigen::VectorXd f_scalar = Eigen::VectorXd::Zero(F.rows());    
     std::unordered_set<int> unique_seamless_vertices;
@@ -193,6 +204,16 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
         ->setEnabled(true);
     mesh->addFaceVectorQuantity("field_2", extremeopt.PD2)
         ->setVectorColor(BLACK_BROWN)
+        ->setVectorRadius(0.0005)
+        ->setVectorLengthScale(0.005)
+        ->setEnabled(true);
+    mesh->addFaceVectorQuantity("grad_u", G_u)
+        ->setVectorColor(BLUE)
+        ->setVectorRadius(0.0005)
+        ->setVectorLengthScale(0.005)
+        ->setEnabled(true);
+    mesh->addFaceVectorQuantity("grad_v", G_v)
+        ->setVectorColor(RED)
         ->setVectorRadius(0.0005)
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);

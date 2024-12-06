@@ -357,6 +357,7 @@ public:
     std::vector<double> min_u_diffs;
     std::vector<int> min_u_diff_ids;
     std::vector<int> min_u_diff_next_ids;
+    Eigen::VectorXi C;
     int num_components;
 
     // Optimization
@@ -412,24 +413,6 @@ public:
                     const Eigen::VectorXd& B1,
                     const Eigen::VectorXd& B2);
     
-    void init_matchings_feature_edges(
-                    const Eigen::MatrixXd& frame_field,
-                    const Eigen::MatrixXd& B1,
-                    const Eigen::MatrixXd& B2,
-                    const Eigen::VectorXi& C,
-                    std::deque<int>& d, 
-                    Eigen::VectorXi& mark,
-                    Eigen::VectorXi& seen_components);
-
-    void init_matchings_boundary_edges(
-                    const Eigen::MatrixXd& frame_field,
-                    const Eigen::MatrixXd& B1,
-                    const Eigen::MatrixXd& B2,
-                    const Eigen::VectorXi& C,
-                    std::deque<int>& d, 
-                    Eigen::VectorXi& mark,
-                    Eigen::VectorXi& seen_components);
-
     std::tuple<std::deque<int>, Eigen::VectorXi> initialize_matchings(
     const Eigen::MatrixXd frame_field, 
     const Eigen::MatrixXd B1,
