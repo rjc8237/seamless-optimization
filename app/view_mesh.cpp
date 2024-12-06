@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
     CLI11_PARSE(app, argc, argv);
 
-
+    ffield = input_dir + "/" + ffield;
     std::string input_file = input_dir + "/" + model + "_" + suffix + ".obj";
     // Loading the input mesh
     Eigen::MatrixXd V, uv, N;
@@ -197,12 +197,12 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);
     polyscope::registerCurveNetwork("feature edges", V_feature, edges_feature);
     mesh->addVertexParameterizationQuantity("Seamless parameterization", uv);
-    mesh->addFaceVectorQuantity("field_1", extremeopt.PD1)
+    mesh->addFaceVectorQuantity("PD1", extremeopt.PD1)
         ->setVectorColor(FOREST_GREEN)
         ->setVectorRadius(0.0005)
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);
-    mesh->addFaceVectorQuantity("field_2", extremeopt.PD2)
+    mesh->addFaceVectorQuantity("PD2", extremeopt.PD2)
         ->setVectorColor(BLACK_BROWN)
         ->setVectorRadius(0.0005)
         ->setVectorLengthScale(0.005)
