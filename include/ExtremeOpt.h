@@ -16,6 +16,20 @@ using json = nlohmann::json;
 
 namespace SymDir {
 
+/**
+ * @brief Find edges per connected component as aligned with the positive u-axis as possible
+ * 
+ * @param uv: parameterization vertices
+ * @param F: parameterization faces
+ * @return list of changes in the v coordinate per edge
+ * @return list of edge start vertices
+ * @return list of edge end vertices
+ */
+std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+find_u_aligned_edges(
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F);
+
 void get_grad_op(
     const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
@@ -354,9 +368,9 @@ public:
     Eigen::VectorXi matchings;
     Eigen::MatrixXd PD1;
     Eigen::MatrixXd PD2;
-    std::vector<double> min_u_diffs;
-    std::vector<int> min_u_diff_ids;
-    std::vector<int> min_u_diff_next_ids;
+    std::vector<double> min_v_diffs;
+    std::vector<int> min_v_diff_ids;
+    std::vector<int> min_v_diff_next_ids;
     Eigen::VectorXi C;
     int num_components;
 

@@ -14,8 +14,63 @@
 #include <Eigen/Core>
 #include "energy.h"
 #include "SYMDIR_NEW.h"
+#include <igl/boundary_loop.h>
 
 namespace SymDir {
+
+std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
+{
+    std::vector<int> component_vertices(N, -1);
+    for (int f = 0; f < F.rows(); ++f)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            int vi = F(f, i);
+            component_vertices[vi] = C[f];
+        }
+    }
+    return component_vertices;
+}
+
+std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+find_u_aligned_edges(
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F)
+{
+    std::vector<std::vector<int>> bds;
+    igl::boundary_loop(F, bds);
+
+    // get face components
+    int N = uv.rows();
+    Eigen::VectorXi C;
+    int num_components = igl::facet_components(F, C);
+    std::vector<int> component_vertices{ propagate_component_labels(F, C, N) };
+    std::vector<double> min_v_diffs(num_components, 1e10);
+    std::vector<int> min_v_diff_ids(num_components, -1);
+    std::vector<int> min_v_diff_next_ids(num_components, -1);
+
+    for (const auto& l : bds)
+    {
+        for (int i = 0; i < l.size(); i++) {
+            double j = (i + 1) % l.size();
+            double signed_u_diff = uv(l[j], 0) - uv(l[i], 0);
+            if (signed_u_diff < 0.) continue; // only check for positive orientation edge
+
+            // see if most aligned
+            double v_diff = abs(uv(l[j], 1) - uv(l[i], 1));
+            int component = component_vertices[l[i]];
+            if (v_diff < min_v_diffs[component]) {
+                min_v_diffs[component] = v_diff;
+                min_v_diff_ids[component] = l[i];
+                min_v_diff_next_ids[component] = l[(i + 1) % l.size()];
+            }
+        }
+    }
+
+    return std::make_tuple(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids);
+}
+
+
 
 std::vector<int> compose(const std::vector<int>& right_f, const std::vector<int>& left_f)
 {
@@ -311,34 +366,8 @@ void ExtremeOpt::create_mesh(
     //     }
     // }
 
-    std::vector<std::vector<int>> bds;
-    igl::boundary_loop(F, bds);
-
-    // get face components
     num_components = igl::facet_components(F, C);
-    std::vector<int> component_faces(num_components);
-    std::vector<int> component_vertices{ propagate_component_labels(F, C, uv.rows()) };
-    for (int f = 0; f < F.rows(); ++f)
-    {
-        component_faces[C[f]] = f;
-    }
-
-    min_u_diffs.resize(num_components, 1e10);
-    min_u_diff_ids.resize(num_components, -1);
-    min_u_diff_next_ids.resize(num_components, -1);
-    for (const auto& l : bds)
-    {
-        for (int i = 0; i < l.size(); i++) {
-            double u_diff = abs(uv(l[i], 0) - uv(l[(i + 1) % l.size()], 0));
-            int component = component_vertices[l[i]];
-            if (u_diff < min_u_diffs[component]) {
-                min_u_diffs[component] = u_diff;
-                min_u_diff_ids[component] = l[i];
-                min_u_diff_next_ids[component] = l[(i + 1) % l.size()];
-            }
-        }
-    }
-
+    std::tie(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids) = find_u_aligned_edges(uv, F);
 }
 
 std::vector<int> ExtremeOpt::propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
@@ -951,8 +980,8 @@ std::tuple<std::deque<int>, Eigen::VectorXi> ExtremeOpt::initialize_matchings(
 
     for (int ci = 0; ci < num_components; ++ci)
     {
-        int vi = min_u_diff_ids[ci];
-        int vj = min_u_diff_next_ids[ci];
+        int vi = min_v_diff_ids[ci];
+        int vj = min_v_diff_next_ids[ci];
         int hij = vv2he.coeff(vi, vj) - 1;
         int fijk = he2f[hij];
         if (seen_components[C[fijk]] || mark[fijk])

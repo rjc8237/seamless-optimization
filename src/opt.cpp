@@ -14,24 +14,9 @@
 #include "spdlog/spdlog.h"
 #include "rref.h"
 
-#include <igl/boundary_loop.h>
 #include <igl/facet_components.h>
 
 namespace SymDir{
-
-std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
-{
-    std::vector<int> component_vertices(N, -1);
-    for (int f = 0; f < F.rows(); ++f)
-    {
-        for (int i = 0; i < 3; ++i)
-        {
-            int vi = F(f, i);
-            component_vertices[vi] = C[f];
-        }
-    }
-    return component_vertices;
-}
 
 void buildAeq(
     const Eigen::MatrixXi& EE,
@@ -45,18 +30,9 @@ void buildAeq(
     int m = EE.rows() / 2;
     int fes = FE.rows();
 
-    std::vector<std::vector<int>> bds;
-    igl::boundary_loop(F, bds);
-
-    // get face components
-    Eigen::VectorXi C;
-    int num_components = igl::facet_components(F, C);
-    std::vector<int> component_faces(num_components);
-    std::vector<int> component_vertices{ propagate_component_labels(F, C, N) };
-    for (int f = 0; f < F.rows(); ++f)
-    {
-        component_faces[C[f]] = f;
-    }
+    // get u aligned edges for each component
+    auto [min_v_diffs, min_v_diff_ids, min_v_diff_next_ids] = find_u_aligned_edges(uv, F);
+    int num_components = min_v_diffs.size();
 
     int n_fix_dof;
     if (fes > 0) 
@@ -117,35 +93,18 @@ void buildAeq(
         c = c + 2;
     }
 
-    std::vector<double> min_u_diffs(num_components, 1e10);
-    std::vector<int> min_u_diff_ids(num_components, -1);
-    std::vector<int> min_u_diff_next_ids(num_components, -1);
-
-    for (const auto& l : bds)
-    {
-        for (int i = 0; i < l.size(); i++) {
-            double u_diff = abs(uv(l[i], 0) - uv(l[(i + 1) % l.size()], 0));
-            int component = component_vertices[l[i]];
-            if (u_diff < min_u_diffs[component]) {
-                min_u_diffs[component] = u_diff;
-                min_u_diff_ids[component] = l[i];
-                min_u_diff_next_ids[component] = l[(i + 1) % l.size()];
-            }
-        }
-    }
-
     for (int ci = 0; ci < num_components; ++ci)
     {
-        int min_u_diff_id = min_u_diff_ids[ci];
-        if (min_u_diff_id == -1)
+        int min_v_diff_id = min_v_diff_ids[ci];
+        if (min_v_diff_id == -1)
         {
             spdlog::warn("for component {}, skipping edge fix", ci);
             n_fix_dof -= 2;
             continue;
         }
-        spdlog::debug("for component {}, fixing {}", ci, min_u_diff_id);
-        trips.push_back(Trip(c, min_u_diff_id, 1));
-        trips.push_back(Trip(c + 1, min_u_diff_id + N, 1));
+        spdlog::debug("for component {}, fixing {}", ci, min_v_diff_id);
+        trips.push_back(Trip(c, min_v_diff_id, 1));
+        trips.push_back(Trip(c + 1, min_v_diff_id + N, 1));
         c = c + 2;
     }
     // fix rotation
@@ -153,14 +112,14 @@ void buildAeq(
     {
         for (int ci = 0; ci < num_components; ++ci)
         {
-            int min_u_diff_id = min_u_diff_ids[ci];
-            if (min_u_diff_id == -1)
+            int min_v_diff_id = min_v_diff_ids[ci];
+            if (min_v_diff_id == -1)
             {
                 n_fix_dof -= 1;
                 continue;
             }
-            spdlog::info("for component {}, fixing rotation {}", ci, min_u_diff_next_ids[ci]);
-            trips.push_back(Trip(c, min_u_diff_next_ids[ci], 1));
+            spdlog::info("for component {}, fixing rotation {}", ci, min_v_diff_next_ids[ci]);
+            trips.push_back(Trip(c, min_v_diff_next_ids[ci], 1));
             c = c + 1;
         }
     }
