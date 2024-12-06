@@ -25,12 +25,12 @@ int main(int argc, char** argv)
     std::string output_dir = "./";
     std::string input_json = "../data/example.json";
     std::string model = "";
-    std::string field = "";
+    std::string ffield = "";
     std::string feature_edges_filename = "";
     Parameters param;
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-m,--model", model, "Input model name.");
-    app.add_option("-f,--field", field, "Input frame field");
+    app.add_option("-f,--field", ffield, "Input frame field");
     app.add_option("-j,--json", input_json, "Input arguments.");
     app.add_option("-o,--output", output_dir, "Output dir.");
 
@@ -38,6 +38,7 @@ int main(int argc, char** argv)
 
 
     std::string input_file = input_dir + "/" + model + ".obj";
+    ffield = input_dir + "/" + ffield;
     // Loading the input mesh
 	Eigen::MatrixXd V_init, uv, N;
 	Eigen::MatrixXi F_init, F, FN;
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
         //extremeopt.FE = FE;
     }
     //extremeopt.view();
-    extremeopt.comb_matchings(field);
+    extremeopt.comb_matchings(ffield);
     extremeopt.do_optimization(opt_log);
 
     if (extremeopt.m_params.with_cons)

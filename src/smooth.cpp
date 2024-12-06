@@ -129,6 +129,7 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
 
     Eigen::MatrixXd uT_vT(3*F.rows(), 2);
 
+    // TODO: print out PD1 and PD2 and compare against these vecs to make sure the rows are contiguous
     uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
 

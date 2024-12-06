@@ -580,16 +580,8 @@ double ExtremeOpt::get_quality_avg_for_smooth_only()
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
-    Eigen::VectorXd area;
-    Eigen::SparseMatrix<double> G;
-    igl::doublearea(V, F, area);
-    get_grad_op(V, F, G);
-    auto compute_energy = [G, area](Eigen::MatrixXd aaa) {
-        Eigen::MatrixXd Ji;
-        jacobian_from_uv(G, aaa, Ji);
-        return compute_energy_from_jacobian(Ji, area);
-    };
-    return compute_energy(uv);
+    double lambda = 0.001;
+    return compute_energy(uv, lambda);
 }
 
 double ExtremeOpt::get_quality()
