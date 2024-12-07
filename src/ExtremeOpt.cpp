@@ -322,6 +322,7 @@ void ExtremeOpt::create_mesh(
     Eigen::VectorXd dblarea;
     igl::doublearea(V, F, dblarea);
 
+    igl::grad(V, F, Grad);
     // Convert from eigen to internal representation (TODO: move to utils and remove it from all
     // app)
     std::vector<std::array<size_t, 3>> tri(F.rows());
@@ -912,6 +913,10 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_r
     Eigen::MatrixXi period_jumps(input_F.rows(), 3);
     
     int i = 0;
+    int num_vectors;
+    inf >> num_vectors;
+    assert(num_vectors == input_F.rows());
+    inf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::string line{};
     while (std::getline(inf, line)) {
         std::istringstream iss(line);
@@ -1031,7 +1036,7 @@ void ExtremeOpt::comb_matchings(std::string_view ffield_file)
     Eigen::VectorXd v_angles = (matchings.cast<double>().array() + 1) * (igl::PI / 2.0);
     PD1 = igl::rotate_vectors(frame_field, u_angles, B1, B2);
     PD2 = igl::rotate_vectors(frame_field, v_angles, B1, B2);
-    check_cross_field_alignment();
+    //check_cross_field_alignment();
 }
 
 void ExtremeOpt::check_cross_field_alignment()

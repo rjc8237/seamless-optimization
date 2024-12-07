@@ -95,12 +95,10 @@ int check_flip(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn)
     return fl;
 }
 
-double ExtremeOpt:: compute_energy(Eigen::MatrixXd aaa, double lambda) {
+double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double lambda) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
 
-    Eigen::SparseMatrix<double> Grad;
-    igl::grad(input_V, input_F, Grad, false);
     Eigen::MatrixXd Guv = Grad * aaa;
 
     Eigen::MatrixXd uT_vT(3*F.rows(), 2);
@@ -117,19 +115,16 @@ double ExtremeOpt:: compute_energy(Eigen::MatrixXd aaa, double lambda) {
 double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXd& Guv,
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
     double lambda,
     bool get_hessian)
 {
     double energy = lambda * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian);
-    Eigen::SparseMatrix<double> Grad;
-    igl::grad(V, F, Grad);
-    Eigen::MatrixXd Guv = Grad * uv;
 
     Eigen::MatrixXd uT_vT(3*F.rows(), 2);
 
-    // TODO: print out PD1 and PD2 and compare against these vecs to make sure the rows are contiguous
     uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
 
@@ -138,16 +133,29 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     
     Eigen::MatrixXd grad_E = 2 * Grad.transpose() * R;
     Eigen::VectorXd grad_E_vec = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
-    Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * Grad;
-    Eigen::MatrixXd hessian_E_dense(hessian.rows(), hessian.cols());
-    hessian_E_dense.topLeftCorner(gradSquared.rows(), gradSquared.cols()) = gradSquared;
-    hessian_E_dense.bottomRightCorner(gradSquared.rows(), gradSquared.cols()) = gradSquared;
-
-    Eigen::SparseMatrix<double> hessian_E = hessian_E_dense.sparseView();
-
     grad = lambda*grad + grad_E_vec;
+
+    Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * Grad;
+    int n = gradSquared.rows();
+
+    Eigen::SparseMatrix<double> hessian_E(2*n, 2*n);
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(2 * gradSquared.nonZeros());
+
+    for (int k = 0; k < gradSquared.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(gradSquared, k); it; ++it) {
+            // Top-left block
+            triplets.emplace_back(it.row(), it.col(), it.value());
+            // Bottom-right block
+            triplets.emplace_back(it.row() + n, it.col() + n, it.value());
+        }
+    }
+
+    hessian_E.setFromTriplets(triplets.begin(), triplets.end());
+    
     hessian = lambda*hessian + hessian_E;
 
+    /*
     std::cout << Grad.rows() << ", " << Grad.cols() << '\n';
     std::cout << grad.rows() << ", " << grad.cols() << '\n';
     std::cout << uv.rows() << ", " << uv.cols() << '\n';
@@ -156,22 +164,22 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     std::cout << grad_E.rows() << ", " << grad_E.cols() << '\n';
     std::cout << grad_E_vec.rows() << ", " << grad_E_vec.cols() << '\n';
     std::cout << hessian.rows() << ", " << hessian.cols() << '\n';
+    */
     return energy;
 }
 
 double ExtremeOpt::smooth_global()
 {
-    Eigen::MatrixXd V;
-    Eigen::MatrixXi F;
     Eigen::MatrixXd uv;
-    export_mesh(V, F, uv);
+    export_uv(uv);
+    Eigen::MatrixXd Guv = Grad * uv;
 
     Eigen::VectorXd newton;
     // get grad and hessian
     Eigen::SparseMatrix<double> hessian;
     Eigen::VectorXd grad;
     double lambda = 0.001;
-    double energy_0 = get_energy_grad_and_hessian(V, F, uv, grad, hessian, lambda, m_params.do_newton);
+    double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, lambda, m_params.do_newton);
 
     bool use_rref = true;
     if (!use_rref) {

@@ -108,15 +108,26 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     Eigen::MatrixXd uv;
     extremeopt.export_mesh(V, F, uv);
 
-    Eigen::SparseMatrix<double> G;
-    igl::grad(V, F, G);
-
-    Eigen::MatrixXd Guv = G * uv;
+    Eigen::MatrixXd Guv = extremeopt.Grad * uv;
 
     Eigen::MatrixXd G_u = Eigen::Map<const Eigen::MatrixXd>(Guv.col(0).data(), F.rows(), 3);
     Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
+
+    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
+    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
+
+    Eigen::MatrixXd R = Guv - uT_vT;
+    Eigen::MatrixXd Rx = R.topRows(F.rows());
+    Eigen::MatrixXd Ry = R.middleRows(F.rows(), F.rows());
+    Eigen::MatrixXd Rz = R.bottomRows(F.rows());
+
+    std::cout << "Total Alignment Energy: " << R.array().square().sum() << '\n';
+
+    Eigen::VectorXd residuals = (Rx.array().square() 
+                           + Ry.array().square() 
+                           + Rz.array().square()).rowwise().sum();
     
-    Eigen::VectorXd f_scalar = Eigen::VectorXd::Zero(F.rows());    
     std::unordered_set<int> unique_seamless_vertices;
     std::unordered_set<int> unique_feature_vertices;
 
@@ -192,7 +203,7 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     }*/
     
     polyscope::init();
-    polyscope::registerPointCloud("vertices", V);
+    //polyscope::registerPointCloud("vertices", V);
     auto mesh = polyscope::registerSurfaceMesh("mesh", V, F);
     polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);
     polyscope::registerCurveNetwork("feature edges", V_feature, edges_feature);
@@ -217,7 +228,7 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
         ->setVectorRadius(0.0005)
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);
-    //mesh->addFaceScalarQuantity("seamless", f_scalar);
+    mesh->addFaceScalarQuantity("alignment_error", residuals)->setEnabled(true);
     //mesh->addEdgeScalarQuantity("seamless", e_scalar);
     polyscope::show();
 }
