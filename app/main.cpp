@@ -68,11 +68,12 @@ int main(int argc, char** argv)
 
 	auto [V, EE] = meshcutter.cut_mesh();
 
+    Eigen::MatrixXi FE_init;
     Eigen::MatrixXi FE(0, 0);
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
-        Eigen::MatrixXi FE_init{ meshcutter.load_feature_edges(input_file) };
+        FE_init = meshcutter.load_feature_edges(input_file);
         FE = meshcutter.reindex_feature_edges(FE_init);
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
@@ -141,6 +142,21 @@ int main(int argc, char** argv)
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
     igl::writeOBJ(output_dir + "/" + model + "_out.obj", V_init, F_init, N, FN, uv, F);
+
+    // open output file
+    std::string output_filename = output_dir + "/" + model + "_out.obj";
+    std::ofstream output_file(output_filename, std::ios::out | std::ios::app);
+
+    // write all feature edge vertices
+    for (int eij = 0; eij < FE_init.rows(); ++eij)
+    {
+        int vi = FE_init(eij, 0);
+        int vj = FE_init(eij, 1);
+        output_file << "l " << vi + 1 << " " << vj + 1 << std::endl;
+    }
+
+    // close output file
+    output_file.close();
     
     if (extremeopt.m_params.with_cons)
     {
