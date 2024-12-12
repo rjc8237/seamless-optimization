@@ -901,9 +901,9 @@ bool ExtremeOpt::check_constraints(double eps)
     // return true;
 }
 
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_reference_field(std::string_view ffield_file)
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_reference_field(const std::string& ffield_file)
 {
-    std::ifstream inf{ ffield_file };
+    std::ifstream inf(ffield_file);
     if (!inf) {
         spdlog::error("Failed to load frame field file\n");
         exit(EXIT_FAILURE);
@@ -1005,7 +1005,7 @@ std::tuple<std::deque<int>, Eigen::VectorXi> ExtremeOpt::initialize_matchings(
     return { d, mark };
 }
 
-void ExtremeOpt::comb_matchings(std::string_view ffield_file)
+void ExtremeOpt::comb_matchings(const std::string& ffield_file)
 {
     
     auto [ reference_field, thetas, period_jumps ] = load_reference_field(ffield_file);
