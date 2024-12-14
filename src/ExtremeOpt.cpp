@@ -581,8 +581,7 @@ double ExtremeOpt::get_quality_avg_for_smooth_only()
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
-    double lambda = 0.001;
-    return compute_energy(uv, lambda);
+    return compute_energy(uv);
 }
 
 double ExtremeOpt::get_quality()

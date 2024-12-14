@@ -63,6 +63,8 @@ int main(int argc, char** argv)
     param.save_meshes = config["save_meshes"];
     param.model_name = model;
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
+    param.symdir_weight = config["symdir_weight"];
+    param.alignment_weight = config["alignment_weight"];
 
 	MeshCutter meshcutter(V_init, uv, F_init, F);
 

@@ -95,7 +95,7 @@ int check_flip(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn)
     return fl;
 }
 
-double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double lambda) {
+double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
 
@@ -109,7 +109,7 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double lambda) {
     Eigen::MatrixXd R = Guv - uT_vT;
     double energy = R.array().square().sum();
 
-    return energy + lambda*SymDir::compute_energy_from_jacobian(Ji, area);
+    return m_params.alignment_weight*energy + m_params.symdir_weight*SymDir::compute_energy_from_jacobian(Ji, area, m_params.Lp);
 }
 
 double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
@@ -118,10 +118,9 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     const Eigen::MatrixXd& Guv,
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
-    double lambda,
     bool get_hessian)
 {
-    double energy = lambda * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian);
+    double energy = m_params.symdir_weight * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian, m_params.Lp);
 
     Eigen::MatrixXd uT_vT(3*F.rows(), 2);
 
@@ -129,11 +128,11 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
 
     Eigen::MatrixXd R = Guv - uT_vT;
-    energy += R.array().square().sum();
+    energy += m_params.alignment_weight*R.array().square().sum();
     
-    Eigen::MatrixXd grad_E = 2 * Grad.transpose() * R;
+    Eigen::MatrixXd grad_E = m_params.alignment_weight * 2 * Grad.transpose() * R;
     Eigen::VectorXd grad_E_vec = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
-    grad = lambda*grad + grad_E_vec;
+    grad = m_params.symdir_weight*grad + grad_E_vec;
 
     Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * Grad;
     int n = gradSquared.rows();
@@ -153,7 +152,7 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
 
     hessian_E.setFromTriplets(triplets.begin(), triplets.end());
     
-    hessian = lambda*hessian + hessian_E;
+    hessian = m_params.symdir_weight*hessian + m_params.alignment_weight*hessian_E;
 
     /*
     std::cout << Grad.rows() << ", " << Grad.cols() << '\n';
@@ -178,8 +177,7 @@ double ExtremeOpt::smooth_global()
     // get grad and hessian
     Eigen::SparseMatrix<double> hessian;
     Eigen::VectorXd grad;
-    double lambda = 0.001;
-    double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, lambda, m_params.do_newton);
+    double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
 
     bool use_rref = true;
     if (!use_rref) {
@@ -262,7 +260,7 @@ double ExtremeOpt::smooth_global()
     bool ls_good = false;
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
-        double new_E = compute_energy(new_x, lambda);
+        double new_E = compute_energy(new_x);
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             ls_good = true;

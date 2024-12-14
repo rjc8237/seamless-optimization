@@ -22,6 +22,9 @@ struct Parameters
 
     bool use_max_energy = false;
     int Lp = 4;
+    double symdir_weight = 0.001;
+    double alignment_weight = 1.0;
+    double norm_p = 1.0;
     /* data */
 };
 

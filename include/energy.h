@@ -8,17 +8,16 @@
 
 // #define SOFT_MAX
 // #define TEST_AMIPS_OLD
-#define NORM_P 1
 namespace SymDir {
 template <typename T>
-T symmetric_dirichlet_energy_t(T a, T b, T c, T d)
+T symmetric_dirichlet_energy_t(T a, T b, T c, T d, double norm_p)
 {
     auto det = a * d - b * c;
     auto frob2 = a * a + b * b + c * c + d * d;
 #ifndef TEST_AMIPS_OLD
-    return pow(frob2 * (1 + 1 / (det * det)), NORM_P);
+    return pow(frob2 * (1 + 1 / (det * det)), norm_p);
 #else
-    return pow((frob2 / det), NORM_P);
+    return pow((frob2 / det), norm_p);
 #endif
     // return frob2 / det; // amips
 }
@@ -28,14 +27,15 @@ inline auto symmetric_dirichlet_energy(
     const Eigen::MatrixBase<Derived>& a,
     const Eigen::MatrixBase<Derived>& b,
     const Eigen::MatrixBase<Derived>& c,
-    const Eigen::MatrixBase<Derived>& d)
+    const Eigen::MatrixBase<Derived>& d,
+    double norm_p)
 {
     auto det = a.array() * d.array() - b.array() * c.array();
     auto frob2 = a.array().abs2() + b.array().abs2() + c.array().abs2() + d.array().abs2();
 #ifndef TEST_AMIPS_OLD
-    return (frob2 * (1 + (det).abs2().inverse())).pow(NORM_P).matrix();
+    return (frob2 * (1 + (det).abs2().inverse())).pow(norm_p).matrix();
 #else
-    return (frob2 * det.inverse()).pow(NORM_P).matrix();
+    return (frob2 * det.inverse()).pow(norm_p).matrix();
 #endif
 }
 
@@ -43,6 +43,7 @@ template <typename Scalar>
 Scalar compute_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, -1>& J,
     const Eigen::Matrix<Scalar, -1, 1>& areas,
+    double norm_p,
     bool uniform = false);
 
 template <typename Scalar>
@@ -52,7 +53,8 @@ Scalar get_grad_and_hessian(
     const Eigen::Matrix<Scalar, -1, -1>& uv,
     Eigen::Matrix<Scalar, -1, 1>& grad,
     Eigen::SparseMatrix<Scalar>& hessian,
-    bool get_hessian);
+    bool get_hessian,
+    double norm_p);
 
 template <typename Scalar>
 void jacobian_from_uv(

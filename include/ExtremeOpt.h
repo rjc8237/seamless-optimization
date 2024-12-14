@@ -379,7 +379,7 @@ public:
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
-    double compute_energy(const Eigen::MatrixXd& aaa, double lambda);
+    double compute_energy(const Eigen::MatrixXd& aaa);
 
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
@@ -443,7 +443,6 @@ public:
     const Eigen::MatrixXd& Guv,
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
-    double lambda,
     bool get_hessian);
     /*
     // Energy Assigned to undefined energy

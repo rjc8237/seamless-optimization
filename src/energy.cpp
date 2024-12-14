@@ -10,7 +10,8 @@ namespace jakob
   template <typename Scalar>
   Scalar gradient_and_hessian_from_J(const Eigen::Matrix<Scalar, 1, 4> &J,
                                      Eigen::Matrix<Scalar, 1, 4> &local_grad,
-                                     Eigen::Matrix<Scalar, 4, 4> &local_hessian)
+                                     Eigen::Matrix<Scalar, 4, 4> &local_hessian,
+                                     double norm_p)
   {
       typedef DScalar2<Scalar, Eigen::Matrix<Scalar, 4, 1>, Eigen::Matrix<Scalar, 4, 4>> DScalar;
       DiffScalarBase::setVariableCount(4);
@@ -19,7 +20,7 @@ namespace jakob
       DScalar b(1, J(1));
       DScalar c(2, J(2));
       DScalar d(3, J(3));
-      auto sd = SymDir::symmetric_dirichlet_energy_t(a, b, c, d);
+      auto sd = SymDir::symmetric_dirichlet_energy_t(a, b, c, d, norm_p);
       local_grad = sd.getGradient();
       local_hessian = sd.getHessian();
       DiffScalarBase::setVariableCount(0);
@@ -37,21 +38,21 @@ namespace SymDir{
     }
     
     template <typename Scalar>
-    Scalar compute_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1> &J, const Eigen::Matrix<Scalar, -1, 1> &area, bool uniform)
+    Scalar compute_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1> &J, const Eigen::Matrix<Scalar, -1, 1> &area, double norm_p, bool uniform)
     {
         if (!uniform)
         {
-            return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3)).dot(area) / area.sum();
+            return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p).dot(area) / area.sum();
         }
         else
         {
-            return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3)).sum() / Scalar(J.rows());
+            return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p).sum() / Scalar(J.rows());
         }
     }
     
     template <typename Scalar>
     Scalar grad_and_hessian_from_jacobian(const Eigen::Matrix<Scalar, -1, 1> &area, const Eigen::Matrix<Scalar, -1, -1> &jacobian,
-                                      Eigen::Matrix<Scalar, -1, -1> &total_grad, Eigen::SparseMatrix<Scalar> &hessian, bool with_hessian)
+                                      Eigen::Matrix<Scalar, -1, -1> &total_grad, Eigen::SparseMatrix<Scalar> &hessian, bool with_hessian, double norm_p)
     {
         int f_num = area.rows();
         total_grad.resize(f_num, 4);
@@ -69,7 +70,7 @@ namespace SymDir{
             Eigen::Matrix<Scalar, 1, 4> J = jacobian.row(i);
             Eigen::Matrix<Scalar, 4, 4> local_hessian;
             Eigen::Matrix<Scalar, 1, 4> local_grad;
-            energy += jakob::gradient_and_hessian_from_J(J, local_grad, local_hessian) * area(i) / total_area;
+            energy += jakob::gradient_and_hessian_from_J(J, local_grad, local_hessian, norm_p) * area(i) / total_area;
             SPDLOG_TRACE("total area is {}", total_area);
             SPDLOG_TRACE("jacobian is {}, {}, {}, {}", J[0], J[1], J[2], J[3]);
             SPDLOG_TRACE("local gradient is {}, {},...", local_grad[0], local_grad[1]);
@@ -112,13 +113,14 @@ namespace SymDir{
                                 const Eigen::Matrix<Scalar, -1, -1> &uv,
                                 Eigen::Matrix<Scalar, -1, 1> &grad,
                                 Eigen::SparseMatrix<Scalar> &hessian,
-                                bool get_hessian)
+                                bool get_hessian,
+                                double norm_p)
     {
         int f_num = area.rows();
         Eigen::Matrix<Scalar, -1, -1> Ji, total_grad;
         jacobian_from_uv(G, uv, Ji);
         Scalar energy;
-        energy = grad_and_hessian_from_jacobian(area, Ji, total_grad, hessian, get_hessian);
+        energy = grad_and_hessian_from_jacobian(area, Ji, total_grad, hessian, get_hessian, norm_p);
 
         Eigen::Matrix<Scalar, -1, 1> vec_grad = Eigen::Map<Eigen::Matrix<Scalar, -1, 1>>(total_grad.data(), total_grad.size());
 
@@ -135,7 +137,8 @@ namespace SymDir{
                                              const Eigen::Matrix<double, -1, -1> &,
                                              Eigen::Matrix<double, -1, 1> &,
                                              Eigen::SparseMatrix<double> &,
-                                             bool);
-    template double compute_energy_from_jacobian<double>(const Eigen::Matrix<double, -1, -1> &, const Eigen::Matrix<double, -1, 1> &, bool);
+                                             bool,
+                                             double);
+    template double compute_energy_from_jacobian<double>(const Eigen::Matrix<double, -1, -1> &, const Eigen::Matrix<double, -1, 1> &, double, bool);
     
 } // namespace SymDir
