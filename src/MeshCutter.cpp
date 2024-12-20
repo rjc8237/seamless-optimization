@@ -108,6 +108,35 @@ Eigen::MatrixXi MeshCutter::load_feature_edges(const std::string& fe_filename) {
 	return FE.array() - 1;
 }
 
+Eigen::MatrixXi MeshCutter::load_misaligned_edges(const std::string& me_filename) {
+	std::ifstream inf(me_filename);
+	if (!inf) {
+		spdlog::info("No misaligned edges provided");
+		return Eigen::MatrixXi();
+	}
+	
+	Eigen::MatrixXi ME(0, 2);
+	std::string line{};
+	std::getline(inf, line);
+	int l{ 0 };
+	while (std::getline(inf, line)) {
+		char label;
+		std::istringstream iss(line);
+		ME.conservativeResize(l + 1, 2);
+		int v1;
+		int v2;
+		iss >> v1 >> v2;
+		ME(l, 0) = v1;
+		ME(l, 1) = v2;
+		++l;
+	}
+
+	spdlog::info("Loaded {} edges", ME.rows());
+
+	return ME;
+}
+
+
 Eigen::MatrixXi MeshCutter::reindex_feature_edges(const Eigen::MatrixXi& FE) {
 	std::unordered_map<int, int> fe_to_f;
 	std::vector<std::array<int, 3>> feature_edges;

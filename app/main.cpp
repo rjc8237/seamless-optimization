@@ -72,11 +72,15 @@ int main(int argc, char** argv)
 
     Eigen::MatrixXi FE_init;
     Eigen::MatrixXi FE(0, 0);
+    Eigen::MatrixXi ME(0, 0);
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
         FE_init = meshcutter.load_feature_edges(input_file);
         FE = meshcutter.reindex_feature_edges(FE_init);
+
+        std::string misaligned_file = input_dir + "/" + model + "_misaligned_edges";
+        ME = meshcutter.load_misaligned_edges(misaligned_file);
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
     
@@ -112,6 +116,7 @@ int main(int argc, char** argv)
         extremeopt.init_constraints(EE_e);
         extremeopt.EE = EE;
         extremeopt.FE = FE;
+        extremeopt.ME = ME;
         // assert(extremeopt.check_mesh_connectivity_validity());
         std::cout << "check constraints inside wmtk" << std::endl;
         if (extremeopt.check_constraints()) {

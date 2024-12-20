@@ -124,19 +124,19 @@ void buildAeq(
         }
     }
     else {
-        std::set<std::pair<int, int>> added_fe;
+        //std::set<std::pair<int, int>> added_fe;
 
         // feature edge constraints
         for (int i = 0; i < fes; ++i) {
             int v1 = FE(i, 0);
             int v2 = FE(i, 1);
             auto e0 = std::make_pair(v1, v2);
-            if (added_fe.find(e0) != added_fe.end())
-            {
-                spdlog::warn("Edge added twice");
-                continue;
-            }
-            added_fe.insert(e0);
+            //if (added_fe.find(e0) != added_fe.end())
+            //{
+            //    spdlog::warn("Edge added twice");
+            //    continue;
+            //}
+            //added_fe.insert(e0);
             
             Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
 
@@ -159,6 +159,39 @@ void buildAeq(
     }
     Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
     Aeq.setFromTriplets(trips.begin(), trips.end());
+}
+
+void buildBeq(
+    const Eigen::MatrixXi& ME,
+    const Eigen::MatrixXd& uv,
+    Eigen::SparseMatrix<double>& Beq)
+{
+    int N = uv.rows();
+    int num_misaligned = ME.rows();
+    spdlog::info("Adding {} misalignment constraints", num_misaligned);
+    typedef Eigen::Triplet<double> Trip;
+    std::vector<Trip> trips;
+    trips.reserve(2 * num_misaligned);
+
+    for (int i = 0; i < num_misaligned; ++i)
+    {
+        int v1 = ME(i, 0);
+        int v2 = ME(i, 1);
+		Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
+
+		// constrain u or v depending on initial position
+		if (std::abs(e_ab[0]) < std::abs(e_ab[1])) {
+            spdlog::info("Adding ({}, {}) u constraint with error {}", v1, v2, e_ab[0]);
+            trips.push_back(Trip(i, v1, -1));
+            trips.push_back(Trip(i, v2, 1));
+		} else {
+            spdlog::info("Adding ({}, {}) v constraint with error {}", v1, v2, e_ab[1]);
+            trips.push_back(Trip(i, v1 + N, -1));
+            trips.push_back(Trip(i, v2 + N, 1));
+		}
+	}
+    Beq.resize(num_misaligned, uv.rows() * 2);
+    Beq.setFromTriplets(trips.begin(), trips.end());
 }
 
 void ExtremeOpt::do_optimization(json& opt_log)
@@ -195,12 +228,15 @@ void ExtremeOpt::do_optimization(json& opt_log)
     int V_size, F_size;
 
     // get input operators
+    spdlog::info("Building constraints");
     igl::doublearea(V, F, area);
     get_grad_op(V, F, G);
     buildAeq(EE, FE, uv, F, Aeq);
+    buildBeq(ME, uv, Beq);
     AeqT = Aeq.transpose();
 
     // build reduced system
+    spdlog::info("Eliminating constraints");
     elim_constr(Aeq, Q2);
     Q2.makeCompressed();
     Q2T = Q2.transpose();

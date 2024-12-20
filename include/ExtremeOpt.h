@@ -361,9 +361,10 @@ public:
     Eigen::MatrixXi F;
     Eigen::MatrixXi EE;
     Eigen::MatrixXi FE;
+    Eigen::MatrixXi ME;
     Eigen::SparseMatrix<double> G; // modified grad for use with symdir
     Eigen::SparseMatrix<double> Grad; // original grad operator from igl::grad
-    Eigen::SparseMatrix<double> Aeq, AeqT;
+    Eigen::SparseMatrix<double> Aeq, AeqT, Beq;
     Eigen::SparseMatrix<double> Q2, Q2T;
     Eigen::VectorXd area;
     Eigen::VectorXi matchings;
