@@ -229,6 +229,7 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);
     mesh->addFaceScalarQuantity("alignment_error", residuals)->setEnabled(true);
+    mesh->addFaceScalarQuantity("matching", extremeopt.matchings)->setEnabled(true);
     //mesh->addEdgeScalarQuantity("seamless", e_scalar);
     polyscope::show();
 }

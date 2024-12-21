@@ -1017,18 +1017,24 @@ void ExtremeOpt::comb_matchings(const std::string& ffield_file)
         int fijk = d.at(0);
         d.pop_front();
         int hij = f2he[fijk];
-        int fjil = he2f[opposite[hij]];
+        int hji = opposite[hij];
         for (int k = 0; k < 3; ++k)
         {
-            if (mark[fjil] == 0)
+            if ((hji >= 0) && (mark[he2f[hji]] == 0) && (C[he2f[hji]] == C[fijk]))
             {
+                int fjil = he2f[hji];
                 int local_hij = hij - (3 * fijk);
-                matchings[fjil] = (matchings[fijk] - period_jumps(fijk, local_hij)) % 4;
+                matchings[fjil] = matchings[fijk] - period_jumps(fijk, local_hij);
+                while (matchings[fjil] < 0)
+                {
+                    matchings[fjil] += 4;
+                }
+                matchings[fjil] = matchings[fjil] % 4;
                 mark[fjil] = 1;
                 d.push_back(fjil);
             }
             hij = next[hij];
-            fjil = he2f[opposite[hij]];
+            hji = opposite[hij];
         }
     }
     Eigen::VectorXd u_angles = (matchings.cast<double>().array()) * (igl::PI / 2.0);
