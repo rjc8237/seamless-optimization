@@ -8,6 +8,7 @@ struct Parameters
     bool save_meshes = false;
 
     bool do_feature_alignment = true;
+    bool fix_misaligned = false;
 
     int max_iters = 500;
     int smooth_only_iters = 100;

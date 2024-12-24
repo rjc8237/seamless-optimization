@@ -65,6 +65,7 @@ int main(int argc, char** argv)
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
     param.symdir_weight = config["symdir_weight"];
     param.alignment_weight = config["alignment_weight"];
+    param.fix_misaligned = config["fix_misaligned"];
 
 	MeshCutter meshcutter(V_init, uv, F_init, F);
 
@@ -78,9 +79,11 @@ int main(int argc, char** argv)
         // Loading the feature edge constraints
         FE_init = meshcutter.load_feature_edges(input_file);
         FE = meshcutter.reindex_feature_edges(FE_init);
-
-        std::string misaligned_file = input_dir + "/" + model + "_misaligned_edges";
-        ME = meshcutter.load_misaligned_edges(misaligned_file);
+        if (param.fix_misaligned)
+        {
+            std::string misaligned_file = input_dir + "/" + model + "_misaligned_edges";
+            ME = meshcutter.load_misaligned_edges(misaligned_file);
+        }
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
     

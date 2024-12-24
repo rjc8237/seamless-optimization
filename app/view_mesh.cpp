@@ -7,6 +7,7 @@
 
 #include <igl/read_triangle_mesh.h>
 #include <CLI/CLI.hpp>
+#include "energy.h"
 using json = nlohmann::json;
 
 using namespace SymDir;
@@ -37,10 +38,12 @@ int main(int argc, char** argv)
     std::string model = "";
     std::string ffield = "";
     std::string suffix = "";
+    std::string input_json = "../data/example.json";
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-f,--field", ffield, "Input frame field");
     app.add_option("-m,--model", model, "Input model name.");
     app.add_option("-s,--suffix", suffix, "Input model suffix.");
+    app.add_option("-j,--json", input_json, "Input arguments.");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -51,6 +54,9 @@ int main(int argc, char** argv)
     Eigen::MatrixXi F, FT, FN;
     igl::readOBJ(input_file, V, uv, N, F, FT, FN);
     spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uv.rows());
+
+    std::ifstream js_in(input_json);
+    json config = json::parse(js_in);
 
     // Loading the seamless boundary constraints
     //Eigen::MatrixXi EE;
@@ -95,6 +101,8 @@ int main(int argc, char** argv)
     extremeopt.FE = FE;
     extremeopt.m_params.do_feature_alignment = true;
     extremeopt.comb_matchings(ffield);
+    extremeopt.m_params.Lp = config["args"]["Lp"];
+    
     //extremeopt.view();
     view(extremeopt, EE, FE);
 
@@ -107,6 +115,8 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     Eigen::MatrixXi F;
     Eigen::MatrixXd uv;
     extremeopt.export_mesh(V, F, uv);
+    SymDir::get_grad_op(V, F, extremeopt.G);
+    igl::doublearea(V, F, extremeopt.area);
 
     Eigen::MatrixXd Guv = extremeopt.Grad * uv;
 
@@ -123,6 +133,19 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     Eigen::MatrixXd Rz = R.bottomRows(F.rows());
 
     std::cout << "Total Alignment Energy: " << R.array().square().sum() << '\n';
+    extremeopt.m_params.alignment_weight = 0.0;
+    extremeopt.m_params.symdir_weight = 1.0;
+    std::cout << "Total Symmetric Dirichlet Energy: " << extremeopt.compute_energy(uv) << '\n';
+
+    Eigen::MatrixXd Ji;
+    SymDir::jacobian_from_uv(extremeopt.G, uv, Ji);
+    Eigen::VectorXd symdir_e(F.rows());
+    for (int i = 0; i < F.rows(); ++i)
+    {
+        Eigen::MatrixXd J = Ji.row(i);
+        symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), extremeopt.m_params.Lp);
+
+    }
 
     Eigen::VectorXd residuals = (Rx.array().square() 
                            + Ry.array().square() 
@@ -229,6 +252,7 @@ void view(ExtremeOpt &extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);
     mesh->addFaceScalarQuantity("alignment_error", residuals)->setEnabled(true);
+    mesh->addFaceScalarQuantity("symdir_energy", symdir_e);
     mesh->addFaceScalarQuantity("matching", extremeopt.matchings)->setEnabled(true);
     //mesh->addEdgeScalarQuantity("seamless", e_scalar);
     polyscope::show();

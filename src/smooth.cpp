@@ -101,10 +101,10 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa) {
 
     Eigen::MatrixXd Guv = Grad * aaa;
 
-    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+    Eigen::MatrixXd uT_vT(3*input_F.rows(), 2);
 
-    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
-    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
+    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * input_F.rows());
+    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * input_F.rows());
 
     Eigen::MatrixXd R = Guv - uT_vT;
     double energy = R.array().square().sum();
@@ -180,8 +180,7 @@ double ExtremeOpt::smooth_global()
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
 
     bool use_rref = true;
-    bool fix_misaligned = true;
-    if (fix_misaligned) {
+    if (ME.cols() > 0) {
         spdlog::info("Fixing misalignment");
 
         // Compute corrected descent direction
