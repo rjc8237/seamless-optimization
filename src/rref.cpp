@@ -148,16 +148,29 @@ auto tm_swap1 = timer.getElapsedTime();
 auto tm_subtract0 = timer.getElapsedTime();        
             // divide the pivot row by the pivot element
             Eigen::SparseMatrix<double, Eigen::RowMajor> Ai = R_rm.row(i) / R_rm.coeff(i, j);
-            Eigen::SparseMatrix<double, Eigen::RowMajor> colj = R_rm.col(j);
+            Eigen::SparseMatrix<double, Eigen::ColMajor> colj = R_rm.col(j);
 auto tm_subtract1 = timer.getElapsedTime();        
 
-            Eigen::SparseMatrix<double, Eigen::RowMajor> tmp = colj * Ai;
+            //Eigen::SparseMatrix<double, Eigen::RowMajor> tmp = colj * Ai;
+            //Eigen::SparseMatrix<double, Eigen::RowMajor> tmp = R_rm.col(j) * Ai;
 
 auto tm_subtract2 = timer.getElapsedTime();        
 
-            R_rm = R_rm - tmp;
+            //R_rm = R_rm - tmp;
+            //R_rm -= tmp;
+            //for (int ri = 0; ri < tmp.outerSize(); ++ri)
+            //{
+            //    for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(tmp, ri); it; ++it)
+            //    {
+            //        R_rm.coeffRef(it.row(), it.col()) -= it.value();
+            //    }
+            //}
+            for (Eigen::SparseMatrix<double, Eigen::ColMajor>::InnerIterator it(colj, 0); it; ++it)
+            {
+                R_rm.row(it.row()) = (R_rm.row(it.row()) - it.value() * Ai).pruned();
+            }
             R_rm.row(i) = Ai;
-            R_rm = R_rm.pruned();
+            //R_rm = R_rm.pruned();
 
 auto tm_subtract3 = timer.getElapsedTime();        
 // std::cout << "\tsubtract time: " << tm_subtract1 - tm_subtract0 << ", " << tm_subtract2 - tm_subtract1 << ", " << tm_subtract3 - tm_subtract2;
