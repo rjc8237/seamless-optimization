@@ -236,10 +236,13 @@ void ExtremeOpt::do_optimization(json& opt_log)
     AeqT = Aeq.transpose();
 
     // build reduced system
-    spdlog::info("Eliminating constraints");
-    elim_constr(Aeq, Q2);
-    Q2.makeCompressed();
-    Q2T = Q2.transpose();
+    if (m_params.use_rref)
+    {
+        spdlog::info("Eliminating constraints");
+        elim_constr(Aeq, Q2);
+        Q2.makeCompressed();
+        Q2T = Q2.transpose();
+    }
 
     double max_grad = 0;
     for (int i = 1; i <= m_params.max_iters; i++) {
