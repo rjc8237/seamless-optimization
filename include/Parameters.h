@@ -26,6 +26,7 @@ struct Parameters
     double symdir_weight = 0.001;
     double alignment_weight = 1.0;
     double norm_p = 1.0;
+    bool use_rref = true;
     /* data */
 };
 

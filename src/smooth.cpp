@@ -179,7 +179,7 @@ double ExtremeOpt::smooth_global()
     Eigen::VectorXd grad;
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
 
-    bool use_rref = true;
+    bool use_rref = m_params.use_rref;
     if (ME.cols() > 0) {
         spdlog::info("Fixing misalignment");
 
