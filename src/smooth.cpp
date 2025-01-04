@@ -180,7 +180,7 @@ double ExtremeOpt::smooth_global()
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
 
     bool use_rref = m_params.use_rref;
-    if (ME.cols() > 0) {
+    if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
 
         // Compute corrected descent direction
@@ -232,8 +232,7 @@ double ExtremeOpt::smooth_global()
             newton = -solver.solve(rhs);
 
             spdlog::trace("Extracting unreduced newton direction");
-            newton = Q2 * (newton.topRows(mat.rows()));
-            double newton_decr = newton.dot(grad);
+            double newton_decr = newton.dot(rhs);
             std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
             std::cout << "newton norm is " << newton.dot(newton) << std::endl;
             std::cout << "projected gradient is " << newton_decr << std::endl;
@@ -254,24 +253,62 @@ double ExtremeOpt::smooth_global()
         grad = rhs.topRows(mat.rows());
     } else {
         if (!use_rref) {
-            // build kkt system
-            Eigen::SparseMatrix<double> kkt(hessian.rows() + Aeq.rows(), hessian.cols() + Aeq.rows());
-            buildkkt(hessian, Aeq, AeqT, kkt);
-            Eigen::VectorXd rhs(kkt.rows());
-            rhs.setZero();
-            rhs.topRows(grad.rows()) << -grad;
-            // solve the system
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-            solver.analyzePattern(kkt);
-            solver.factorize(kkt);
-            newton = solver.solve(rhs);
-            if (solver.info() != Eigen::Success) {
-                std::cout << "cannot solve newton system" << std::endl;
-                hessian.setIdentity();
-                buildkkt(hessian, Aeq, AeqT, kkt);
+            double a = 0;
+            Eigen::SparseMatrix<double> mat;
+            while (true)
+            {
+                if (a == 0)
+                {
+                    mat = hessian;
+                }
+                else 
+                {     
+                    // Create identity
+                    Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                    id.setIdentity();
+                    
+                    // Create matrix with correction
+                    mat = hessian + a*id;
+                }
+
+                // build kkt system
+                Eigen::SparseMatrix<double> kkt(hessian.rows() + Aeq.rows(), hessian.cols() + Aeq.rows());
+                buildkkt(mat, Aeq, AeqT, kkt);
+                Eigen::VectorXd rhs(kkt.rows());
+                rhs.setZero();
+                rhs.topRows(grad.rows()) << -grad;
+
+                // solve the system
+                Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
                 solver.analyzePattern(kkt);
                 solver.factorize(kkt);
                 newton = solver.solve(rhs);
+                //if (solver.info() != Eigen::Success) {
+                //    std::cout << "cannot solve newton system" << std::endl;
+                //    hessian.setIdentity();
+                //    buildkkt(hessian, Aeq, AeqT, kkt);
+                //    solver.analyzePattern(kkt);
+                //    solver.factorize(kkt);
+                //    newton = solver.solve(rhs);
+                //}
+
+                double newton_decr = newton.topRows(grad.rows()).dot(grad);
+                std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+                std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+                std::cout << "projected gradient is " << newton_decr << std::endl;
+                if (solver.info() == Eigen::Success && newton_decr < 0)
+                {
+                    break;
+                }
+                else if (a == 0)
+                {
+                    a = 1; // We did not try the correction yet, start from arbitrary value 1
+                    spdlog::info(" Starting correction.");
+                }
+                else
+                {
+                    a *= 2; // Correction was not enough, increase weight of id
+                }
             }
         } else {
             spdlog::debug("{}x{} constraint matrix", Aeq.rows(), Aeq.cols());
