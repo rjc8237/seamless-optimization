@@ -7,13 +7,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-fPIC)
 add_compile_options(-Wno-register)
 
+option(USE_SUITESPARSE "Use suitesparse for QR factorization" ON)
 option(USE_COMISO "Use Comiso for field generation" ON)
+set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr" )
+option ( SUITESPARSE_USE_CUDA OFF )
 
 if (USE_COMISO)
   add_compile_definitions(USE_COMISO)
   option(LIBIGL_COPYLEFT_COMISO "Use COSIMO" ON)
   set(COMISO_LIBS
     igl_copyleft::comiso
+  )
+endif()
+
+if(USE_SUITESPARSE)
+  add_compile_definitions(USE_SUITESPARSE)
+  set(SUITESPARSE_LIBS
+    SuiteSparse::SuiteSparseConfig
+    SuiteSparse::SPQR
+    SuiteSparse::CHOLMOD
   )
 endif()
 
@@ -27,6 +39,7 @@ include(libigl)
 include(eigen)
 include(spdlog)
 include(polyscope)
+include(suitesparse)
 igl_include(predicates)
 
 
@@ -44,6 +57,7 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     igl::core
     igl::predicates
     ${COMISO_LIBS}
+    ${SUITESPARSE_LIBS}
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
     spdlog::spdlog
