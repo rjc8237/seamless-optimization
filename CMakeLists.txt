@@ -5,6 +5,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-fPIC)
+add_compile_options(-Wno-register)
+
+option(USE_COMISO "Use Comiso for field generation" ON)
+
+if (USE_COMISO)
+  add_compile_definitions(USE_COMISO)
+  option(LIBIGL_COPYLEFT_COMISO "Use COSIMO" ON)
+  set(COMISO_LIBS
+    igl_copyleft::comiso
+  )
+endif()
 
 # Install executables to bin directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -17,6 +28,7 @@ include(eigen)
 include(spdlog)
 include(polyscope)
 igl_include(predicates)
+
 
 add_library(SymmetricDirichletLib
     src/energy.cpp
@@ -31,6 +43,7 @@ target_include_directories(SymmetricDirichletLib PUBLIC include)
 target_link_libraries(SymmetricDirichletLib PUBLIC
     igl::core
     igl::predicates
+    ${COMISO_LIBS}
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
     spdlog::spdlog
