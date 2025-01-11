@@ -5,6 +5,8 @@
 #include "ExtremeOpt.h"
 #include "energy.h"
 #include "spdlog/spdlog.h"
+#include <Eigen/CholmodSupport>
+#include <umfpack.h>
 
 namespace SymDir {
 
@@ -51,6 +53,49 @@ void addCustomOps(Executor& e)
 }
 
 */
+
+Eigen::VectorXd UMFPACK_solve(const Eigen::SparseMatrix<double>& A_eigen,
+                                 const Eigen::VectorXd& b_eigen, int& status)
+{
+    int n = static_cast<int>(A_eigen.rows());
+    const int* Ap = A_eigen.outerIndexPtr();
+    const int* Ai = A_eigen.innerIndexPtr();
+    const double* Ax = A_eigen.valuePtr();
+
+    void* Symbolic = nullptr;
+    void* Numeric  = nullptr;
+
+    status = umfpack_di_symbolic(n, n, Ap, Ai, Ax, &Symbolic, nullptr, nullptr);
+    if (status != UMFPACK_OK)
+    {
+        spdlog::error("UMFPACK symbolic factorization failed");
+        return Eigen::VectorXd();
+    }
+
+    status = umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, nullptr, nullptr);
+    umfpack_di_free_symbolic(&Symbolic);
+    if (status != UMFPACK_OK) {
+        spdlog::error("UMFPACK numeric factorization failed");
+        return Eigen::VectorXd();
+    }
+
+    Eigen::VectorXd x_eigen(n);
+    status = umfpack_di_solve(UMFPACK_A, Ap, Ai, Ax, 
+                                    x_eigen.data(),
+                                    b_eigen.data(), 
+                                    Numeric,
+                                    nullptr, 
+                                    nullptr);
+
+    umfpack_di_free_numeric(&Numeric);
+
+    if (status != UMFPACK_OK) {
+        spdlog::error("UMFPACK solve failed");
+        return Eigen::VectorXd();
+    }
+
+    return x_eigen;
+}
 
 
 void buildkkt(
@@ -219,24 +264,27 @@ double ExtremeOpt::smooth_global()
             //rhs.topRows(Q2T.rows()) << grad;
 
             spdlog::trace("Solving {}x{} kkt with {} rhs", kkt.rows(), kkt.cols(), rhs.size());
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-            solver.analyzePattern(kkt);
-            solver.factorize(kkt);
-            if (solver.info() != Eigen::Success) {
+            //Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+            //solver.analyzePattern(kkt);
+            //solver.factorize(kkt);
+            int status{};
+            newton = -UMFPACK_solve(kkt, rhs, status);
+            if (status != UMFPACK_OK) {
                 std::cout << "cannot solve newton system" << std::endl;
                 mat.setIdentity();
                 buildkkt(mat, cons, consT, kkt);
-                solver.analyzePattern(kkt);
-                solver.factorize(kkt);
+                //solver.analyzePattern(kkt);
+                //solver.factorize(kkt);
+                newton = -UMFPACK_solve(kkt, rhs, status);
             }
-            newton = -solver.solve(rhs);
+            //newton = -solver.solve(rhs);
 
             spdlog::trace("Extracting unreduced newton direction");
             double newton_decr = newton.dot(rhs);
             std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
             std::cout << "newton norm is " << newton.dot(newton) << std::endl;
             std::cout << "projected gradient is " << newton_decr << std::endl;
-            if (solver.info() == Eigen::Success && newton_decr < 0)
+            if (status == UMFPACK_OK && newton_decr < 0)
             {
                 break;
             }
@@ -279,10 +327,12 @@ double ExtremeOpt::smooth_global()
                 rhs.topRows(grad.rows()) << -grad;
 
                 // solve the system
-                Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-                solver.analyzePattern(kkt);
-                solver.factorize(kkt);
-                newton = solver.solve(rhs);
+                //Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+                //solver.analyzePattern(kkt);
+                //solver.factorize(kkt);
+                //newton = solver.solve(rhs);
+                int status{};
+                newton = UMFPACK_solve(kkt, rhs, status);
                 //if (solver.info() != Eigen::Success) {
                 //    std::cout << "cannot solve newton system" << std::endl;
                 //    hessian.setIdentity();
@@ -296,7 +346,7 @@ double ExtremeOpt::smooth_global()
                 std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
                 std::cout << "newton norm is " << newton.dot(newton) << std::endl;
                 std::cout << "projected gradient is " << newton_decr << std::endl;
-                if (solver.info() == Eigen::Success && newton_decr < 0)
+                if (status == UMFPACK_OK && newton_decr < 0)
                 {
                     break;
                 }
@@ -337,16 +387,18 @@ double ExtremeOpt::smooth_global()
                 // Create matrix with correction
                 mat = Q2T * ((hessian + a*id) * Q2);
             }
-
-            Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-            solver.compute(mat);
-            newton = -solver.solve(rhs);
+            mat.makeCompressed();
+            //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+            //solver.compute(mat);
+            //newton = -solver.solve(rhs);
+            int status{};
+            newton = -UMFPACK_solve(mat, rhs, status);
             newton = Q2 * newton;
             double newton_decr = newton.dot(grad);
             std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
             std::cout << "newton norm is " << newton.dot(newton) << std::endl;
             std::cout << "projected gradient is " << newton_decr << std::endl;
-            if (solver.info() == Eigen::Success && newton_decr < 0)
+            if (status == UMFPACK_OK && newton_decr < 0)
             {
                 break;
             }

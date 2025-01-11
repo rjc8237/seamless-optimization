@@ -9,7 +9,7 @@ add_compile_options(-Wno-register)
 
 option(USE_SUITESPARSE "Use suitesparse for QR factorization" ON)
 option(USE_COMISO "Use Comiso for field generation" ON)
-set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr" )
+set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr;umfpack" )
 option ( SUITESPARSE_USE_CUDA OFF )
 
 if (USE_COMISO)
@@ -26,6 +26,7 @@ if(USE_SUITESPARSE)
     SuiteSparse::SuiteSparseConfig
     SuiteSparse::SPQR
     SuiteSparse::CHOLMOD
+    SuiteSparse::UMFPACK
   )
 endif()
 
