@@ -175,7 +175,7 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa) {
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * input_F.rows());
 
     Eigen::MatrixXd R = Guv - uT_vT;
-    double energy = (R.transpose() * (weights * R)).coeff(0,0);
+    double energy = (R.transpose() * (weights * R)).trace();
 
     return m_params.alignment_weight*energy + m_params.symdir_weight*SymDir::compute_energy_from_jacobian(Ji, area, m_params.Lp);
 }
@@ -198,7 +198,10 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
 
     Eigen::MatrixXd R = Guv - uT_vT;
-    energy += m_params.alignment_weight * (R.transpose() * (weights * R)).coeff(0,0);
+    double alignment_energy = m_params.alignment_weight * (R.transpose() * (weights * R)).coeff(0,0);
+    spdlog::info("sym Dirichlet energy: {}", energy);
+    spdlog::info("alignment energy: {}", alignment_energy);
+    energy += m_params.alignment_weight * (R.transpose() * (weights * R)).trace();
     
     Eigen::MatrixXd grad_E = m_params.alignment_weight * 2 * Grad.transpose() * (weights * R);
     Eigen::VectorXd grad_E_vec = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
