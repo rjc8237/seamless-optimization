@@ -445,6 +445,7 @@ public:
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
     bool get_hessian);
+    Eigen::SparseMatrix<double> compute_area_weight_matrix();
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?
