@@ -323,6 +323,7 @@ double ExtremeOpt::smooth_global()
                 a *= 2; // Correction was not enough, increase weight of id
             }
         }
+        newton = Q2 * (newton.topRows(mat.rows()));
         grad = rhs.topRows(mat.rows());
     } else {
         if (!use_rref) {
