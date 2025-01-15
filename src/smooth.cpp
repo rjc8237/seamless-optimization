@@ -292,24 +292,27 @@ double ExtremeOpt::smooth_global()
             //rhs.topRows(Q2T.rows()) << grad;
 
             spdlog::trace("Solving {}x{} kkt with {} rhs", kkt.rows(), kkt.cols(), rhs.size());
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-            solver.analyzePattern(kkt);
-            solver.factorize(kkt);
-            if (solver.info() != Eigen::Success) {
+            //Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+            //solver.analyzePattern(kkt);
+            //solver.factorize(kkt);
+            int status{};
+            newton = -UMFPACK_solve(kkt, rhs, status);
+            if (status != UMFPACK_OK) {
                 std::cout << "cannot solve newton system" << std::endl;
                 mat.setIdentity();
                 buildkkt(mat, cons, consT, kkt);
-                solver.analyzePattern(kkt);
-                solver.factorize(kkt);
+                //solver.analyzePattern(kkt);
+                //solver.factorize(kkt);
+                newton = -UMFPACK_solve(kkt, rhs, status);
             }
-            newton = -solver.solve(rhs);
+            //newton = -solver.solve(rhs);
 
             spdlog::trace("Extracting unreduced newton direction");
             double newton_decr = newton.dot(rhs);
             std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
             std::cout << "newton norm is " << newton.dot(newton) << std::endl;
             std::cout << "projected gradient is " << newton_decr << std::endl;
-            if (solver.info() == Eigen::Success && newton_decr < 0)
+            if (status == UMFPACK_OK && newton_decr < 0)
             {
                 break;
             }
