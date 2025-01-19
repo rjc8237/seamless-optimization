@@ -69,14 +69,14 @@ Eigen::VectorXd UMFPACK_solve(const Eigen::SparseMatrix<double>& A_eigen,
     if (status != UMFPACK_OK)
     {
         spdlog::error("UMFPACK symbolic factorization failed");
-        return Eigen::VectorXd();
+        return Eigen::VectorXd::Zero(A_eigen.rows());
     }
 
     status = umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, nullptr, nullptr);
     umfpack_di_free_symbolic(&Symbolic);
     if (status != UMFPACK_OK) {
         spdlog::error("UMFPACK numeric factorization failed");
-        return Eigen::VectorXd();
+        return Eigen::VectorXd::Zero(A_eigen.rows());
     }
 
     Eigen::VectorXd x_eigen(n);
@@ -91,7 +91,7 @@ Eigen::VectorXd UMFPACK_solve(const Eigen::SparseMatrix<double>& A_eigen,
 
     if (status != UMFPACK_OK) {
         spdlog::error("UMFPACK solve failed");
-        return Eigen::VectorXd();
+        return Eigen::VectorXd::Zero(A_eigen.rows());
     }
 
     return x_eigen;
