@@ -242,7 +242,7 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     return energy;
 }
 
-double ExtremeOpt::smooth_global()
+double ExtremeOpt::smooth_global(bool& failed)
 {
     Eigen::MatrixXd uv;
     export_uv(uv);
@@ -471,6 +471,7 @@ double ExtremeOpt::smooth_global()
         }
     } else {
         std::cout << "smooth failed" << std::endl;
+        failed = true;
     }
 
     return grad.cwiseAbs().maxCoeff();

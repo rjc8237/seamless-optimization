@@ -391,7 +391,7 @@ public:
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
 
-    double smooth_global();
+    double smooth_global(bool& failed);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
 

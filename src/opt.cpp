@@ -247,10 +247,10 @@ void ExtremeOpt::do_optimization(json& opt_log)
     double max_grad = 0;
     for (int i = 1; i <= m_params.max_iters; i++) {
         double E_max;
-
+        bool failed = false;
         if (this->m_params.global_smooth) {
             timer.start();
-            max_grad = smooth_global();
+            max_grad = smooth_global(failed);
             time = timer.getElapsedTime();
             spdlog::info("GLOBAL smoothing operation time serial: {}s", time);
 
@@ -280,6 +280,12 @@ void ExtremeOpt::do_optimization(json& opt_log)
             spdlog::info(
                 "Reach target energy({}), optimization succeed!",
                 m_params.E_target);
+            break;
+        }
+        if (failed) {
+            spdlog::info(
+                "Line search step failed. stopping optimization early."
+            );
             break;
         }
 
