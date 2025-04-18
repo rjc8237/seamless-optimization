@@ -258,6 +258,13 @@ double ExtremeOpt::smooth_global(bool& failed)
     if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
 
+        // add augmentation term to lagrangian
+        Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+        Eigen::SparseMatrix<double> aug_hessian = (Beq.transpose() * Beq);
+        hessian = hessian + aug_hessian;
+        grad = grad + aug_hessian * uv_flat;
+        energy_0 = energy_0 + 0.5 * uv_flat.dot(aug_hessian * uv_flat);
+
         // Compute corrected descent direction
         double a = 0;
         Eigen::SparseMatrix<double> mat;
@@ -455,6 +462,7 @@ double ExtremeOpt::smooth_global(bool& failed)
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
         double new_E = compute_energy(new_x);
+        if (ME.rows() > 0) new_E += 0.5 * (Beq * uv).squaredNorm();
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             ls_good = true;
