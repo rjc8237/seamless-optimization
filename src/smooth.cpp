@@ -253,6 +253,7 @@ double ExtremeOpt::smooth_global(bool& failed)
     Eigen::SparseMatrix<double> hessian;
     Eigen::VectorXd grad;
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
+    double misalignment_weight = 1.;
 
     bool use_rref = m_params.use_rref;
     if (ME.rows() > 0) {
@@ -261,9 +262,9 @@ double ExtremeOpt::smooth_global(bool& failed)
         // add augmentation term to lagrangian
         Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
         Eigen::SparseMatrix<double> aug_hessian = (Beq.transpose() * Beq);
-        hessian = hessian + aug_hessian;
-        grad = grad + aug_hessian * uv_flat;
-        energy_0 = energy_0 + 0.5 * uv_flat.dot(aug_hessian * uv_flat);
+        hessian = hessian + misalignment_weight * aug_hessian;
+        grad = grad + misalignment_weight * aug_hessian * uv_flat;
+        energy_0 = energy_0 + 0.5 * misalignment_weight * uv_flat.dot(aug_hessian * uv_flat);
 
         // Compute corrected descent direction
         double a = 0;
@@ -462,13 +463,25 @@ double ExtremeOpt::smooth_global(bool& failed)
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
         double new_E = compute_energy(new_x);
-        if (ME.rows() > 0) new_E += 0.5 * (Beq * uv).squaredNorm();
+        if (ME.rows() > 0) 
+        {
+            Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+            double misalignment_energy = 0.5 * (Beq * uv_flat).squaredNorm();
+            new_E += misalignment_weight * misalignment_energy;
+        }
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             ls_good = true;
             break;
         }
         ls_step_size *= 0.8;
+    }
+
+    if (ME.rows() > 0) 
+    {
+        Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+        double misalignment_energy = 0.5 * (Beq * uv_flat).squaredNorm();
+        spdlog::info("Misalignment error is {}", misalignment_energy);
     }
 
     if (ls_good) {
