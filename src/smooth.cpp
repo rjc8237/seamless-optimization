@@ -488,9 +488,71 @@ bool ExtremeOpt::smooth_after(const Tuple& t)
 }
 */
 
+auto solve_system(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b, const std::string& solver_name) {
+    Eigen::VectorXd result;
+    if (solver_name == "CG") {
+		Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> solver;
+        solver.compute(A);
+        result = -solver.solve(b);
+    } else if (solver_name == "LDLT") {
+        Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+        solver.compute(A);
+        result = -solver.solve(b);
+    }
+    return result;
+}
+
+class Solver {
+public:
+    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name): solver_name_(solver_name) 
+    {
+        compute(A);
+    }
+
+    void compute(const Eigen::SparseMatrix<double>& A) {
+        if (solver_name_ == "CG") {
+            cg_.compute(A);
+            if (cg_.info() != Eigen::Success)
+                throw std::runtime_error("CG decomposition failed");
+        } else if (solver_name_ == "LDLT") {
+            ldlt_.compute(A);
+            if (ldlt_.info() != Eigen::Success)
+                throw std::runtime_error("LDLT decomposition failed");
+        } 
+        else {
+            throw std::invalid_argument("Unknown solver name: " + solver_name_);
+        }
+    }
+
+    Eigen::VectorXd solve(const Eigen::VectorXd& b) {
+        if (solver_name_ == "CG") return cg_.solve(b);
+        else if (solver_name_ == "LDLT") return ldlt_.solve(b);
+        throw std::invalid_argument("Unknown solver: " + solver_name_);
+    }
+
+    Eigen::ComputationInfo info() const {
+        if (solver_name_ == "CG") return cg_.info();
+        else if (solver_name_ == "LDLT") return ldlt_.info();
+        return Eigen::InvalidInput;
+    }
+
+
+private:
+    std::string solver_name_;
+
+    // Solvers
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg_;
+    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> ldlt_;
+    // Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> cholmod_llt_;
+
+
+};
+
+
 double ExtremeOpt::smooth_global(int steps)
 {
     Eigen::MatrixXi F;
+    
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
     Eigen::MatrixXi EE;
@@ -565,10 +627,13 @@ double ExtremeOpt::smooth_global(int steps)
 			mat = hessian + a*id;
 		  }
 
-		  Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-		  solver.compute(mat);
-		  newton = -solver.solve(rhs);
-	 	  newton = Q2 * newton;
+		//   Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+	    //   Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> solver;
+        //    solver.compute(mat);
+		//    newton = -solver.solve(rhs);
+          Solver solver(mat, m_params.solver_type);
+          newton = -solver.solve(rhs);
+          newton = Q2 * newton;
 		  double newton_decr = newton.dot(grad);
 		  std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
 		  std::cout << "projected gradient is " << newton_decr << std::endl;

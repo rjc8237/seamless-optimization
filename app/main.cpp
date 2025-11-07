@@ -9,7 +9,7 @@
 #include <igl/writeOBJ.h>
 #include <CLI/CLI.hpp>
 //#include "json.hpp"
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 using namespace SymDir;
 
@@ -144,6 +144,7 @@ int main(int argc, char** argv)
     app.add_option("-j,--json", input_json, "Input arguments.");
     app.add_option("-o,--output", output_dir, "Output dir.");
 
+    app.add_option("-s,--solver", param.solver_type, "Solver type");
     CLI11_PARSE(app, argc, argv);
 
 
@@ -188,8 +189,9 @@ int main(int argc, char** argv)
 
     json opt_log;
     opt_log["model_name"] = model;
+    opt_log["solver_type"] = param.solver_type;
     opt_log["args"] = config;
-    std::ofstream js_out(output_dir + "/" + model + ".json");
+    std::ofstream js_out(output_dir + "/" + model + "_" + param.solver_type + ".json");
 
     std::vector<std::vector<int>> bds;
     igl::boundary_loop(F, bds);

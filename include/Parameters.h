@@ -21,6 +21,8 @@ struct Parameters
     bool use_max_energy = false;
     int Lp = 4;
     /* data */
+    /* solver type*/
+    std::string solver_type = "LDLT"; // "CG" or "LDLT"
 };
 
 } // namespace SymDir

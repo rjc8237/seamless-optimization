@@ -10,7 +10,7 @@
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 
 namespace SymDir {
@@ -360,16 +360,16 @@ public:
     // Writes a triangle mesh in OBJ format
     void write_obj(const std::string& path);
 
-    void view() {
+    void view(std::string name) {
         Eigen::MatrixXd V;
         Eigen::MatrixXi F;
         Eigen::MatrixXd uv;
         export_mesh(V, F, uv);
 
         polyscope::init();
-        polyscope::registerPointCloud("vertices", V);
-        polyscope::registerSurfaceMesh("mesh", V, F);
-        polyscope::show();
+        polyscope::registerPointCloud(name + " vertices", V);
+        polyscope::registerSurfaceMesh(name + " mesh", V, F);
+        // polyscope::show();
     }
 
     /*

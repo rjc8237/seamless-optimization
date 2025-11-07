@@ -19,7 +19,10 @@ namespace SymDir{
 void ExtremeOpt::do_optimization(json& opt_log)
 {
     igl::Timer timer;
+    igl::Timer total_timer;
     double time;
+    double total_time = 0;
+    opt_log["total_time"] = total_time;
 
 
     // get edge length thresholds for collapsing operation
@@ -51,6 +54,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
     int V_size, F_size;
 
     double max_grad = 0;
+    total_timer.start();
     for (int i = 1; i <= m_params.max_iters; i++) {
         double E_max;
 
@@ -71,7 +75,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
         opt_log["opt_log"].push_back(
             {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"max_grad", max_grad}});
-
     
         double grad_thres = 1e-5;
         if (max_grad < grad_thres) {
@@ -92,5 +95,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
         E_old = E;
         std::cout << std::endl;
     }
+    total_time = total_timer.getElapsedTime();
+    spdlog::info("Total optimization time: {}s", total_time);
+    opt_log["total_time"] = total_time;
 }
 } // namespace SymDir
