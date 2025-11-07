@@ -22,7 +22,7 @@ glm::vec3 DARK_TEAL(0., 0.5*0.375, 0.5*0.5);
 glm::vec3 BLUE(0., 0., 1.);
 glm::vec3 RED(1., 0., 0.);
 
-void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE);
+void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE);
 void transform_EE(
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXi& EE_v,
@@ -34,28 +34,34 @@ int main(int argc, char** argv)
     //ZoneScopedN("extreme_opt_main");
 
     CLI::App app{argv[0]};
-    std::string input_dir = "";
-    std::string model = "";
+    std::vector<std::string> models{};
     std::string ffield = "";
     std::string suffix = "";
-    app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-f,--field", ffield, "Input frame field");
-    app.add_option("-m,--model", model, "Input model name.");
-    app.add_option("--suffix", suffix, "suffix for model name.");
+    app.add_option("-m,--models", models, "Input model names.")->expected(-1);
+    app.add_option("-s,--suffix", suffix, "Input model suffix.");
 
     CLI11_PARSE(app, argc, argv);
-
-    ffield = input_dir + "/" + ffield;
-    std::string input_file = input_dir + "/" + model + ".obj";
-    if (suffix != "")
-    {
-        input_file = input_dir + "/" + model + "_" + suffix + ".obj";
-    }
     // Loading the input mesh
-    Eigen::MatrixXd V, N, uv;
+    Eigen::MatrixXd V, N;
     Eigen::MatrixXi F, FT, FN;
-    igl::readOBJ(input_file, V, uv, N, F, FT, FN);
-    spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uv.rows());
+    std::vector<Eigen::MatrixXd> uvs;
+    std::vector<json> json_configs;
+    
+    for (const auto& m : models)
+    {
+        std::string input_file = m + "_" + suffix + ".obj";
+        Eigen::MatrixXd uv;
+        igl::readOBJ(input_file, V, uv, N, F, FT, FN);
+        uvs.push_back(uv);
+        std::string input_json = m + ".json";
+        std::ifstream js_in(input_json);
+        json config = json::parse(js_in);
+        json_configs.push_back(config);
+    }
+    spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uvs[0].rows());
+
+    
 
     // Loading the seamless boundary constraints
     //Eigen::MatrixXi EE;
@@ -89,24 +95,32 @@ int main(int argc, char** argv)
     //}
     //spdlog::info("Input FE size {}", FE.rows());
 
-    MeshCutter meshcutter(V, uv, F, FT);
+    MeshCutter meshcutter(V, uvs[0], F, FT);
     auto [V_cut, EE] = meshcutter.cut_mesh();
-    Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(input_file);
+    Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(models[0] + "_" + suffix + ".obj");
     Eigen::MatrixXi FE = meshcutter.reindex_feature_edges(FE_i);
 
-    ExtremeOpt extremeopt(V_cut, FT);
-    extremeopt.create_mesh(V_cut, FT, uv);
-    extremeopt.EE = EE;
-    extremeopt.FE = FE;
-    extremeopt.m_params.do_feature_alignment = true;
-    if (ffield != "") extremeopt.comb_matchings(ffield);
+    std::vector<ExtremeOpt> extremeopts;
+    for (int i = 0; i < uvs.size(); ++i)
+    {
+        ExtremeOpt extremeopt(V_cut, FT);
+        extremeopt.create_mesh(V_cut, FT, uvs[i]);
+        extremeopt.EE = EE;
+        extremeopt.FE = FE;
+        extremeopt.m_params.do_feature_alignment = true;
+        extremeopt.comb_matchings(ffield);
+        extremeopt.m_params.Lp = json_configs[i]["args"]["Lp"];
+        extremeopts.push_back(extremeopt);
+    }
     
     
-    view(extremeopt, EE, FE);
+    //extremeopt.view();
+    view(extremeopts, EE, FE);
+
 }
 
 
-void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE)
+void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE)
 {
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
@@ -120,49 +134,53 @@ void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
     std::vector<Eigen::MatrixXd> G_us;
     std::vector<Eigen::MatrixXd> G_vs;
 
-    Eigen::MatrixXd uv;
-    extremeopt.export_mesh(V, F, uv);
-    uvs.push_back(uv);
-    SymDir::get_grad_op(V, F, extremeopt.G);
-    igl::doublearea(V, F, extremeopt.area);
-
-    Eigen::MatrixXd Guv = extremeopt.Grad * uv;
-
-    Eigen::MatrixXd G_u = Eigen::Map<const Eigen::MatrixXd>(Guv.col(0).data(), F.rows(), 3);
-    Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
-    G_us.push_back(G_u);
-    G_vs.push_back(G_v);
-
-
-    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
-    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
-    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
-
-    Eigen::MatrixXd R = Guv - uT_vT;
-    Eigen::MatrixXd Rx = R.topRows(F.rows());
-    Eigen::MatrixXd Ry = R.middleRows(F.rows(), F.rows());
-    Eigen::MatrixXd Rz = R.bottomRows(F.rows());
-
-    alignment_energies.push_back(R.array().square().sum());
-    extremeopt.m_params.alignment_weight = 0.0;
-    extremeopt.m_params.symdir_weight = 1.0;
-    symdir_energies.push_back(extremeopt.compute_energy(uv));
-
-    Eigen::MatrixXd Ji;
-    SymDir::jacobian_from_uv(extremeopt.G, uv, Ji);
-    Eigen::VectorXd symdir_e(F.rows());
-    for (int i = 0; i < F.rows(); ++i)
+    for (auto& extremeopt : extremeopts)
     {
-        Eigen::MatrixXd J = Ji.row(i);
-        symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), extremeopt.m_params.Lp);
+        Eigen::MatrixXd uv;
+        extremeopt.export_mesh(V, F, uv);
+        uvs.push_back(uv);
+        SymDir::get_grad_op(V, F, extremeopt.G);
+        igl::doublearea(V, F, extremeopt.area);
 
+        Eigen::MatrixXd Guv = extremeopt.Grad * uv;
+
+        Eigen::MatrixXd G_u = Eigen::Map<const Eigen::MatrixXd>(Guv.col(0).data(), F.rows(), 3);
+        Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
+        G_us.push_back(G_u);
+        G_vs.push_back(G_v);
+
+
+        Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+        uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
+        uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
+
+        Eigen::MatrixXd R = Guv - uT_vT;
+        Eigen::MatrixXd Rx = R.topRows(F.rows());
+        Eigen::MatrixXd Ry = R.middleRows(F.rows(), F.rows());
+        Eigen::MatrixXd Rz = R.bottomRows(F.rows());
+
+        alignment_energies.push_back(R.array().square().sum());
+        extremeopt.m_params.alignment_weight = 0.0;
+        extremeopt.m_params.symdir_weight = 1.0;
+        symdir_energies.push_back(extremeopt.compute_energy(uv));
+
+        Eigen::MatrixXd Ji;
+        SymDir::jacobian_from_uv(extremeopt.G, uv, Ji);
+        Eigen::VectorXd symdir_e(F.rows());
+        for (int i = 0; i < F.rows(); ++i)
+        {
+            Eigen::MatrixXd J = Ji.row(i);
+            symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), extremeopt.m_params.Lp);
+
+        }
+        symdir_face_energies.push_back(symdir_e);
+
+        Eigen::VectorXd residuals = (Rx.array().square() 
+                            + Ry.array().square() 
+                            + Rz.array().square()).rowwise().sum();
+        alignment_face_energies.push_back(residuals);
     }
-    symdir_face_energies.push_back(symdir_e);
 
-    Eigen::VectorXd residuals = (Rx.array().square() 
-                        + Ry.array().square() 
-                        + Rz.array().square()).rowwise().sum();
-    alignment_face_energies.push_back(residuals);
     
     std::unordered_set<int> unique_seamless_vertices;
     std::unordered_set<int> unique_feature_vertices;
@@ -260,17 +278,17 @@ void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
 
     polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);
     polyscope::registerCurveNetwork("feature edges", V_feature, edges_feature);
-    mesh->addFaceVectorQuantity("PD1", extremeopt.PD1)
+    mesh->addFaceVectorQuantity("PD1", extremeopts[0].PD1)
         ->setVectorColor(FOREST_GREEN)
         ->setVectorRadius(0.0005)
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);
-    mesh->addFaceVectorQuantity("PD2", extremeopt.PD2)
+    mesh->addFaceVectorQuantity("PD2", extremeopts[0].PD2)
         ->setVectorColor(BLACK_BROWN)
         ->setVectorRadius(0.0005)
         ->setVectorLengthScale(0.005)
         ->setEnabled(true);
-    mesh->addFaceScalarQuantity("matching", extremeopt.matchings)->setEnabled(true);
+    mesh->addFaceScalarQuantity("matching", extremeopts[0].matchings)->setEnabled(true);
     
     
     //mesh->addEdgeScalarQuantity("seamless", e_scalar);

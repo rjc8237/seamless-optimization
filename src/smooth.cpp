@@ -5,6 +5,8 @@
 #include "ExtremeOpt.h"
 #include "energy.h"
 #include "spdlog/spdlog.h"
+#include <Eigen/CholmodSupport>
+#include <umfpack.h>
 
 namespace SymDir {
 
@@ -52,6 +54,51 @@ void addCustomOps(Executor& e)
 
 */
 
+Eigen::VectorXd UMFPACK_solve(const Eigen::SparseMatrix<double>& A_eigen,
+                                 const Eigen::VectorXd& b_eigen, int& status)
+{
+    int n = static_cast<int>(A_eigen.rows());
+    const int* Ap = A_eigen.outerIndexPtr();
+    const int* Ai = A_eigen.innerIndexPtr();
+    const double* Ax = A_eigen.valuePtr();
+
+    void* Symbolic = nullptr;
+    void* Numeric  = nullptr;
+
+    status = umfpack_di_symbolic(n, n, Ap, Ai, Ax, &Symbolic, nullptr, nullptr);
+    if (status != UMFPACK_OK)
+    {
+        spdlog::error("UMFPACK symbolic factorization failed");
+        return Eigen::VectorXd::Zero(n);
+    }
+
+    status = umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, nullptr, nullptr);
+    umfpack_di_free_symbolic(&Symbolic);
+    if (status != UMFPACK_OK)
+    {
+        umfpack_di_free_numeric(&Numeric);
+        spdlog::error("UMFPACK numeric factorization failed");
+        return Eigen::VectorXd::Zero(n);
+    }
+
+    Eigen::VectorXd x_eigen(n);
+    status = umfpack_di_solve(UMFPACK_A, Ap, Ai, Ax, 
+                                    x_eigen.data(),
+                                    b_eigen.data(), 
+                                    Numeric,
+                                    nullptr, 
+                                    nullptr);
+
+    umfpack_di_free_numeric(&Numeric);
+    if (status != UMFPACK_OK)
+    {
+        spdlog::error("UMFPACK solve failed");
+        return Eigen::VectorXd::Zero(n);
+    }
+    
+    return x_eigen;
+}
+
 
 void buildkkt(
     Eigen::SparseMatrix<double>& hessian,
@@ -95,59 +142,103 @@ int check_flip(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn)
     return fl;
 }
 
-double ExtremeOpt:: compute_energy(Eigen::MatrixXd aaa, double lambda) {
+Eigen::SparseMatrix<double> ExtremeOpt::compute_area_weight_matrix()
+{
+    int num_faces = area.size();
+    Eigen::SparseMatrix<double> weights(3 * num_faces, 3 * num_faces);
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(3 * num_faces);
+    double total_area = area.sum();
+
+    for (int f = 0; f < num_faces; ++f)
+    {
+        double area_f = area[f] / total_area;
+        for (int i = 0; i < 3; ++i)
+        {
+            int j = f + (i * num_faces);
+            triplets.emplace_back(j, j, area_f);
+        }
+    }
+
+    weights.setFromTriplets(triplets.begin(), triplets.end());
+    return weights;
+}
+
+double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
+    
+    double energy = 0.;
+    if (m_params.alignment_weight > 0.)
+    {
+        Eigen::SparseMatrix<double> weights = compute_area_weight_matrix();
+        Eigen::MatrixXd Guv = Grad * aaa;
 
-    Eigen::SparseMatrix<double> Grad;
-    igl::grad(input_V, input_F, Grad, false);
-    Eigen::MatrixXd Guv = Grad * aaa;
+        Eigen::MatrixXd uT_vT(3*input_F.rows(), 2);
 
-    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+        uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * input_F.rows());
+        uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * input_F.rows());
 
-    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
-    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
+        Eigen::MatrixXd R = Guv - uT_vT;
+        energy = (R.transpose() * (weights * R)).trace();
+    }
 
-    Eigen::MatrixXd R = Guv - uT_vT;
-    double energy = R.array().square().sum();
-
-    return energy + lambda*SymDir::compute_energy_from_jacobian(Ji, area);
+    return m_params.alignment_weight*energy + m_params.symdir_weight*SymDir::compute_energy_from_jacobian(Ji, area, m_params.Lp);
 }
+
 
 double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXd& Guv,
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
-    double lambda,
     bool get_hessian)
 {
-    double energy = lambda * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian);
-    Eigen::SparseMatrix<double> Grad;
-    igl::grad(V, F, Grad);
-    Eigen::MatrixXd Guv = Grad * uv;
+    Eigen::SparseMatrix<double> weights = compute_area_weight_matrix();
+    double energy = m_params.symdir_weight * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian, m_params.Lp);
+    grad *= m_params.symdir_weight;
+    hessian *= m_params.symdir_weight;
 
-    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+    if (m_params.alignment_weight > 0.)
+    {
+        Eigen::MatrixXd uT_vT(3*F.rows(), 2);
 
-    // TODO: print out PD1 and PD2 and compare against these vecs to make sure the rows are contiguous
-    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
-    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
+        uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
+        uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
 
-    Eigen::MatrixXd R = Guv - uT_vT;
-    energy += R.array().square().sum();
+        Eigen::MatrixXd R = Guv - uT_vT;
+        double alignment_energy = m_params.alignment_weight * (R.transpose() * (weights * R)).trace();
+        spdlog::info("sym Dirichlet energy: {}", energy);
+        spdlog::info("alignment energy: {}", alignment_energy);
+        energy += alignment_energy;
     
-    Eigen::MatrixXd grad_E = 2 * Grad.transpose() * R;
-    Eigen::VectorXd grad_E_vec = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
-    Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * Grad;
-    Eigen::MatrixXd hessian_E_dense(hessian.rows(), hessian.cols());
-    hessian_E_dense.topLeftCorner(gradSquared.rows(), gradSquared.cols()) = gradSquared;
-    hessian_E_dense.bottomRightCorner(gradSquared.rows(), gradSquared.cols()) = gradSquared;
+        Eigen::MatrixXd grad_E = m_params.alignment_weight * 2 * Grad.transpose() * (weights * R);
+        Eigen::VectorXd grad_E_vec = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
+        grad += grad_E_vec;
 
-    Eigen::SparseMatrix<double> hessian_E = hessian_E_dense.sparseView();
+        Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * (weights * Grad);
+        int n = gradSquared.rows();
 
-    grad = lambda*grad + grad_E_vec;
-    hessian = lambda*hessian + hessian_E;
+        Eigen::SparseMatrix<double> hessian_E(2*n, 2*n);
+        std::vector<Eigen::Triplet<double>> triplets;
+        triplets.reserve(2 * gradSquared.nonZeros());
 
+        for (int k = 0; k < gradSquared.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(gradSquared, k); it; ++it) {
+                // Top-left block
+                triplets.emplace_back(it.row(), it.col(), it.value());
+                // Bottom-right block
+                triplets.emplace_back(it.row() + n, it.col() + n, it.value());
+            }
+        }
+
+        hessian_E.setFromTriplets(triplets.begin(), triplets.end());
+    
+        hessian += m_params.alignment_weight*hessian_E;
+    }
+
+    /*
     std::cout << Grad.rows() << ", " << Grad.cols() << '\n';
     std::cout << grad.rows() << ", " << grad.cols() << '\n';
     std::cout << uv.rows() << ", " << uv.cols() << '\n';
@@ -156,95 +247,221 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     std::cout << grad_E.rows() << ", " << grad_E.cols() << '\n';
     std::cout << grad_E_vec.rows() << ", " << grad_E_vec.cols() << '\n';
     std::cout << hessian.rows() << ", " << hessian.cols() << '\n';
+    */
     return energy;
 }
 
-double ExtremeOpt::smooth_global()
+double ExtremeOpt::smooth_global(bool& failed)
 {
-    Eigen::MatrixXd V;
-    Eigen::MatrixXi F;
     Eigen::MatrixXd uv;
-    export_mesh(V, F, uv);
+    export_uv(uv);
+    Eigen::MatrixXd Guv = Grad * uv;
 
     Eigen::VectorXd newton;
     // get grad and hessian
     Eigen::SparseMatrix<double> hessian;
     Eigen::VectorXd grad;
-    double lambda = 0.001;
-    double energy_0 = get_energy_grad_and_hessian(V, F, uv, grad, hessian, lambda, m_params.do_newton);
+    double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
+    double misalignment_weight = 1.;
 
-    bool use_rref = true;
-    if (!use_rref) {
-        // build kkt system
-        Eigen::SparseMatrix<double> kkt(hessian.rows() + Aeq.rows(), hessian.cols() + Aeq.rows());
-        buildkkt(hessian, Aeq, AeqT, kkt);
-        Eigen::VectorXd rhs(kkt.rows());
-        rhs.setZero();
-        rhs.topRows(grad.rows()) << -grad;
-        // solve the system
-        Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-        solver.analyzePattern(kkt);
-        solver.factorize(kkt);
-        newton = solver.solve(rhs);
-        if (solver.info() != Eigen::Success) {
-            std::cout << "cannot solve newton system" << std::endl;
-            hessian.setIdentity();
-            buildkkt(hessian, Aeq, AeqT, kkt);
-            solver.analyzePattern(kkt);
-            solver.factorize(kkt);
-            newton = solver.solve(rhs);
+    bool use_rref = m_params.use_rref;
+    if (ME.rows() > 0) {
+        spdlog::info("Fixing misalignment");
+
+        // add augmentation term to lagrangian
+        Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+        Eigen::SparseMatrix<double> aug_hessian = (Beq.transpose() * Beq);
+        hessian = hessian + misalignment_weight * aug_hessian;
+        grad = grad + misalignment_weight * aug_hessian * uv_flat;
+        energy_0 = energy_0 + 0.5 * misalignment_weight * uv_flat.dot(aug_hessian * uv_flat);
+
+        // Compute corrected descent direction
+        double a = 0;
+        Eigen::SparseMatrix<double> mat;
+        Eigen::VectorXd rhs;
+        Eigen::SparseMatrix<double> cons;
+        while (true)
+        {
+            if (a == 0)
+            {
+                //mat = hessian; // Use newton step
+                mat = Q2T * hessian * Q2;
+                cons = Beq * Q2;
+            }
+            else 
+            {     
+                // Create identity
+                Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                id.setIdentity();
+                
+                // Create matrix with correction
+                mat = Q2T * ((hessian + a*id) * Q2);
+                cons = (1 + a) * Beq * Q2;
+                //mat = hessian + a*id; // use newton step
+            }
+
+            spdlog::trace("Building kkt with {}x{} constraints", Beq.rows(), Beq.cols());
+            //Eigen::SparseMatrix<double> cons = Beq;
+            spdlog::trace("Reduced constraint: {}x{}", cons.rows(), cons.cols());
+            Eigen::SparseMatrix<double> consT = cons.transpose();
+            Eigen::SparseMatrix<double> kkt(mat.rows() + cons.rows(), mat.cols() + cons.rows());
+            buildkkt(mat, cons, consT, kkt);
+            rhs.setZero(kkt.rows());
+            rhs.topRows(Q2T.rows()) << Q2T* grad;
+            //rhs.topRows(Q2T.rows()) << grad;
+
+            spdlog::trace("Solving {}x{} kkt with {} rhs", kkt.rows(), kkt.cols(), rhs.size());
+            //Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+            //solver.analyzePattern(kkt);
+            //solver.factorize(kkt);
+            int status{};
+            newton = -UMFPACK_solve(kkt, rhs, status);
+            if (status != UMFPACK_OK) {
+                std::cout << "cannot solve newton system" << std::endl;
+                mat.setIdentity();
+                buildkkt(mat, cons, consT, kkt);
+                //solver.analyzePattern(kkt);
+                //solver.factorize(kkt);
+                newton = -UMFPACK_solve(kkt, rhs, status);
+            }
+            //newton = -solver.solve(rhs);
+
+            spdlog::trace("Extracting unreduced newton direction");
+            double newton_decr = newton.dot(rhs);
+            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+            std::cout << "projected gradient is " << newton_decr << std::endl;
+            if (status == UMFPACK_OK && newton_decr < 0)
+            {
+                break;
+            }
+            else if (a == 0)
+            {
+                a = 1; // We did not try the correction yet, start from arbitrary value 1
+                spdlog::info(" Starting correction.");
+            }
+            else
+            {
+                a *= 2; // Correction was not enough, increase weight of id
+            }
         }
+        newton = Q2 * (newton.topRows(mat.rows()));
+        grad = rhs.topRows(mat.rows());
     } else {
-        spdlog::debug("{}x{} constraint matrix", Aeq.rows(), Aeq.cols());
-        spdlog::debug("{}x{} reduced matrix", Q2.rows(), Q2.cols());
-        std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
-                  << std::endl;
-        //hessian = Q2T * hessian * Q2;
-        Eigen::VectorXd rhs = Q2T* grad;
+        if (!use_rref) {
+            double a = 0;
+            Eigen::SparseMatrix<double> mat;
+            while (true)
+            {
+                if (a == 0)
+                {
+                    mat = hessian;
+                }
+                else 
+                {     
+                    // Create identity
+                    Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                    id.setIdentity();
+                    
+                    // Create matrix with correction
+                    mat = hessian + a*id;
+                }
 
-		// Compute corrected descent direction
-		double a = 0;
-		while (true)
-		{
-		  Eigen::SparseMatrix<double> mat;
-		  if (a == 0)
-		  {
-			//mat = hessian; // Use newton step
-            mat = Q2T * hessian * Q2;
-		  }
-		  else 
-		  {     
-			// Create identity
-			Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
-			id.setIdentity();
-			
-			// Create matrix with correction
-			mat = Q2T * ((hessian + a*id) * Q2);
-		  }
+                // build kkt system
+                Eigen::SparseMatrix<double> kkt(hessian.rows() + Aeq.rows(), hessian.cols() + Aeq.rows());
+                buildkkt(mat, Aeq, AeqT, kkt);
+                Eigen::VectorXd rhs(kkt.rows());
+                rhs.setZero();
+                rhs.topRows(grad.rows()) << -grad;
 
-		  Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-		  solver.compute(mat);
-		  newton = -solver.solve(rhs);
-	 	  newton = Q2 * newton;
-		  double newton_decr = newton.dot(grad);
-		  std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
-		  std::cout << "newton norm is " << newton.dot(newton) << std::endl;
-		  std::cout << "projected gradient is " << newton_decr << std::endl;
-		  if (solver.info() == Eigen::Success && newton_decr < 0)
-		  {
-            break;
-		  }
-		  else if (a == 0)
-		  {
-			a = 1; // We did not try the correction yet, start from arbitrary value 1
-			spdlog::info(" Starting correction.");
-		  }
-		  else
-		  {
-			a *= 2; // Correction was not enough, increase weight of id
-		  }
-		}
-        grad = rhs;
+                // solve the system
+                //Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+                //solver.analyzePattern(kkt);
+                //solver.factorize(kkt);
+                //newton = solver.solve(rhs);
+                int status{};
+                newton = UMFPACK_solve(kkt, rhs, status);
+                //if (solver.info() != Eigen::Success) {
+                //    std::cout << "cannot solve newton system" << std::endl;
+                //    hessian.setIdentity();
+                //    buildkkt(hessian, Aeq, AeqT, kkt);
+                //    solver.analyzePattern(kkt);
+                //    solver.factorize(kkt);
+                //    newton = solver.solve(rhs);
+                //}
+
+                double newton_decr = newton.topRows(grad.rows()).dot(grad);
+                std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+                std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+                std::cout << "projected gradient is " << newton_decr << std::endl;
+                if (status == UMFPACK_OK && newton_decr < 0)
+                {
+                    break;
+                }
+                else if (a == 0)
+                {
+                    a = 1; // We did not try the correction yet, start from arbitrary value 1
+                    spdlog::info(" Starting correction.");
+                }
+                else
+                {
+                    a *= 2; // Correction was not enough, increase weight of id
+                }
+            }
+        } else {
+            spdlog::debug("{}x{} constraint matrix", Aeq.rows(), Aeq.cols());
+            spdlog::debug("{}x{} reduced matrix", Q2.rows(), Q2.cols());
+            std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
+                    << std::endl;
+            //hessian = Q2T * hessian * Q2;
+            Eigen::VectorXd rhs = Q2T* grad;
+
+            // Compute corrected descent direction
+            double a = 0;
+            while (true)
+            {
+            Eigen::SparseMatrix<double> mat;
+            if (a == 0)
+            {
+                //mat = hessian; // Use newton step
+                mat = Q2T * hessian * Q2;
+            }
+            else 
+            {     
+                // Create identity
+                Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                id.setIdentity();
+                
+                // Create matrix with correction
+                mat = Q2T * ((hessian + a*id) * Q2);
+            }
+            mat.makeCompressed();
+            //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+            //solver.compute(mat);
+            //newton = -solver.solve(rhs);
+            int status{};
+            newton = -UMFPACK_solve(mat, rhs, status);
+            newton = Q2 * newton;
+            double newton_decr = newton.dot(grad);
+            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+            std::cout << "projected gradient is " << newton_decr << std::endl;
+            if (status == UMFPACK_OK && newton_decr < 0)
+            {
+                break;
+            }
+            else if (a == 0)
+            {
+                a = 1; // We did not try the correction yet, start from arbitrary value 1
+                spdlog::info(" Starting correction.");
+            }
+            else
+            {
+                a *= 2; // Correction was not enough, increase weight of id
+            }
+            }
+            grad = rhs;
+        }
     }
 
     // do lineserach
@@ -254,13 +471,26 @@ double ExtremeOpt::smooth_global()
     bool ls_good = false;
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
-        double new_E = compute_energy(new_x, lambda);
+        double new_E = compute_energy(new_x);
+        if (ME.rows() > 0) 
+        {
+            Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+            double misalignment_energy = 0.5 * (Beq * uv_flat).squaredNorm();
+            new_E += misalignment_weight * misalignment_energy;
+        }
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             ls_good = true;
             break;
         }
         ls_step_size *= 0.8;
+    }
+
+    if (ME.rows() > 0) 
+    {
+        Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+        double misalignment_energy = 0.5 * (Beq * uv_flat).squaredNorm();
+        spdlog::info("Misalignment error is {}", misalignment_energy);
     }
 
     if (ls_good) {
@@ -271,6 +501,7 @@ double ExtremeOpt::smooth_global()
         }
     } else {
         std::cout << "smooth failed" << std::endl;
+        failed = true;
     }
 
     return grad.cwiseAbs().maxCoeff();
@@ -287,6 +518,14 @@ void ExtremeOpt::smooth_all_vertices()
     auto executor = SymDir::ExecutePass<ExtremeOpt, SymDir::ExecutionPolicy::kSeq>();
     addCustomOps(executor);
     executor(*this, collect_all_ops);
+}
+
+for (int k =0; k < Beq.outerSize(); ++k)
+{
+    for (Eigen::SparseMatrix<double>::InnerIterator it (Beq, k); it; ++it)
+    {
+        spdlog::info("{}, {}: {}", it.row(), it.col(), it.value());
+    }
 }
 */
 

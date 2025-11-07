@@ -8,6 +8,7 @@ struct Parameters
     bool save_meshes = false;
 
     bool do_feature_alignment = true;
+    bool fix_misaligned = false;
 
     int max_iters = 500;
     int smooth_only_iters = 100;
@@ -22,6 +23,10 @@ struct Parameters
 
     bool use_max_energy = false;
     int Lp = 4;
+    double symdir_weight = 0.001;
+    double alignment_weight = 1.0;
+    double norm_p = 1.0;
+    bool use_rref = true;
     /* data */
 };
 

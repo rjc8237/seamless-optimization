@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     CLI::App app{argv[0]};
     std::string input_dir = "../data";
     std::string output_dir = "./";
-    std::string input_json = "../data/example.json";
+    std::string input_json = "../app/example.json";
     std::string model = "";
     std::string ffield = "";
     std::string feature_edges_filename = "";
@@ -63,17 +63,34 @@ int main(int argc, char** argv)
     param.save_meshes = config["save_meshes"];
     param.model_name = model;
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
+    param.symdir_weight = config["symdir_weight"];
+    param.alignment_weight = config["alignment_weight"];
+    param.fix_misaligned = config["fix_misaligned"];
+    param.use_rref = config["use_rref"];
+
+    if (ffield == "")
+    {
+        spdlog::info("no field provided: disabling alignment");
+        param.alignment_weight = config["alignment_weight"];
+    }
 
 	MeshCutter meshcutter(V_init, uv, F_init, F);
 
 	auto [V, EE] = meshcutter.cut_mesh();
 
+    Eigen::MatrixXi FE_init;
     Eigen::MatrixXi FE(0, 0);
+    Eigen::MatrixXi ME(0, 0);
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
-        Eigen::MatrixXi FE_init{ meshcutter.load_feature_edges(input_file) };
+        FE_init = meshcutter.load_feature_edges(input_file);
         FE = meshcutter.reindex_feature_edges(FE_init);
+        if (param.fix_misaligned)
+        {
+            std::string misaligned_file = input_dir + "/" + model + "_misaligned_edges";
+            ME = meshcutter.load_misaligned_edges(misaligned_file);
+        }
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
     
@@ -109,6 +126,7 @@ int main(int argc, char** argv)
         extremeopt.init_constraints(EE_e);
         extremeopt.EE = EE;
         extremeopt.FE = FE;
+        extremeopt.ME = ME;
         // assert(extremeopt.check_mesh_connectivity_validity());
         std::cout << "check constraints inside wmtk" << std::endl;
         if (extremeopt.check_constraints()) {
@@ -141,6 +159,21 @@ int main(int argc, char** argv)
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
     igl::writeOBJ(output_dir + "/" + model + "_out.obj", V_init, F_init, N, FN, uv, F);
+
+    // open output file
+    std::string output_filename = output_dir + "/" + model + "_out.obj";
+    std::ofstream output_file(output_filename, std::ios::out | std::ios::app);
+
+    // write all feature edge vertices
+    for (int eij = 0; eij < FE_init.rows(); ++eij)
+    {
+        int vi = FE_init(eij, 0);
+        int vj = FE_init(eij, 1);
+        output_file << "l " << vi + 1 << " " << vj + 1 << std::endl;
+    }
+
+    // close output file
+    output_file.close();
     
     if (extremeopt.m_params.with_cons)
     {

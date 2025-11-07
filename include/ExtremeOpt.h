@@ -361,8 +361,10 @@ public:
     Eigen::MatrixXi F;
     Eigen::MatrixXi EE;
     Eigen::MatrixXi FE;
-    Eigen::SparseMatrix<double> G;
-    Eigen::SparseMatrix<double> Aeq, AeqT;
+    Eigen::MatrixXi ME;
+    Eigen::SparseMatrix<double> G; // modified grad for use with symdir
+    Eigen::SparseMatrix<double> Grad; // original grad operator from igl::grad
+    Eigen::SparseMatrix<double> Aeq, AeqT, Beq;
     Eigen::SparseMatrix<double> Q2, Q2T;
     Eigen::VectorXd area;
     Eigen::VectorXi matchings;
@@ -378,7 +380,7 @@ public:
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
-    double compute_energy(Eigen::MatrixXd aaa, double lambda);
+    double compute_energy(const Eigen::MatrixXd& aaa);
 
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
@@ -389,7 +391,7 @@ public:
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
 
-    double smooth_global();
+    double smooth_global(bool& failed);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
 
@@ -439,10 +441,11 @@ public:
     double get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXd& Guv,
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
-    double lambda,
     bool get_hessian);
+    Eigen::SparseMatrix<double> compute_area_weight_matrix();
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?
