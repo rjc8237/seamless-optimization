@@ -419,7 +419,7 @@ public:
     std::tuple<
     Eigen::MatrixXd, 
     Eigen::VectorXd, 
-    Eigen::MatrixXi> load_reference_field(std::string_view ffield_file);
+    Eigen::MatrixXi> load_reference_field(const std::string& ffield_file);
 
     Eigen::VectorXd rotate_vector(
                     const Eigen::VectorXd& V,
@@ -432,7 +432,7 @@ public:
     const Eigen::MatrixXd B1,
     const Eigen::MatrixXd B2);
     
-    void comb_matchings(std::string_view ffield_file);
+    void comb_matchings(const std::string& ffield_file);
     
     void check_cross_field_alignment();
 

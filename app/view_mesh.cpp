@@ -36,16 +36,14 @@ int main(int argc, char** argv)
     std::string input_dir = "../data";
     std::string model = "";
     std::string ffield = "";
-    std::string suffix = "";
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-f,--field", ffield, "Input frame field");
     app.add_option("-m,--model", model, "Input model name.");
-    app.add_option("-s,--suffix", suffix, "Input model suffix.");
 
     CLI11_PARSE(app, argc, argv);
 
     ffield = input_dir + "/" + ffield;
-    std::string input_file = input_dir + "/" + model + "_" + suffix + ".obj";
+    std::string input_file = input_dir + "/" + model + ".obj";
     // Loading the input mesh
     Eigen::MatrixXd V, uv, N;
     Eigen::MatrixXi F, FT, FN;

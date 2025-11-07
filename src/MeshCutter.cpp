@@ -78,7 +78,7 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXi> MeshCutter::cut_mesh() {
 	return { V_cut, EE };
 }
 
-Eigen::MatrixXi MeshCutter::load_feature_edges(std::string_view fe_filename) {
+Eigen::MatrixXi MeshCutter::load_feature_edges(const std::string& fe_filename) {
 	std::ifstream inf{ fe_filename };
 	if (!inf) {
 		spdlog::error("Failed to load feature edges file\n");

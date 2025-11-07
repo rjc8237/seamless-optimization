@@ -10,7 +10,7 @@ public:
 
     std::pair<Eigen::MatrixXd, Eigen::MatrixXi> cut_mesh();
 
-    Eigen::MatrixXi load_feature_edges(std::string_view fe_filename);
+    Eigen::MatrixXi load_feature_edges(const std::string& fe_filename);
 
     Eigen::MatrixXi reindex_feature_edges(const Eigen::MatrixXi& FE);
 

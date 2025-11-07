@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
 
     std::string input_file = input_dir + "/" + model + ".obj";
-    ffield = input_dir + "/" + ffield;
+    std::string ffield_path = input_dir + "/" + ffield;
     // Loading the input mesh
 	Eigen::MatrixXd V_init, uv, N;
 	Eigen::MatrixXi F_init, F, FN;
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
         //extremeopt.FE = FE;
     }
     //extremeopt.view();
-    extremeopt.comb_matchings(ffield);
+    if (ffield == "") extremeopt.comb_matchings(ffield_path);
     extremeopt.do_optimization(opt_log);
 
     if (extremeopt.m_params.with_cons)
