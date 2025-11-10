@@ -3,7 +3,7 @@
 /py/*.so
 *DS_Store
 *__pycache__*
-/py_codes*
-/venv*
-/.vscode*
-/data/closed_myles*
+/py_codes/
+/venv/
+/.vscode/
+/data/closed_myles/
