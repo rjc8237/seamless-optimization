@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,566 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Projecting fertility_tri to constrints
-2024-01-23 16:59:06,845 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:06,876 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Initial quality is 2.3667665992553917
-2024-01-23 16:59:06,876 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Average metric coordinate is 1.5482496598955897
-2024-01-23 16:59:06,876 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:08,929 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/fertility_tri_output/fertility_tri_metric_coords
-2024-01-23 16:59:09,060 - output/closed_myles/fertility_tri_output/fertility_tri_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/fertility_tri_output/fertility_tri_flip_seq

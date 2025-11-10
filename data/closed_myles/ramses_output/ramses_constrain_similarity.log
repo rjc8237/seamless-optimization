@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,557 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Projecting ramses to constrints
-2024-01-23 16:59:07,902 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:08,092 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Initial quality is 13.324067199179591
-2024-01-23 16:59:08,092 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Average metric coordinate is 2.1598959157742637
-2024-01-23 16:59:08,093 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:20,874 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/ramses_output/ramses_metric_coords
-2024-01-23 16:59:21,211 - output/closed_myles/ramses_output/ramses_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/ramses_output/ramses_flip_seq

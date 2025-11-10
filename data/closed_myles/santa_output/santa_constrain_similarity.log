@@ -1,7 +1,0 @@
-2024-01-23 16:59:30,755 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Projecting santa to constrints
-2024-01-23 16:59:32,153 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:32,332 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Initial quality is 21.961471358823864
-2024-01-23 16:59:32,332 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Average metric coordinate is -15.546970100008942
-2024-01-23 16:59:32,332 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 17:00:29,640 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/santa_output/santa_metric_coords
-2024-01-23 17:00:30,096 - output/closed_myles/santa_output/santa_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/santa_output/santa_flip_seq

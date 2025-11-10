@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,566 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Projecting sculpt to constrints
-2024-01-23 16:59:06,666 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:06,673 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Initial quality is 2.563070371948966
-2024-01-23 16:59:06,673 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Average metric coordinate is -6.798611842480486
-2024-01-23 16:59:06,673 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:07,009 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/sculpt_output/sculpt_metric_coords
-2024-01-23 16:59:07,036 - output/closed_myles/sculpt_output/sculpt_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/sculpt_output/sculpt_flip_seq

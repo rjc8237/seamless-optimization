@@ -1,5 +1,0 @@
-2024-01-24 12:00:06,510 - multiprocessing - INFO - Generating histograms for brain100k
-2024-01-24 12:00:12,999 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/brain100k_output/brain100k_metric_coords
-2024-01-24 12:00:13,807 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:25,140 - multiprocessing - INFO - process shutting down
-2024-01-24 12:00:25,142 - multiprocessing - INFO - process exiting with exitcode 0

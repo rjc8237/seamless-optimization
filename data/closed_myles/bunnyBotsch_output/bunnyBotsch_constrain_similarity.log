@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,564 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Projecting bunnyBotsch to constrints
-2024-01-23 16:59:07,829 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:07,982 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Initial quality is 2.656774856317477
-2024-01-23 16:59:07,982 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Average metric coordinate is -13.624570966749928
-2024-01-23 16:59:07,982 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:15,436 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bunnyBotsch_output/bunnyBotsch_metric_coords
-2024-01-23 16:59:15,810 - output/closed_myles/bunnyBotsch_output/bunnyBotsch_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bunnyBotsch_output/bunnyBotsch_flip_seq

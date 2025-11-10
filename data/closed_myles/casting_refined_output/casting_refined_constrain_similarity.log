@@ -1,7 +1,0 @@
-2024-01-23 16:59:20,182 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Projecting casting_refined to constrints
-2024-01-23 16:59:20,544 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:20,680 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Initial quality is 40.67676713235487
-2024-01-23 16:59:20,681 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Average metric coordinate is -12.655204510191295
-2024-01-23 16:59:20,681 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:25,408 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/casting_refined_output/casting_refined_metric_coords
-2024-01-23 16:59:25,535 - output/closed_myles/casting_refined_output/casting_refined_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/casting_refined_output/casting_refined_flip_seq

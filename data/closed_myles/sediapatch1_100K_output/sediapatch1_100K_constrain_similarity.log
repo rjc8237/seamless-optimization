@@ -1,7 +1,0 @@
-2024-01-23 16:59:31,666 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Projecting sediapatch1_100K to constrints
-2024-01-23 16:59:32,731 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:32,892 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Initial quality is 14.949185365324208
-2024-01-23 16:59:32,892 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Average metric coordinate is -0.4839785668725974
-2024-01-23 16:59:32,892 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:46,006 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_metric_coords
-2024-01-23 16:59:46,322 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_flip_seq

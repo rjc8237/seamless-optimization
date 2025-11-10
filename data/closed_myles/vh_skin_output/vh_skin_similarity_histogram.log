@@ -1,5 +1,0 @@
-2024-01-24 12:00:14,325 - multiprocessing - INFO - Generating histograms for vh_skin
-2024-01-24 12:00:17,193 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/vh_skin_output/vh_skin_metric_coords
-2024-01-24 12:00:17,545 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:25,142 - multiprocessing - INFO - process shutting down
-2024-01-24 12:00:25,143 - multiprocessing - INFO - process exiting with exitcode 0

@@ -1,7 +1,0 @@
-2024-01-23 16:59:22,571 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Projecting dente to constrints
-2024-01-23 16:59:22,768 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:22,806 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Initial quality is 17.342054592909733
-2024-01-23 16:59:22,807 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Average metric coordinate is -2.5401473983526057
-2024-01-23 16:59:22,807 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:23,977 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dente_output/dente_metric_coords
-2024-01-23 16:59:24,036 - output/closed_myles/dente_output/dente_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dente_output/dente_flip_seq

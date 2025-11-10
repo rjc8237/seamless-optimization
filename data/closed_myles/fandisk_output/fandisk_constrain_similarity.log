@@ -1,7 +1,0 @@
-2024-01-23 16:59:30,750 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Projecting fandisk to constrints
-2024-01-23 16:59:30,869 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:30,884 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Initial quality is 4.497459549435931
-2024-01-23 16:59:30,884 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Average metric coordinate is -4.628470019901312
-2024-01-23 16:59:30,884 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:31,942 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/fandisk_output/fandisk_metric_coords
-2024-01-23 16:59:31,988 - output/closed_myles/fandisk_output/fandisk_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/fandisk_output/fandisk_flip_seq

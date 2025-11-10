@@ -1,7 +1,0 @@
-2024-01-23 16:59:07,037 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Projecting bumpy_sphere to constrints
-2024-01-23 16:59:07,153 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:07,169 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Initial quality is 10.620758823339806
-2024-01-23 16:59:07,169 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Average metric coordinate is -1.3174022545440116
-2024-01-23 16:59:07,169 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:08,362 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bumpy_sphere_output/bumpy_sphere_metric_coords
-2024-01-23 16:59:08,403 - output/closed_myles/bumpy_sphere_output/bumpy_sphere_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bumpy_sphere_output/bumpy_sphere_flip_seq

@@ -1,7 +1,0 @@
-2024-01-23 16:59:20,160 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Projecting genus3 to constrints
-2024-01-23 16:59:20,293 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:20,343 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Initial quality is 6.502756261335269
-2024-01-23 16:59:20,343 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Average metric coordinate is -7.934119251077853
-2024-01-23 16:59:20,344 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:21,664 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/genus3_output/genus3_metric_coords
-2024-01-23 16:59:21,719 - output/closed_myles/genus3_output/genus3_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/genus3_output/genus3_flip_seq

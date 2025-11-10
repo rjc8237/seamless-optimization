@@ -1,8 +1,0 @@
-2024-01-24 11:59:56,763 - multiprocessing - INFO - Generating histograms for eros100K
-2024-01-24 12:00:03,846 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/eros100K_output/eros100K_metric_coords
-2024-01-24 12:00:04,462 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:12,003 - multiprocessing - INFO - Generating histograms for joint
-2024-01-24 12:00:14,383 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/joint_output/joint_metric_coords
-2024-01-24 12:00:14,691 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:25,141 - multiprocessing - INFO - process shutting down
-2024-01-24 12:00:25,141 - multiprocessing - INFO - process exiting with exitcode 0

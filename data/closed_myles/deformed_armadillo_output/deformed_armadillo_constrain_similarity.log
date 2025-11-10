@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,568 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Projecting deformed_armadillo to constrints
-2024-01-23 16:59:07,954 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:08,142 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Initial quality is 20.452549352012536
-2024-01-23 16:59:08,143 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Average metric coordinate is -0.205886238848157
-2024-01-23 16:59:08,143 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:19,779 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/deformed_armadillo_output/deformed_armadillo_metric_coords
-2024-01-23 16:59:20,121 - output/closed_myles/deformed_armadillo_output/deformed_armadillo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/deformed_armadillo_output/deformed_armadillo_flip_seq

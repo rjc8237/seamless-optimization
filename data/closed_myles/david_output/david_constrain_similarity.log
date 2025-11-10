@@ -1,7 +1,0 @@
-2024-01-23 16:59:08,357 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Projecting david to constrints
-2024-01-23 16:59:08,871 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:08,944 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Initial quality is 38.96526526204709
-2024-01-23 16:59:08,944 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Average metric coordinate is -4.807789736109238
-2024-01-23 16:59:08,944 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:22,368 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/david_output/david_metric_coords
-2024-01-23 16:59:22,549 - output/closed_myles/david_output/david_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/david_output/david_flip_seq

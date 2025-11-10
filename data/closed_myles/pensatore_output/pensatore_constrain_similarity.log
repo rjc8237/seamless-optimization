@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,562 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Projecting pensatore to constrints
-2024-01-23 16:59:07,960 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:08,181 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Initial quality is 12.171942010686287
-2024-01-23 16:59:08,182 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Average metric coordinate is 0.6804666171414121
-2024-01-23 16:59:08,182 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:16,996 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pensatore_output/pensatore_metric_coords
-2024-01-23 16:59:17,339 - output/closed_myles/pensatore_output/pensatore_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pensatore_output/pensatore_flip_seq

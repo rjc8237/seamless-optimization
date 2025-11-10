@@ -1,7 +1,0 @@
-2024-01-23 16:59:21,247 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Projecting armchair to constrints
-2024-01-23 16:59:22,335 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:22,484 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Initial quality is 14.770264041847174
-2024-01-23 16:59:22,485 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Average metric coordinate is -0.38641422266324
-2024-01-23 16:59:22,485 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:31,217 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/armchair_output/armchair_metric_coords
-2024-01-23 16:59:31,632 - output/closed_myles/armchair_output/armchair_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/armchair_output/armchair_flip_seq

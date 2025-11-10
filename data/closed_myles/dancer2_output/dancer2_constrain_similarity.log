@@ -1,7 +1,0 @@
-2024-01-23 16:59:12,727 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Projecting dancer2 to constrints
-2024-01-23 16:59:12,930 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:12,978 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Initial quality is 21.513731261183956
-2024-01-23 16:59:12,978 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Average metric coordinate is 0.825740353028582
-2024-01-23 16:59:12,978 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:19,429 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dancer2_output/dancer2_metric_coords
-2024-01-23 16:59:19,491 - output/closed_myles/dancer2_output/dancer2_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dancer2_output/dancer2_flip_seq

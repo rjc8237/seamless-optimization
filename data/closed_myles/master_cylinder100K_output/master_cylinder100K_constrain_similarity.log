@@ -1,7 +1,0 @@
-2024-01-23 16:59:17,059 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Projecting master_cylinder100K to constrints
-2024-01-23 16:59:18,175 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:18,754 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Initial quality is 18.065016366201686
-2024-01-23 16:59:18,754 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Average metric coordinate is -8.405474871584465
-2024-01-23 16:59:18,755 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:44,363 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/master_cylinder100K_output/master_cylinder100K_metric_coords
-2024-01-23 16:59:44,705 - output/closed_myles/master_cylinder100K_output/master_cylinder100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/master_cylinder100K_output/master_cylinder100K_flip_seq

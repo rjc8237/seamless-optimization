@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,572 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Projecting elephant to constrints
-2024-01-23 16:59:07,276 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:07,501 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Initial quality is 14.808072170650192
-2024-01-23 16:59:07,502 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Average metric coordinate is -9.800599905845374
-2024-01-23 16:59:07,502 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:11,042 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/elephant_output/elephant_metric_coords
-2024-01-23 16:59:11,211 - output/closed_myles/elephant_output/elephant_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/elephant_output/elephant_flip_seq

@@ -1,7 +1,0 @@
-2024-01-23 16:59:30,682 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Projecting chair to constrints
-2024-01-23 16:59:32,203 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:34,051 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Initial quality is 18.49768617733317
-2024-01-23 16:59:34,052 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Average metric coordinate is 1.8343286444395943
-2024-01-23 16:59:34,052 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:44,884 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/chair_output/chair_metric_coords
-2024-01-23 16:59:45,191 - output/closed_myles/chair_output/chair_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/chair_output/chair_flip_seq

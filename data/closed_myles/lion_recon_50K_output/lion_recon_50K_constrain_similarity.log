@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,556 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Projecting lion_recon_50K to constrints
-2024-01-23 16:59:07,304 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:07,375 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Initial quality is 25.732119160327834
-2024-01-23 16:59:07,376 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Average metric coordinate is -13.088906708488791
-2024-01-23 16:59:07,376 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:10,517 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/lion_recon_50K_output/lion_recon_50K_metric_coords
-2024-01-23 16:59:10,790 - output/closed_myles/lion_recon_50K_output/lion_recon_50K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/lion_recon_50K_output/lion_recon_50K_flip_seq

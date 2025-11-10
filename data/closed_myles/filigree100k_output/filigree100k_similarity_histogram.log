@@ -1,5 +1,0 @@
-2024-01-24 12:00:11,656 - multiprocessing - INFO - Generating histograms for filigree100k
-2024-01-24 12:00:18,869 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/filigree100k_output/filigree100k_metric_coords
-2024-01-24 12:00:19,272 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:25,153 - multiprocessing - INFO - process shutting down
-2024-01-24 12:00:25,156 - multiprocessing - INFO - process exiting with exitcode 0

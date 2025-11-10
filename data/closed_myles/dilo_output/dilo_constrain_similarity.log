@@ -1,7 +1,0 @@
-2024-01-23 16:59:21,729 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Projecting dilo to constrints
-2024-01-23 16:59:22,448 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:22,585 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Initial quality is 42.85406930944737
-2024-01-23 16:59:22,585 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Average metric coordinate is -11.478133459744091
-2024-01-23 16:59:22,585 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:50,985 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dilo_output/dilo_metric_coords
-2024-01-23 16:59:51,159 - output/closed_myles/dilo_output/dilo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dilo_output/dilo_flip_seq

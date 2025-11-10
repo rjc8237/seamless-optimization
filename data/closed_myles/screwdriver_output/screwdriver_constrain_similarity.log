@@ -1,7 +1,0 @@
-2024-01-23 16:59:25,585 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Projecting screwdriver to constrints
-2024-01-23 16:59:26,091 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:26,145 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Initial quality is 27.08710971685911
-2024-01-23 16:59:26,146 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Average metric coordinate is -10.487810703476184
-2024-01-23 16:59:26,146 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:28,690 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/screwdriver_output/screwdriver_metric_coords
-2024-01-23 16:59:28,885 - output/closed_myles/screwdriver_output/screwdriver_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/screwdriver_output/screwdriver_flip_seq

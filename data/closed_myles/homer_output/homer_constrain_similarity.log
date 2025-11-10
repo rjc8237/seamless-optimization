@@ -1,7 +1,0 @@
-2024-01-23 16:59:19,505 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Projecting homer to constrints
-2024-01-23 16:59:19,619 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:19,636 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Initial quality is 47.442472428709436
-2024-01-23 16:59:19,637 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Average metric coordinate is -8.585298943364856
-2024-01-23 16:59:19,637 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:20,143 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/homer_output/homer_metric_coords
-2024-01-23 16:59:20,176 - output/closed_myles/homer_output/homer_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/homer_output/homer_flip_seq

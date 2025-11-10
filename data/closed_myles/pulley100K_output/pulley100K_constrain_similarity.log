@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,591 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Projecting pulley100K to constrints
-2024-01-23 16:59:07,994 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:08,443 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Initial quality is 18.823660040917567
-2024-01-23 16:59:08,444 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Average metric coordinate is -0.8127353204105302
-2024-01-23 16:59:08,444 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:57,883 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pulley100K_output/pulley100K_metric_coords
-2024-01-23 16:59:58,168 - output/closed_myles/pulley100K_output/pulley100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pulley100K_output/pulley100K_flip_seq

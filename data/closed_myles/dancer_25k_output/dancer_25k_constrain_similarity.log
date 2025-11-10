@@ -1,7 +1,0 @@
-2024-01-23 16:59:24,970 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Projecting dancer_25k to constrints
-2024-01-23 16:59:25,476 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:25,592 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Initial quality is 19.209551397370184
-2024-01-23 16:59:25,592 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Average metric coordinate is -0.11494872997483659
-2024-01-23 16:59:25,592 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:29,517 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dancer_25k_output/dancer_25k_metric_coords
-2024-01-23 16:59:29,692 - output/closed_myles/dancer_25k_output/dancer_25k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dancer_25k_output/dancer_25k_flip_seq

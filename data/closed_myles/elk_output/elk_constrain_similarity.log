@@ -1,7 +1,0 @@
-2024-01-23 16:59:06,563 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Projecting elk to constrints
-2024-01-23 16:59:06,688 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Using Delaunay connectivity
-2024-01-23 16:59:06,708 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Initial quality is 16.71589164181283
-2024-01-23 16:59:06,708 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Average metric coordinate is 2.43559200920417
-2024-01-23 16:59:06,708 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Optimizing metric
-2024-01-23 16:59:09,052 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/elk_output/elk_metric_coords
-2024-01-23 16:59:09,086 - output/closed_myles/elk_output/elk_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/elk_output/elk_flip_seq

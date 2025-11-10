@@ -1,8 +1,0 @@
-2024-01-24 11:59:52,608 - multiprocessing - INFO - Generating histograms for isidore_horse
-2024-01-24 12:00:03,650 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/isidore_horse_output/isidore_horse_metric_coords
-2024-01-24 12:00:04,595 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:13,760 - multiprocessing - INFO - Generating histograms for dilo
-2024-01-24 12:00:17,203 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/dilo_output/dilo_metric_coords
-2024-01-24 12:00:17,550 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:25,141 - multiprocessing - INFO - process shutting down
-2024-01-24 12:00:25,147 - multiprocessing - INFO - process exiting with exitcode 0

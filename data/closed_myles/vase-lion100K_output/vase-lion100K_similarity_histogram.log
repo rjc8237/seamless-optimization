@@ -1,8 +1,0 @@
-2024-01-24 11:59:52,493 - multiprocessing - INFO - Generating histograms for vase-lion100K
-2024-01-24 12:00:05,284 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/vase-lion100K_output/vase-lion100K_metric_coords
-2024-01-24 12:00:05,478 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:16,422 - multiprocessing - INFO - Generating histograms for neptune0
-2024-01-24 12:00:20,935 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/neptune0_output/neptune0_metric_coords
-2024-01-24 12:00:21,425 - multiprocessing - INFO - Computing symmetric stretches
-2024-01-24 12:00:25,154 - multiprocessing - INFO - process shutting down
-2024-01-24 12:00:25,155 - multiprocessing - INFO - process exiting with exitcode 0
