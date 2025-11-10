@@ -1,0 +1,12 @@
+2024-01-23 17:05:46,826 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Converting santa to vf
+2024-01-23 17:05:47,982 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/santa_output/santa_metric_coords
+2024-01-23 17:07:31,915 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/santa_output/santa_overlay_with_uv.obj
+2024-01-23 17:07:32,309 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:08:20,747 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/santa_output/santa_refined_with_uv.obj
+2024-01-23 17:08:21,013 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/santa_output/santa_is_cut_h
+2024-01-23 17:08:39,701 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/santa_output/santa_cut_to_sin_list.pickle
+2024-01-23 17:08:39,712 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/santa_output/santa_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:08:39,719 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/santa_output/santa_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:08:39,725 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/santa_output/santa_fn_to_f
+2024-01-23 17:08:40,038 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/santa_output/santa_vn_to_v
+2024-01-23 17:08:40,184 - output/closed_myles/santa_output/santa_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/santa_output/santa_endpoints

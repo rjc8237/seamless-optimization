@@ -1,0 +1,10 @@
+2024-01-23 16:59:27,647 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Projecting trim-star to constrints
+2024-01-23 16:59:27,740 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:27,753 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Initial quality is 76.38341064625611
+2024-01-23 16:59:27,753 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Average metric coordinate is -1.5226682231429363
+2024-01-23 16:59:27,757 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Quality is 19.814683981261958
+2024-01-23 16:59:27,761 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Final quality is 19.81468398126195
+2024-01-23 16:59:27,761 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Final average is -1.5224727335777617
+2024-01-23 16:59:27,761 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:28,184 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/trim-star_output/trim-star_metric_coords
+2024-01-23 16:59:28,217 - output/closed_myles/trim-star_output/trim-star_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/trim-star_output/trim-star_flip_seq

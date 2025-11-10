@@ -348,6 +348,7 @@ public:
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
+    double get_quality_avg_worst_for_smooth_only(double percent = 5, int p = 5);
 
     double smooth_global(int steps);
 

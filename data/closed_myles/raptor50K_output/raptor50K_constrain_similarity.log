@@ -1,0 +1,7 @@
+2024-01-23 16:59:08,945 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Projecting raptor50K to constrints
+2024-01-23 16:59:09,464 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:09,633 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Initial quality is 22.276119414582514
+2024-01-23 16:59:09,634 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Average metric coordinate is -9.947670202056083
+2024-01-23 16:59:09,634 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:39,623 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/raptor50K_output/raptor50K_metric_coords
+2024-01-23 16:59:39,789 - output/closed_myles/raptor50K_output/raptor50K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/raptor50K_output/raptor50K_flip_seq

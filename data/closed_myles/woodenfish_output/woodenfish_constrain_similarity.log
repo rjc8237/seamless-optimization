@@ -1,0 +1,7 @@
+2024-01-23 16:59:27,885 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Projecting woodenfish to constrints
+2024-01-23 16:59:28,279 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:28,349 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Initial quality is 24.782013754465826
+2024-01-23 16:59:28,350 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Average metric coordinate is 2.6610796172889932
+2024-01-23 16:59:28,350 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:31,511 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/woodenfish_output/woodenfish_metric_coords
+2024-01-23 16:59:31,647 - output/closed_myles/woodenfish_output/woodenfish_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/woodenfish_output/woodenfish_flip_seq

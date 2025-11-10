@@ -1,0 +1,5 @@
+2024-01-24 12:00:18,193 - multiprocessing - INFO - Generating histograms for chair
+2024-01-24 12:00:22,342 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/chair_output/chair_metric_coords
+2024-01-24 12:00:22,629 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,262 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,263 - multiprocessing - INFO - process exiting with exitcode 0

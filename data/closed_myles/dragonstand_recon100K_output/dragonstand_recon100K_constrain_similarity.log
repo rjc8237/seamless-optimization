@@ -1,0 +1,7 @@
+2024-01-23 16:59:09,064 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Projecting dragonstand_recon100K to constrints
+2024-01-23 16:59:10,093 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:10,304 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Initial quality is 26.513977852408082
+2024-01-23 16:59:10,304 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Average metric coordinate is -13.386203029900882
+2024-01-23 16:59:10,304 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:22,029 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_metric_coords
+2024-01-23 16:59:22,391 - output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dragonstand_recon100K_output/dragonstand_recon100K_flip_seq

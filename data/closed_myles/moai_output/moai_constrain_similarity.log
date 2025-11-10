@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,556 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Projecting moai to constrints
+2024-01-23 16:59:06,774 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:06,800 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Initial quality is 9.627837653710898
+2024-01-23 16:59:06,800 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Average metric coordinate is -4.0307441701598865
+2024-01-23 16:59:06,800 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:07,664 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/moai_output/moai_metric_coords
+2024-01-23 16:59:07,731 - output/closed_myles/moai_output/moai_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/moai_output/moai_flip_seq

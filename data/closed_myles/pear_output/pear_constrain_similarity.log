@@ -1,0 +1,7 @@
+2024-01-23 16:59:22,641 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Projecting pear to constrints
+2024-01-23 16:59:22,841 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:22,866 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Initial quality is 4.2049395440020065
+2024-01-23 16:59:22,867 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Average metric coordinate is -4.281802068376996
+2024-01-23 16:59:22,867 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:24,893 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pear_output/pear_metric_coords
+2024-01-23 16:59:24,961 - output/closed_myles/pear_output/pear_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pear_output/pear_flip_seq

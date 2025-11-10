@@ -1,0 +1,5 @@
+2024-01-24 12:00:11,905 - multiprocessing - INFO - Generating histograms for pear
+2024-01-24 12:00:13,233 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/pear_output/pear_metric_coords
+2024-01-24 12:00:13,434 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,138 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process exiting with exitcode 0

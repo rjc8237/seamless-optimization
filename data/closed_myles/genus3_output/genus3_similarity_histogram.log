@@ -1,0 +1,8 @@
+2024-01-24 12:00:11,442 - multiprocessing - INFO - Generating histograms for genus3
+2024-01-24 12:00:12,133 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/genus3_output/genus3_metric_coords
+2024-01-24 12:00:12,196 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:19,991 - multiprocessing - INFO - Generating histograms for santa
+2024-01-24 12:00:23,721 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/santa_output/santa_metric_coords
+2024-01-24 12:00:24,030 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,543 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,543 - multiprocessing - INFO - process exiting with exitcode 0

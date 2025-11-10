@@ -1,0 +1,19 @@
+2024-01-23 17:29:23,882 - multiprocessing - INFO - Rendering rolling_stage100K_refined_with_uv
+2024-01-23 17:29:23,882 - multiprocessing - INFO - Loading initial mesh at data/closed-Myles
+2024-01-23 17:29:24,442 - multiprocessing - INFO - Loading uv coordinates at output_sonic/closed_myles
+2024-01-23 17:29:25,085 - multiprocessing - INFO - Is double: False
+2024-01-23 17:29:25,085 - multiprocessing - INFO - Loading vertex map at output_sonic/closed_myles/rolling_stage100K_output/rolling_stage100K_refined_with_uv_vn_to_v
+2024-01-23 17:29:25,087 - multiprocessing - ERROR - Could not load vertex map
+2024-01-23 17:29:25,088 - multiprocessing - INFO - Loading endpoints at output_sonic/closed_myles/rolling_stage100K_output/rolling_stage100K_refined_with_uv_endpoints
+2024-01-23 17:29:25,088 - multiprocessing - ERROR - Could not load endpoints
+2024-01-23 17:29:25,089 - multiprocessing - INFO - Loading camera at data/cameras/rolling_stage100K_camera.pickle
+2024-01-23 17:29:25,245 - multiprocessing - INFO - Getting point matrices
+2024-01-23 17:29:39,084 - multiprocessing - INFO - Getting connectivity
+2024-01-23 17:29:52,286 - multiprocessing - INFO - Getting per corner uv coordinates
+2024-01-23 17:29:52,913 - multiprocessing - INFO - Getting scale_factors colormap
+2024-01-23 17:29:54,656 - multiprocessing - INFO - Using colormap scale 1
+2024-01-23 17:29:54,656 - multiprocessing - INFO - Rendering image
+2024-01-23 17:31:54,405 - multiprocessing - INFO - Saving plain image at output_sonic/closed_myles/rolling_stage100K_output/images/rolling_stage100K_refined_with_uv_plain.png
+2024-01-23 17:31:55,579 - multiprocessing - INFO - Adding shading
+2024-01-23 17:34:17,711 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/rolling_stage100K_output/images/rolling_stage100K_refined_with_uv.png
+2024-01-23 17:34:18,513 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/images/rolling_stage100K_refined_with_uv.png

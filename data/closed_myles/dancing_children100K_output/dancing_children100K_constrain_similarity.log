@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,591 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Projecting dancing_children100K to constrints
+2024-01-23 16:59:07,794 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:08,933 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Initial quality is 28.92890339368449
+2024-01-23 16:59:08,933 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Average metric coordinate is 0.80674157041988
+2024-01-23 16:59:08,933 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:36,070 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dancing_children100K_output/dancing_children100K_metric_coords
+2024-01-23 16:59:36,358 - output/closed_myles/dancing_children100K_output/dancing_children100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/dancing_children100K_output/dancing_children100K_flip_seq

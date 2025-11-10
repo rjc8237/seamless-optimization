@@ -1,0 +1,10 @@
+2024-01-23 16:59:24,045 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Projecting helmet to constrints
+2024-01-23 16:59:24,055 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:24,057 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Initial quality is 58.32056361365003
+2024-01-23 16:59:24,057 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Average metric coordinate is -5.54561498524621
+2024-01-23 16:59:24,058 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Quality is 8.016210465869921
+2024-01-23 16:59:24,058 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Final quality is 8.016210465869921
+2024-01-23 16:59:24,058 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Final average is -5.523520901639652
+2024-01-23 16:59:24,059 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:24,236 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/helmet_output/helmet_metric_coords
+2024-01-23 16:59:24,240 - output/closed_myles/helmet_output/helmet_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/helmet_output/helmet_flip_seq

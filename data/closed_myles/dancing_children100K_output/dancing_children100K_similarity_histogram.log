@@ -1,0 +1,8 @@
+2024-01-24 11:59:52,517 - multiprocessing - INFO - Generating histograms for dancing_children100K
+2024-01-24 12:00:03,698 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/dancing_children100K_output/dancing_children100K_metric_coords
+2024-01-24 12:00:04,594 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:15,226 - multiprocessing - INFO - Generating histograms for thai_statue
+2024-01-24 12:00:18,998 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/thai_statue_output/thai_statue_metric_coords
+2024-01-24 12:00:19,303 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,148 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,149 - multiprocessing - INFO - process exiting with exitcode 0

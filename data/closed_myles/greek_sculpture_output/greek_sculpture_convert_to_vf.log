@@ -1,0 +1,12 @@
+2024-01-23 17:05:28,035 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Converting greek_sculpture to vf
+2024-01-23 17:05:28,457 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/greek_sculpture_output/greek_sculpture_metric_coords
+2024-01-23 17:05:50,561 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/greek_sculpture_output/greek_sculpture_overlay_with_uv.obj
+2024-01-23 17:05:50,816 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:06:39,832 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/greek_sculpture_output/greek_sculpture_refined_with_uv.obj
+2024-01-23 17:06:39,985 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/greek_sculpture_output/greek_sculpture_is_cut_h
+2024-01-23 17:06:43,015 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/greek_sculpture_output/greek_sculpture_cut_to_sin_list.pickle
+2024-01-23 17:06:43,019 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/greek_sculpture_output/greek_sculpture_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:06:43,022 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/greek_sculpture_output/greek_sculpture_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:06:43,025 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/greek_sculpture_output/greek_sculpture_fn_to_f
+2024-01-23 17:06:43,178 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/greek_sculpture_output/greek_sculpture_vn_to_v
+2024-01-23 17:06:43,253 - output/closed_myles/greek_sculpture_output/greek_sculpture_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/greek_sculpture_output/greek_sculpture_endpoints

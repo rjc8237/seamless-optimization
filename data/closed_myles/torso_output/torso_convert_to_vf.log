@@ -1,0 +1,12 @@
+2024-01-23 17:04:20,428 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Converting torso to vf
+2024-01-23 17:04:20,994 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/torso_output/torso_metric_coords
+2024-01-23 17:05:21,344 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/torso_output/torso_overlay_with_uv.obj
+2024-01-23 17:05:21,737 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:06:42,028 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/torso_output/torso_refined_with_uv.obj
+2024-01-23 17:06:42,229 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/torso_output/torso_is_cut_h
+2024-01-23 17:07:08,152 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/torso_output/torso_cut_to_sin_list.pickle
+2024-01-23 17:07:08,159 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/torso_output/torso_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:08,166 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/torso_output/torso_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:08,172 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/torso_output/torso_fn_to_f
+2024-01-23 17:07:08,408 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/torso_output/torso_vn_to_v
+2024-01-23 17:07:08,524 - output/closed_myles/torso_output/torso_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/torso_output/torso_endpoints

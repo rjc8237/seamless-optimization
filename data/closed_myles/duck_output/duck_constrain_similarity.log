@@ -1,0 +1,7 @@
+2024-01-23 16:59:07,862 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Projecting duck to constrints
+2024-01-23 16:59:08,063 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:08,102 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Initial quality is 25.588855745553627
+2024-01-23 16:59:08,102 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Average metric coordinate is 0.7574292648518396
+2024-01-23 16:59:08,102 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:09,652 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/duck_output/duck_metric_coords
+2024-01-23 16:59:09,713 - output/closed_myles/duck_output/duck_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/duck_output/duck_flip_seq

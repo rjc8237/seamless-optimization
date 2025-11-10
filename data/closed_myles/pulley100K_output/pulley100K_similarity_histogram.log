@@ -1,0 +1,8 @@
+2024-01-24 11:59:52,412 - multiprocessing - INFO - Generating histograms for pulley100K
+2024-01-24 12:00:04,366 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/pulley100K_output/pulley100K_metric_coords
+2024-01-24 12:00:04,876 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:16,090 - multiprocessing - INFO - Generating histograms for armchair
+2024-01-24 12:00:20,068 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/armchair_output/armchair_metric_coords
+2024-01-24 12:00:20,428 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,152 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,153 - multiprocessing - INFO - process exiting with exitcode 0

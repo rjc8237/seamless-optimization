@@ -1,0 +1,7 @@
+2024-01-23 16:59:17,369 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Projecting torso to constrints
+2024-01-23 16:59:18,562 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:18,801 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Initial quality is 11.537448703076961
+2024-01-23 16:59:18,801 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Average metric coordinate is -10.997662233323105
+2024-01-23 16:59:18,802 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:33,420 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/torso_output/torso_metric_coords
+2024-01-23 16:59:33,746 - output/closed_myles/torso_output/torso_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/torso_output/torso_flip_seq

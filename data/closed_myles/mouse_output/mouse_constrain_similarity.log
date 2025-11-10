@@ -1,0 +1,7 @@
+2024-01-23 16:59:25,544 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Projecting mouse to constrints
+2024-01-23 16:59:25,851 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:25,901 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Initial quality is 17.563455539385497
+2024-01-23 16:59:25,902 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Average metric coordinate is -0.4879109797438365
+2024-01-23 16:59:25,902 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:27,767 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/mouse_output/mouse_metric_coords
+2024-01-23 16:59:27,871 - output/closed_myles/mouse_output/mouse_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/mouse_output/mouse_flip_seq

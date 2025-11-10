@@ -1,0 +1,10 @@
+2024-01-23 16:59:06,568 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Projecting armadillo to constrints
+2024-01-23 16:59:07,097 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:07,178 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Initial quality is 71.39614312021992
+2024-01-23 16:59:07,178 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Average metric coordinate is 0.6533936767222424
+2024-01-23 16:59:07,197 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Quality is 13.477829838816138
+2024-01-23 16:59:07,215 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Final quality is 13.477829838816138
+2024-01-23 16:59:07,216 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Final average is 0.6533936767222421
+2024-01-23 16:59:07,216 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:10,733 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/armadillo_output/armadillo_metric_coords
+2024-01-23 16:59:10,884 - output/closed_myles/armadillo_output/armadillo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/armadillo_output/armadillo_flip_seq

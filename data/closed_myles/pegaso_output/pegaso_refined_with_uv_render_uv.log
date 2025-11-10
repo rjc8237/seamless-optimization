@@ -1,0 +1,38 @@
+2024-01-23 17:22:48,797 - multiprocessing - INFO - Rendering pegaso_refined_with_uv
+2024-01-23 17:22:48,797 - multiprocessing - INFO - Loading initial mesh at data/closed-Myles
+2024-01-23 17:22:48,897 - multiprocessing - INFO - Loading uv coordinates at output_sonic/closed_myles
+2024-01-23 17:22:49,027 - multiprocessing - INFO - Is double: False
+2024-01-23 17:22:49,027 - multiprocessing - INFO - Loading vertex map at output_sonic/closed_myles/pegaso_output/pegaso_refined_with_uv_vn_to_v
+2024-01-23 17:22:49,028 - multiprocessing - ERROR - Could not load vertex map
+2024-01-23 17:22:49,028 - multiprocessing - INFO - Loading endpoints at output_sonic/closed_myles/pegaso_output/pegaso_refined_with_uv_endpoints
+2024-01-23 17:22:49,028 - multiprocessing - ERROR - Could not load endpoints
+2024-01-23 17:22:49,028 - multiprocessing - INFO - Loading camera at data/cameras/pegaso_camera.pickle
+2024-01-23 17:22:49,059 - multiprocessing - INFO - Getting point matrices
+2024-01-23 17:22:59,372 - multiprocessing - INFO - Getting connectivity
+2024-01-23 17:23:03,262 - multiprocessing - INFO - Getting per corner uv coordinates
+2024-01-23 17:23:03,416 - multiprocessing - INFO - Getting scale_factors colormap
+2024-01-23 17:23:03,861 - multiprocessing - INFO - Using colormap scale 1
+2024-01-23 17:23:03,861 - multiprocessing - INFO - Rendering image
+2024-01-23 17:23:59,948 - multiprocessing - INFO - Saving plain image at output_sonic/closed_myles/pegaso_output/images/pegaso_refined_with_uv_plain.png
+2024-01-23 17:24:00,762 - multiprocessing - INFO - Adding shading
+2024-01-23 17:25:59,384 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/pegaso_output/images/pegaso_refined_with_uv.png
+2024-01-23 17:26:00,723 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/images/pegaso_refined_with_uv.png
+2024-01-23 17:26:07,658 - multiprocessing - INFO - Rendering rgb_dragon_refined_with_uv
+2024-01-23 17:26:07,659 - multiprocessing - INFO - Loading initial mesh at data/closed-Myles
+2024-01-23 17:26:08,240 - multiprocessing - INFO - Loading uv coordinates at output_sonic/closed_myles
+2024-01-23 17:26:08,890 - multiprocessing - INFO - Is double: False
+2024-01-23 17:26:08,890 - multiprocessing - INFO - Loading vertex map at output_sonic/closed_myles/rgb_dragon_output/rgb_dragon_refined_with_uv_vn_to_v
+2024-01-23 17:26:08,893 - multiprocessing - ERROR - Could not load vertex map
+2024-01-23 17:26:08,893 - multiprocessing - INFO - Loading endpoints at output_sonic/closed_myles/rgb_dragon_output/rgb_dragon_refined_with_uv_endpoints
+2024-01-23 17:26:08,894 - multiprocessing - ERROR - Could not load endpoints
+2024-01-23 17:26:08,894 - multiprocessing - INFO - Loading camera at data/cameras/rgb_dragon_camera.pickle
+2024-01-23 17:26:09,058 - multiprocessing - INFO - Getting point matrices
+2024-01-23 17:26:21,790 - multiprocessing - INFO - Getting connectivity
+2024-01-23 17:26:35,934 - multiprocessing - INFO - Getting per corner uv coordinates
+2024-01-23 17:26:36,466 - multiprocessing - INFO - Getting scale_factors colormap
+2024-01-23 17:26:38,024 - multiprocessing - INFO - Using colormap scale 1
+2024-01-23 17:26:38,025 - multiprocessing - INFO - Rendering image
+2024-01-23 17:27:47,050 - multiprocessing - INFO - Saving plain image at output_sonic/closed_myles/rgb_dragon_output/images/rgb_dragon_refined_with_uv_plain.png
+2024-01-23 17:27:47,972 - multiprocessing - INFO - Adding shading
+2024-01-23 17:29:50,756 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/rgb_dragon_output/images/rgb_dragon_refined_with_uv.png
+2024-01-23 17:29:51,850 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/images/rgb_dragon_refined_with_uv.png

@@ -1,0 +1,7 @@
+2024-01-23 16:59:28,220 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Projecting vh_skin to constrints
+2024-01-23 16:59:28,829 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:28,977 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Initial quality is 5.786532029100307
+2024-01-23 16:59:28,977 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Average metric coordinate is 29.67410260170804
+2024-01-23 16:59:28,977 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:00:24,431 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/vh_skin_output/vh_skin_metric_coords
+2024-01-23 17:00:24,626 - output/closed_myles/vh_skin_output/vh_skin_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/vh_skin_output/vh_skin_flip_seq

@@ -1,0 +1,7 @@
+2024-01-23 16:59:15,818 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Projecting botijo to constrints
+2024-01-23 16:59:16,610 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:16,696 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Initial quality is 4.388359332638215
+2024-01-23 16:59:16,697 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Average metric coordinate is -7.852262906489768
+2024-01-23 16:59:16,697 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:27,338 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/botijo_output/botijo_metric_coords
+2024-01-23 16:59:27,641 - output/closed_myles/botijo_output/botijo_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/botijo_output/botijo_flip_seq

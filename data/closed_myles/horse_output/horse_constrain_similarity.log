@@ -1,0 +1,7 @@
+2024-01-23 16:59:07,188 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Projecting horse to constrints
+2024-01-23 16:59:07,542 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:07,588 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Initial quality is 15.17763388451354
+2024-01-23 16:59:07,588 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Average metric coordinate is -9.785766258436318
+2024-01-23 16:59:07,588 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:16,929 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/horse_output/horse_metric_coords
+2024-01-23 16:59:17,052 - output/closed_myles/horse_output/horse_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/horse_output/horse_flip_seq

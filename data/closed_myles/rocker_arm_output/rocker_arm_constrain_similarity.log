@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,556 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Projecting rocker_arm to constrints
+2024-01-23 16:59:06,811 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:06,833 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Initial quality is 29.20027328671114
+2024-01-23 16:59:06,834 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Average metric coordinate is -5.0092063148194175
+2024-01-23 16:59:06,834 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:07,794 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/rocker_arm_output/rocker_arm_metric_coords
+2024-01-23 16:59:07,858 - output/closed_myles/rocker_arm_output/rocker_arm_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/rocker_arm_output/rocker_arm_flip_seq

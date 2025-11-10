@@ -1,0 +1,7 @@
+2024-01-23 16:59:29,712 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Projecting magalie_hand100K to constrints
+2024-01-23 16:59:31,003 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:31,180 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Initial quality is 15.607810492959779
+2024-01-23 16:59:31,180 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Average metric coordinate is -0.12774051632356745
+2024-01-23 16:59:31,180 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:40,421 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/magalie_hand100K_output/magalie_hand100K_metric_coords
+2024-01-23 16:59:40,723 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/magalie_hand100K_output/magalie_hand100K_flip_seq

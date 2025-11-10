@@ -1,0 +1,7 @@
+2024-01-23 16:59:19,594 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Projecting joint to constrints
+2024-01-23 16:59:20,097 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:20,172 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Initial quality is 6.367006345171177
+2024-01-23 16:59:20,172 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Average metric coordinate is -8.15554389645391
+2024-01-23 16:59:20,172 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:23,628 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/joint_output/joint_metric_coords
+2024-01-23 16:59:23,776 - output/closed_myles/joint_output/joint_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/joint_output/joint_flip_seq

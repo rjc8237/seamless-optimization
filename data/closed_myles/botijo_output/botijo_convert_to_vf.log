@@ -1,0 +1,12 @@
+2024-01-23 17:03:00,336 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Converting botijo to vf
+2024-01-23 17:03:00,906 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/botijo_output/botijo_metric_coords
+2024-01-23 17:03:20,202 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/botijo_output/botijo_overlay_with_uv.obj
+2024-01-23 17:03:20,374 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:04:40,827 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/botijo_output/botijo_refined_with_uv.obj
+2024-01-23 17:04:40,989 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/botijo_output/botijo_is_cut_h
+2024-01-23 17:04:51,631 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/botijo_output/botijo_cut_to_sin_list.pickle
+2024-01-23 17:04:51,633 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/botijo_output/botijo_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:04:51,635 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/botijo_output/botijo_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:04:51,636 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/botijo_output/botijo_fn_to_f
+2024-01-23 17:04:51,762 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/botijo_output/botijo_vn_to_v
+2024-01-23 17:04:51,821 - output/closed_myles/botijo_output/botijo_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/botijo_output/botijo_endpoints

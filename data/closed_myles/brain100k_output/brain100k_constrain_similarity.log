@@ -1,0 +1,7 @@
+2024-01-23 16:59:17,220 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Projecting brain100k to constrints
+2024-01-23 16:59:18,250 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:18,830 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Initial quality is 18.836204074842275
+2024-01-23 16:59:18,830 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Average metric coordinate is -1.2659220753592755
+2024-01-23 16:59:18,831 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:00:35,234 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/brain100k_output/brain100k_metric_coords
+2024-01-23 17:00:35,531 - output/closed_myles/brain100k_output/brain100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/brain100k_output/brain100k_flip_seq

@@ -1,0 +1,7 @@
+2024-01-23 16:59:10,560 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Projecting bumpy_torus to constrints
+2024-01-23 16:59:10,882 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:10,930 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Initial quality is 13.986394725440945
+2024-01-23 16:59:10,930 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Average metric coordinate is -1.9868859718144918
+2024-01-23 16:59:10,930 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:12,612 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bumpy_torus_output/bumpy_torus_metric_coords
+2024-01-23 16:59:12,719 - output/closed_myles/bumpy_torus_output/bumpy_torus_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bumpy_torus_output/bumpy_torus_flip_seq

@@ -1,0 +1,7 @@
+2024-01-23 16:59:14,277 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Projecting carter100K to constrints
+2024-01-23 16:59:15,409 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:16,769 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Initial quality is 11.422454017166007
+2024-01-23 16:59:16,769 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Average metric coordinate is -0.429896855103173
+2024-01-23 16:59:16,770 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:01:59,588 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/carter100K_output/carter100K_metric_coords
+2024-01-23 17:01:59,876 - output/closed_myles/carter100K_output/carter100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/carter100K_output/carter100K_flip_seq

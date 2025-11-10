@@ -1,0 +1,18 @@
+2024-01-23 16:59:06,560 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Projecting camel to constrints
+2024-01-23 16:59:07,414 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:07,601 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Initial quality is 14063.714258557116
+2024-01-23 16:59:07,602 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Average metric coordinate is -9.612293500784125
+2024-01-23 16:59:07,631 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 5301.714802712518
+2024-01-23 16:59:07,657 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 2243.9333721374473
+2024-01-23 16:59:07,682 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 1037.2597069942026
+2024-01-23 16:59:07,708 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 518.2101799139539
+2024-01-23 16:59:07,733 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 277.62420667039873
+2024-01-23 16:59:07,758 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 158.4098009466181
+2024-01-23 16:59:07,783 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 95.68664876864194
+2024-01-23 16:59:07,810 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 60.85837982374871
+2024-01-23 16:59:07,834 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Quality is 40.559476899792074
+2024-01-23 16:59:07,859 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Final quality is 40.55947689979211
+2024-01-23 16:59:07,859 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Final average is -9.61210800689179
+2024-01-23 16:59:07,859 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:00:57,873 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/camel_output/camel_metric_coords
+2024-01-23 17:00:58,073 - output/closed_myles/camel_output/camel_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/camel_output/camel_flip_seq

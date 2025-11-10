@@ -1,0 +1,8 @@
+2024-01-24 11:59:52,410 - multiprocessing - INFO - Generating histograms for gargoyle100K
+2024-01-24 12:00:02,756 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/gargoyle100K_output/gargoyle100K_metric_coords
+2024-01-24 12:00:03,720 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:12,479 - multiprocessing - INFO - Generating histograms for mouse
+2024-01-24 12:00:14,646 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/mouse_output/mouse_metric_coords
+2024-01-24 12:00:14,850 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,142 - multiprocessing - INFO - process exiting with exitcode 0

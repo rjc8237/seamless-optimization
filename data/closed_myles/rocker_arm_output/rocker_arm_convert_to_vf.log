@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,218 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Converting rocker_arm to vf
+2024-01-23 17:02:00,379 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/rocker_arm_output/rocker_arm_metric_coords
+2024-01-23 17:02:02,681 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/rocker_arm_output/rocker_arm_overlay_with_uv.obj
+2024-01-23 17:02:02,733 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:10,477 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/rocker_arm_output/rocker_arm_refined_with_uv.obj
+2024-01-23 17:02:10,514 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/rocker_arm_output/rocker_arm_is_cut_h
+2024-01-23 17:02:11,985 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/rocker_arm_output/rocker_arm_cut_to_sin_list.pickle
+2024-01-23 17:02:11,986 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/rocker_arm_output/rocker_arm_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:11,988 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/rocker_arm_output/rocker_arm_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:11,989 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/rocker_arm_output/rocker_arm_fn_to_f
+2024-01-23 17:02:12,045 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/rocker_arm_output/rocker_arm_vn_to_v
+2024-01-23 17:02:12,067 - output/closed_myles/rocker_arm_output/rocker_arm_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/rocker_arm_output/rocker_arm_endpoints

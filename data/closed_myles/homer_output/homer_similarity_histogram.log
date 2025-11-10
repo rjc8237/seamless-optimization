@@ -1,0 +1,8 @@
+2024-01-24 12:00:07,032 - multiprocessing - INFO - Generating histograms for homer
+2024-01-24 12:00:07,920 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/homer_output/homer_metric_coords
+2024-01-24 12:00:07,939 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:15,242 - multiprocessing - INFO - Generating histograms for pierrot100k
+2024-01-24 12:00:19,574 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/pierrot100k_output/pierrot100k_metric_coords
+2024-01-24 12:00:19,993 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,152 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,152 - multiprocessing - INFO - process exiting with exitcode 0

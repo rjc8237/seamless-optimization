@@ -1,0 +1,5 @@
+2024-01-24 12:00:17,510 - multiprocessing - INFO - Generating histograms for bozbezbozzel100K
+2024-01-24 12:00:21,259 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_metric_coords
+2024-01-24 12:00:21,624 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,262 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,263 - multiprocessing - INFO - process exiting with exitcode 0

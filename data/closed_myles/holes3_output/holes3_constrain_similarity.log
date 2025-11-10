@@ -1,0 +1,7 @@
+2024-01-23 16:59:10,897 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Projecting holes3 to constrints
+2024-01-23 16:59:10,998 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:11,036 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Initial quality is 2.9019106188692048
+2024-01-23 16:59:11,036 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Average metric coordinate is 2.4910052360419273
+2024-01-23 16:59:11,036 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:11,552 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/holes3_output/holes3_metric_coords
+2024-01-23 16:59:11,588 - output/closed_myles/holes3_output/holes3_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/holes3_output/holes3_flip_seq

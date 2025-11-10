@@ -1,0 +1,7 @@
+2024-01-23 16:59:16,938 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Projecting grayloc to constrints
+2024-01-23 16:59:17,737 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:18,397 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Initial quality is 34.51610485000024
+2024-01-23 16:59:18,398 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Average metric coordinate is 0.16740896579264827
+2024-01-23 16:59:18,398 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:30,394 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/grayloc_output/grayloc_metric_coords
+2024-01-23 16:59:30,628 - output/closed_myles/grayloc_output/grayloc_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/grayloc_output/grayloc_flip_seq

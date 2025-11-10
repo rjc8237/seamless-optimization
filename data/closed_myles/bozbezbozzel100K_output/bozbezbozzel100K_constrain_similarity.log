@@ -1,0 +1,7 @@
+2024-01-23 16:59:28,892 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Projecting bozbezbozzel100K to constrints
+2024-01-23 16:59:29,991 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:30,294 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Initial quality is 18.392512710216504
+2024-01-23 16:59:30,294 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Average metric coordinate is 1.2470924152513045
+2024-01-23 16:59:30,294 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:00:01,457 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_metric_coords
+2024-01-23 17:00:01,761 - output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bozbezbozzel100K_output/bozbezbozzel100K_flip_seq

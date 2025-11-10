@@ -1,0 +1,13 @@
+2024-01-23 16:59:06,566 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Projecting uu-memento100k to constrints
+2024-01-23 16:59:07,990 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:08,146 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Initial quality is 569.0011858797887
+2024-01-23 16:59:08,147 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Average metric coordinate is -0.6751748501106791
+2024-01-23 16:59:08,186 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Quality is 190.83125651834615
+2024-01-23 16:59:08,228 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Quality is 104.0699332753571
+2024-01-23 16:59:08,273 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Quality is 64.22198642405378
+2024-01-23 16:59:08,319 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Quality is 42.288944701752186
+2024-01-23 16:59:08,361 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Final quality is 42.288944701752186
+2024-01-23 16:59:08,363 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Final average is -0.675174850110679
+2024-01-23 16:59:08,363 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:16,849 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/uu-memento100k_output/uu-memento100k_metric_coords
+2024-01-23 16:59:17,185 - output/closed_myles/uu-memento100k_output/uu-memento100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/uu-memento100k_output/uu-memento100k_flip_seq

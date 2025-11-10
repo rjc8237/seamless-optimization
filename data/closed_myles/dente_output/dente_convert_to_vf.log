@@ -1,0 +1,12 @@
+2024-01-23 17:05:17,070 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Converting dente to vf
+2024-01-23 17:05:17,189 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/dente_output/dente_metric_coords
+2024-01-23 17:05:20,229 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/dente_output/dente_overlay_with_uv.obj
+2024-01-23 17:05:20,300 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:38,747 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/dente_output/dente_refined_with_uv.obj
+2024-01-23 17:05:38,795 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/dente_output/dente_is_cut_h
+2024-01-23 17:05:39,999 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/dente_output/dente_cut_to_sin_list.pickle
+2024-01-23 17:05:40,000 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/dente_output/dente_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:40,001 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/dente_output/dente_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:40,002 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/dente_output/dente_fn_to_f
+2024-01-23 17:05:40,058 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/dente_output/dente_vn_to_v
+2024-01-23 17:05:40,087 - output/closed_myles/dente_output/dente_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/dente_output/dente_endpoints

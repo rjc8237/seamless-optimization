@@ -6,6 +6,7 @@
 #include <Eigen/Sparse>
 // #include <Eigen/CholmodSupport>
 #include <iostream>
+#include <numeric>
 
 // #define SOFT_MAX
 // #define TEST_AMIPS_OLD
@@ -45,6 +46,11 @@ Scalar compute_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, -1>& J,
     const Eigen::Matrix<Scalar, -1, 1>& areas,
     bool uniform = false);
+template <typename Scalar>
+Scalar compute_worst_n_energy(
+    const Eigen::Matrix<Scalar, -1, -1>& J,
+    const Eigen::Matrix<Scalar, -1, 1>& area,
+    double percent, int p);
 
 template <typename Scalar>
 Scalar get_grad_and_hessian(

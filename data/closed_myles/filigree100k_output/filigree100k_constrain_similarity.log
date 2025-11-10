@@ -1,0 +1,7 @@
+2024-01-23 16:59:18,850 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Projecting filigree100k to constrints
+2024-01-23 16:59:20,060 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:25,802 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Initial quality is 34.2341130918535
+2024-01-23 16:59:25,803 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Average metric coordinate is -10.453595350522253
+2024-01-23 16:59:25,803 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:00:43,656 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/filigree100k_output/filigree100k_metric_coords
+2024-01-23 17:00:43,951 - output/closed_myles/filigree100k_output/filigree100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/filigree100k_output/filigree100k_flip_seq

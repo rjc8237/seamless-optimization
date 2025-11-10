@@ -1,0 +1,7 @@
+2024-01-23 16:59:29,089 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Projecting gearbox to constrints
+2024-01-23 16:59:30,350 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:31,904 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Initial quality is 19.818381463519273
+2024-01-23 16:59:31,904 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Average metric coordinate is -9.384211865906968
+2024-01-23 16:59:31,905 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 17:00:43,875 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/gearbox_output/gearbox_metric_coords
+2024-01-23 17:00:44,269 - output/closed_myles/gearbox_output/gearbox_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/gearbox_output/gearbox_flip_seq

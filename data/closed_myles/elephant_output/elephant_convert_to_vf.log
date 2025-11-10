@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,230 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Converting elephant to vf
+2024-01-23 17:02:00,648 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/elephant_output/elephant_metric_coords
+2024-01-23 17:02:16,284 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/elephant_output/elephant_overlay_with_uv.obj
+2024-01-23 17:02:16,455 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:39,303 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/elephant_output/elephant_refined_with_uv.obj
+2024-01-23 17:02:39,399 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/elephant_output/elephant_is_cut_h
+2024-01-23 17:02:44,843 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/elephant_output/elephant_cut_to_sin_list.pickle
+2024-01-23 17:02:44,846 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/elephant_output/elephant_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:44,850 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/elephant_output/elephant_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:44,854 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/elephant_output/elephant_fn_to_f
+2024-01-23 17:02:45,001 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/elephant_output/elephant_vn_to_v
+2024-01-23 17:02:45,075 - output/closed_myles/elephant_output/elephant_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/elephant_output/elephant_endpoints

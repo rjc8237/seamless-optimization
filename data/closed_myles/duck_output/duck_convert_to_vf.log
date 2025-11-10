@@ -1,0 +1,12 @@
+2024-01-23 17:02:10,869 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Converting duck to vf
+2024-01-23 17:02:10,978 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/duck_output/duck_metric_coords
+2024-01-23 17:02:14,523 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/duck_output/duck_overlay_with_uv.obj
+2024-01-23 17:02:14,605 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:23,827 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/duck_output/duck_refined_with_uv.obj
+2024-01-23 17:02:23,868 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/duck_output/duck_is_cut_h
+2024-01-23 17:02:24,879 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/duck_output/duck_cut_to_sin_list.pickle
+2024-01-23 17:02:24,880 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/duck_output/duck_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:24,881 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/duck_output/duck_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:24,882 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/duck_output/duck_fn_to_f
+2024-01-23 17:02:24,936 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/duck_output/duck_vn_to_v
+2024-01-23 17:02:24,963 - output/closed_myles/duck_output/duck_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/duck_output/duck_endpoints

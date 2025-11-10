@@ -184,6 +184,10 @@ int main(int argc, char** argv)
     param.do_projection = config["do_projection"];
     param.with_cons = config["with_cons"];
     param.Lp = config["Lp"];
+    
+    param.percent = config["percent"];
+    param.p_energy = config["p_energy"];
+
     param.save_meshes = config["save_meshes"];
     param.model_name = model;
 

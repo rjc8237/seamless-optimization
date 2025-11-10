@@ -1,0 +1,12 @@
+2024-01-23 17:05:25,269 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Converting femur to vf
+2024-01-23 17:05:25,322 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/femur_output/femur_metric_coords
+2024-01-23 17:05:26,554 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/femur_output/femur_overlay_with_uv.obj
+2024-01-23 17:05:26,592 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:36,645 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/femur_output/femur_refined_with_uv.obj
+2024-01-23 17:05:36,661 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/femur_output/femur_is_cut_h
+2024-01-23 17:05:37,030 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/femur_output/femur_cut_to_sin_list.pickle
+2024-01-23 17:05:37,031 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/femur_output/femur_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:37,031 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/femur_output/femur_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:37,032 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/femur_output/femur_fn_to_f
+2024-01-23 17:05:37,059 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/femur_output/femur_vn_to_v
+2024-01-23 17:05:37,075 - output/closed_myles/femur_output/femur_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/femur_output/femur_endpoints

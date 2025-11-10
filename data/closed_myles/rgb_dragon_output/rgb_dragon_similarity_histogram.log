@@ -1,0 +1,11 @@
+2024-01-24 11:59:51,752 - multiprocessing - INFO - Generating histograms for rgb_dragon
+2024-01-24 12:00:03,024 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/rgb_dragon_output/rgb_dragon_metric_coords
+2024-01-24 12:00:04,107 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:11,634 - multiprocessing - INFO - Generating histograms for trim-star
+2024-01-24 12:00:12,116 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/trim-star_output/trim-star_metric_coords
+2024-01-24 12:00:12,173 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:14,920 - multiprocessing - INFO - Generating histograms for fandisk
+2024-01-24 12:00:15,616 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/fandisk_output/fandisk_metric_coords
+2024-01-24 12:00:15,687 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process exiting with exitcode 0

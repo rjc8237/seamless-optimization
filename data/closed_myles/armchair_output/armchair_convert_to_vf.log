@@ -1,0 +1,12 @@
+2024-01-23 17:05:09,526 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Converting armchair to vf
+2024-01-23 17:05:10,253 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/armchair_output/armchair_metric_coords
+2024-01-23 17:06:01,069 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/armchair_output/armchair_overlay_with_uv.obj
+2024-01-23 17:06:01,404 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:07:00,471 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/armchair_output/armchair_refined_with_uv.obj
+2024-01-23 17:07:00,679 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/armchair_output/armchair_is_cut_h
+2024-01-23 17:07:07,236 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/armchair_output/armchair_cut_to_sin_list.pickle
+2024-01-23 17:07:07,241 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/armchair_output/armchair_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:07,246 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/armchair_output/armchair_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:07,250 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/armchair_output/armchair_fn_to_f
+2024-01-23 17:07:07,463 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/armchair_output/armchair_vn_to_v
+2024-01-23 17:07:07,568 - output/closed_myles/armchair_output/armchair_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/armchair_output/armchair_endpoints

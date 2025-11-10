@@ -1,0 +1,14 @@
+2024-01-24 11:59:47,374 - multiprocessing - INFO - Generating histograms for bozbezbozzel50K
+2024-01-24 11:59:52,427 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/bozbezbozzel50K_output/bozbezbozzel50K_metric_coords
+2024-01-24 11:59:52,869 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 11:59:57,620 - multiprocessing - INFO - Generating histograms for dancer2
+2024-01-24 11:59:59,115 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/dancer2_output/dancer2_metric_coords
+2024-01-24 11:59:59,281 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:04,816 - multiprocessing - INFO - Generating histograms for grayloc
+2024-01-24 12:00:09,489 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/grayloc_output/grayloc_metric_coords
+2024-01-24 12:00:10,033 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:13,780 - multiprocessing - INFO - Generating histograms for cup
+2024-01-24 12:00:14,367 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/cup_output/cup_metric_coords
+2024-01-24 12:00:14,434 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process exiting with exitcode 0

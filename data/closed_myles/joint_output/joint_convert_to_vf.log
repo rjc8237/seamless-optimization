@@ -1,0 +1,12 @@
+2024-01-23 17:04:59,554 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Converting joint to vf
+2024-01-23 17:04:59,816 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/joint_output/joint_metric_coords
+2024-01-23 17:05:05,778 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/joint_output/joint_overlay_with_uv.obj
+2024-01-23 17:05:05,868 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:31,077 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/joint_output/joint_refined_with_uv.obj
+2024-01-23 17:05:31,173 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/joint_output/joint_is_cut_h
+2024-01-23 17:05:36,396 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/joint_output/joint_cut_to_sin_list.pickle
+2024-01-23 17:05:36,398 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/joint_output/joint_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:36,399 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/joint_output/joint_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:36,400 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/joint_output/joint_fn_to_f
+2024-01-23 17:05:36,482 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/joint_output/joint_vn_to_v
+2024-01-23 17:05:36,514 - output/closed_myles/joint_output/joint_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/joint_output/joint_endpoints

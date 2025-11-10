@@ -1,0 +1,7 @@
+2024-01-23 16:59:12,864 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Projecting vase100K to constrints
+2024-01-23 16:59:13,875 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:14,013 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Initial quality is 21.184772647042234
+2024-01-23 16:59:14,013 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Average metric coordinate is -9.861370580991206
+2024-01-23 16:59:14,013 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:34,336 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/vase100K_output/vase100K_metric_coords
+2024-01-23 16:59:34,659 - output/closed_myles/vase100K_output/vase100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/vase100K_output/vase100K_flip_seq

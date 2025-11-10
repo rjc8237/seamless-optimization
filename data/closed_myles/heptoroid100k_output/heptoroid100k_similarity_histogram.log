@@ -1,0 +1,11 @@
+2024-01-24 11:59:52,111 - multiprocessing - INFO - Generating histograms for heptoroid100k
+2024-01-24 12:00:05,745 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/heptoroid100k_output/heptoroid100k_metric_coords
+2024-01-24 12:00:05,954 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:11,872 - multiprocessing - INFO - Generating histograms for dente
+2024-01-24 12:00:13,191 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/dente_output/dente_metric_coords
+2024-01-24 12:00:13,302 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:15,450 - multiprocessing - INFO - Generating histograms for eight
+2024-01-24 12:00:15,545 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/eight_output/eight_metric_coords
+2024-01-24 12:00:15,552 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process exiting with exitcode 0

@@ -1,0 +1,7 @@
+2024-01-23 16:59:30,195 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Projecting cup to constrints
+2024-01-23 16:59:30,287 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:30,298 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Initial quality is 8.968014217466553
+2024-01-23 16:59:30,298 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Average metric coordinate is -0.5131226925082792
+2024-01-23 16:59:30,298 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:30,717 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/cup_output/cup_metric_coords
+2024-01-23 16:59:30,753 - output/closed_myles/cup_output/cup_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/cup_output/cup_flip_seq

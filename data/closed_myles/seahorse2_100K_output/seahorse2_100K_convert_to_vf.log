@@ -1,0 +1,12 @@
+2024-01-23 17:02:44,036 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Converting seahorse2_100K to vf
+2024-01-23 17:02:44,669 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/seahorse2_100K_output/seahorse2_100K_metric_coords
+2024-01-23 17:03:32,901 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/seahorse2_100K_output/seahorse2_100K_overlay_with_uv.obj
+2024-01-23 17:03:33,281 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:34,916 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/seahorse2_100K_output/seahorse2_100K_refined_with_uv.obj
+2024-01-23 17:05:35,149 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/seahorse2_100K_output/seahorse2_100K_is_cut_h
+2024-01-23 17:05:42,406 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/seahorse2_100K_output/seahorse2_100K_cut_to_sin_list.pickle
+2024-01-23 17:05:42,416 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/seahorse2_100K_output/seahorse2_100K_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:42,422 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/seahorse2_100K_output/seahorse2_100K_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:42,427 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/seahorse2_100K_output/seahorse2_100K_fn_to_f
+2024-01-23 17:05:42,685 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/seahorse2_100K_output/seahorse2_100K_vn_to_v
+2024-01-23 17:05:42,819 - output/closed_myles/seahorse2_100K_output/seahorse2_100K_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/seahorse2_100K_output/seahorse2_100K_endpoints

@@ -1,0 +1,12 @@
+2024-01-23 17:05:39,349 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Converting magalie_hand100K to vf
+2024-01-23 17:05:40,030 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/magalie_hand100K_output/magalie_hand100K_metric_coords
+2024-01-23 17:06:27,947 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/magalie_hand100K_output/magalie_hand100K_overlay_with_uv.obj
+2024-01-23 17:06:28,294 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:07:14,898 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/magalie_hand100K_output/magalie_hand100K_refined_with_uv.obj
+2024-01-23 17:07:15,113 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/magalie_hand100K_output/magalie_hand100K_is_cut_h
+2024-01-23 17:07:24,319 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/magalie_hand100K_output/magalie_hand100K_cut_to_sin_list.pickle
+2024-01-23 17:07:24,324 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/magalie_hand100K_output/magalie_hand100K_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:24,329 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/magalie_hand100K_output/magalie_hand100K_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:24,334 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/magalie_hand100K_output/magalie_hand100K_fn_to_f
+2024-01-23 17:07:24,536 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/magalie_hand100K_output/magalie_hand100K_vn_to_v
+2024-01-23 17:07:24,636 - output/closed_myles/magalie_hand100K_output/magalie_hand100K_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/magalie_hand100K_output/magalie_hand100K_endpoints

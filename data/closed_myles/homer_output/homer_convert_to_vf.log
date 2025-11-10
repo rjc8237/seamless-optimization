@@ -1,0 +1,12 @@
+2024-01-23 17:04:54,169 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Converting homer to vf
+2024-01-23 17:04:54,251 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/homer_output/homer_metric_coords
+2024-01-23 17:04:55,643 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/homer_output/homer_overlay_with_uv.obj
+2024-01-23 17:04:55,679 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:08,645 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/homer_output/homer_refined_with_uv.obj
+2024-01-23 17:05:08,668 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/homer_output/homer_is_cut_h
+2024-01-23 17:05:09,429 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/homer_output/homer_cut_to_sin_list.pickle
+2024-01-23 17:05:09,430 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/homer_output/homer_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:09,431 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/homer_output/homer_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:09,431 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/homer_output/homer_fn_to_f
+2024-01-23 17:05:09,464 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/homer_output/homer_vn_to_v
+2024-01-23 17:05:09,483 - output/closed_myles/homer_output/homer_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/homer_output/homer_endpoints

@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,563 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Projecting igea100k to constrints
+2024-01-23 16:59:07,697 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:07,854 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Initial quality is 23.656837803372344
+2024-01-23 16:59:07,854 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Average metric coordinate is -14.483537239881866
+2024-01-23 16:59:07,854 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:19,291 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/igea100k_output/igea100k_metric_coords
+2024-01-23 16:59:19,640 - output/closed_myles/igea100k_output/igea100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/igea100k_output/igea100k_flip_seq

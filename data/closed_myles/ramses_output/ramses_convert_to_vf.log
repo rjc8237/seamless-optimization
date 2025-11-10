@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,218 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Converting ramses to vf
+2024-01-23 17:02:00,857 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/ramses_output/ramses_metric_coords
+2024-01-23 17:02:52,341 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/ramses_output/ramses_overlay_with_uv.obj
+2024-01-23 17:02:52,705 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:04:51,031 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/ramses_output/ramses_refined_with_uv.obj
+2024-01-23 17:04:51,263 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/ramses_output/ramses_is_cut_h
+2024-01-23 17:05:00,917 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/ramses_output/ramses_cut_to_sin_list.pickle
+2024-01-23 17:05:00,928 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/ramses_output/ramses_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:00,940 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/ramses_output/ramses_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:00,951 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/ramses_output/ramses_fn_to_f
+2024-01-23 17:05:01,196 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/ramses_output/ramses_vn_to_v
+2024-01-23 17:05:01,304 - output/closed_myles/ramses_output/ramses_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/ramses_output/ramses_endpoints

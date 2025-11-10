@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,584 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Projecting kitten100K to constrints
+2024-01-23 16:59:07,702 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:07,989 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Initial quality is 35.15565299577888
+2024-01-23 16:59:07,989 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Average metric coordinate is -1.1129258818768906
+2024-01-23 16:59:07,990 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:30,302 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/kitten100K_output/kitten100K_metric_coords
+2024-01-23 16:59:30,644 - output/closed_myles/kitten100K_output/kitten100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/kitten100K_output/kitten100K_flip_seq

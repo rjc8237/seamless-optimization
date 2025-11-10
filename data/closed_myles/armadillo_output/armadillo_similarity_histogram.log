@@ -1,0 +1,14 @@
+2024-01-24 11:59:47,272 - multiprocessing - INFO - Generating histograms for armadillo
+2024-01-24 11:59:51,726 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/armadillo_output/armadillo_metric_coords
+2024-01-24 11:59:52,344 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 11:59:56,749 - multiprocessing - INFO - Generating histograms for holes3
+2024-01-24 11:59:57,406 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/holes3_output/holes3_metric_coords
+2024-01-24 11:59:57,428 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:03,700 - multiprocessing - INFO - Generating histograms for botijo
+2024-01-24 12:00:06,687 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/botijo_output/botijo_metric_coords
+2024-01-24 12:00:07,473 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:13,042 - multiprocessing - INFO - Generating histograms for woodenfish
+2024-01-24 12:00:15,682 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/woodenfish_output/woodenfish_metric_coords
+2024-01-24 12:00:15,904 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process exiting with exitcode 0

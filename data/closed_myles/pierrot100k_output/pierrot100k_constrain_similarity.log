@@ -1,0 +1,16 @@
+2024-01-23 16:59:19,674 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Projecting pierrot100k to constrints
+2024-01-23 16:59:20,766 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:20,914 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Initial quality is 5357.228620628234
+2024-01-23 16:59:20,914 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Average metric coordinate is -1.3301454060686444
+2024-01-23 16:59:20,953 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 1498.63025124497
+2024-01-23 16:59:20,994 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 686.4220314936381
+2024-01-23 16:59:21,033 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 354.34991652997553
+2024-01-23 16:59:21,075 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 196.8991469582762
+2024-01-23 16:59:21,120 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 116.2818778989911
+2024-01-23 16:59:21,168 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 72.48454660693427
+2024-01-23 16:59:21,210 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Quality is 47.43869553279502
+2024-01-23 16:59:21,259 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Final quality is 47.438695532795016
+2024-01-23 16:59:21,260 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Final average is -1.3301454060686444
+2024-01-23 16:59:21,260 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:33,202 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pierrot100k_output/pierrot100k_metric_coords
+2024-01-23 16:59:33,548 - output/closed_myles/pierrot100k_output/pierrot100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pierrot100k_output/pierrot100k_flip_seq

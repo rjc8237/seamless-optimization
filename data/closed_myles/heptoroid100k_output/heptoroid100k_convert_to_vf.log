@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,219 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Converting heptoroid100k to vf
+2024-01-23 17:02:00,914 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/heptoroid100k_output/heptoroid100k_metric_coords
+2024-01-23 17:04:26,684 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/heptoroid100k_output/heptoroid100k_overlay_with_uv.obj
+2024-01-23 17:04:27,392 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:06:53,020 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/heptoroid100k_output/heptoroid100k_refined_with_uv.obj
+2024-01-23 17:06:53,222 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/heptoroid100k_output/heptoroid100k_is_cut_h
+2024-01-23 17:07:00,175 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/heptoroid100k_output/heptoroid100k_cut_to_sin_list.pickle
+2024-01-23 17:07:00,180 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/heptoroid100k_output/heptoroid100k_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:00,184 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/heptoroid100k_output/heptoroid100k_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:00,188 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/heptoroid100k_output/heptoroid100k_fn_to_f
+2024-01-23 17:07:00,602 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/heptoroid100k_output/heptoroid100k_vn_to_v
+2024-01-23 17:07:00,816 - output/closed_myles/heptoroid100k_output/heptoroid100k_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/heptoroid100k_output/heptoroid100k_endpoints

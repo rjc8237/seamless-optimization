@@ -1,0 +1,7 @@
+2024-01-23 16:59:22,417 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Projecting red_circular_box100K to constrints
+2024-01-23 16:59:24,001 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:24,292 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Initial quality is 17.200421330257935
+2024-01-23 16:59:24,293 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Average metric coordinate is -0.1843708491676236
+2024-01-23 16:59:24,294 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:35,011 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/red_circular_box100K_output/red_circular_box100K_metric_coords
+2024-01-23 16:59:35,316 - output/closed_myles/red_circular_box100K_output/red_circular_box100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/red_circular_box100K_output/red_circular_box100K_flip_seq

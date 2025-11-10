@@ -1,5 +1,6 @@
 #include "energy.h"
 #include "spdlog/spdlog.h"
+#include <numeric>
 
 // From AutoDiff
 namespace jakob
@@ -49,6 +50,33 @@ namespace SymDir{
         }
     }
     
+    template <typename Scalar>
+    Scalar compute_worst_n_energy(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, double percent, int p)
+    {
+        // Compute per-triangle energy vector
+        Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3)).array() * area.array();
+        
+        // Sort indices based on energy values
+        std::vector<int> indices(energy_per_tri.size());
+        std::iota(indices.begin(), indices.end(), 0);
+
+        std::sort(indices.begin(), indices.end(),
+                [&](int i1, int i2) { return energy_per_tri[i1] > energy_per_tri[i2]; });
+
+        // Calculate how many triangles to include
+        int num_tris = static_cast<int>(std::ceil(percent / 100.0 * indices.size()));
+        
+        // Compute p-norm of the N% largest energies
+        Scalar p_norm_sum = 0;
+        Scalar area_sum = 0;
+        for (int i = 0; i < num_tris; i++) {
+            p_norm_sum += std::pow(energy_per_tri[indices[i]] * area[indices[i]], p);
+            area_sum += area[indices[i]]; 
+        }
+        // Return average of worst N% triangles
+        return std::pow(p_norm_sum, 1.0 / p) / area_sum;
+    }
+
     template <typename Scalar>
     Scalar grad_and_hessian_from_jacobian(const Eigen::Matrix<Scalar, -1, 1> &area, const Eigen::Matrix<Scalar, -1, -1> &jacobian,
                                       Eigen::Matrix<Scalar, -1, -1> &total_grad, Eigen::SparseMatrix<Scalar> &hessian, bool with_hessian)
@@ -138,4 +166,9 @@ namespace SymDir{
                                              bool);
     template double compute_energy_from_jacobian<double>(const Eigen::Matrix<double, -1, -1> &, const Eigen::Matrix<double, -1, 1> &, bool);
     
+    template double compute_worst_n_energy<double>(
+        const Eigen::Matrix<double, -1, -1>&,
+        const Eigen::Matrix<double, -1, 1>&,
+        double,
+        int);
 } // namespace SymDir

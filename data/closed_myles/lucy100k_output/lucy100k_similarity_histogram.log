@@ -1,0 +1,5 @@
+2024-01-24 12:00:04,701 - multiprocessing - INFO - Generating histograms for lucy100k
+2024-01-24 12:00:11,711 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/lucy100k_output/lucy100k_metric_coords
+2024-01-24 12:00:12,503 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process exiting with exitcode 0

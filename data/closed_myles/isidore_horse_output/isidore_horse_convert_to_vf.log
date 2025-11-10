@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,230 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Converting isidore_horse to vf
+2024-01-23 17:02:01,049 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/isidore_horse_output/isidore_horse_metric_coords
+2024-01-23 17:02:57,754 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/isidore_horse_output/isidore_horse_overlay_with_uv.obj
+2024-01-23 17:02:58,175 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:16,953 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/isidore_horse_output/isidore_horse_refined_with_uv.obj
+2024-01-23 17:05:17,297 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/isidore_horse_output/isidore_horse_is_cut_h
+2024-01-23 17:05:26,919 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/isidore_horse_output/isidore_horse_cut_to_sin_list.pickle
+2024-01-23 17:05:26,925 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/isidore_horse_output/isidore_horse_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:26,931 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/isidore_horse_output/isidore_horse_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:26,940 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/isidore_horse_output/isidore_horse_fn_to_f
+2024-01-23 17:05:27,251 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/isidore_horse_output/isidore_horse_vn_to_v
+2024-01-23 17:05:27,430 - output/closed_myles/isidore_horse_output/isidore_horse_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/isidore_horse_output/isidore_horse_endpoints

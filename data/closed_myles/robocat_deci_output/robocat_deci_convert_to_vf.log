@@ -1,0 +1,12 @@
+2024-01-23 17:05:37,114 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Converting robocat_deci to vf
+2024-01-23 17:05:37,165 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/robocat_deci_output/robocat_deci_metric_coords
+2024-01-23 17:05:38,098 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/robocat_deci_output/robocat_deci_overlay_with_uv.obj
+2024-01-23 17:05:38,139 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:46,023 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/robocat_deci_output/robocat_deci_refined_with_uv.obj
+2024-01-23 17:05:46,045 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/robocat_deci_output/robocat_deci_is_cut_h
+2024-01-23 17:05:46,728 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/robocat_deci_output/robocat_deci_cut_to_sin_list.pickle
+2024-01-23 17:05:46,729 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/robocat_deci_output/robocat_deci_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:46,729 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/robocat_deci_output/robocat_deci_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:46,730 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/robocat_deci_output/robocat_deci_fn_to_f
+2024-01-23 17:05:46,758 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/robocat_deci_output/robocat_deci_vn_to_v
+2024-01-23 17:05:46,774 - output/closed_myles/robocat_deci_output/robocat_deci_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/robocat_deci_output/robocat_deci_endpoints

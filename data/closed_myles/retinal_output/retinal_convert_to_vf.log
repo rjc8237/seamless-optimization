@@ -1,0 +1,12 @@
+2024-01-23 17:02:12,961 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Converting retinal to vf
+2024-01-23 17:02:13,006 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/retinal_output/retinal_metric_coords
+2024-01-23 17:02:13,595 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/retinal_output/retinal_overlay_with_uv.obj
+2024-01-23 17:02:13,618 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:16,306 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/retinal_output/retinal_refined_with_uv.obj
+2024-01-23 17:02:16,322 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/retinal_output/retinal_is_cut_h
+2024-01-23 17:02:16,676 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/retinal_output/retinal_cut_to_sin_list.pickle
+2024-01-23 17:02:16,676 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/retinal_output/retinal_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:16,677 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/retinal_output/retinal_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:16,677 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/retinal_output/retinal_fn_to_f
+2024-01-23 17:02:16,693 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/retinal_output/retinal_vn_to_v
+2024-01-23 17:02:16,702 - output/closed_myles/retinal_output/retinal_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/retinal_output/retinal_endpoints

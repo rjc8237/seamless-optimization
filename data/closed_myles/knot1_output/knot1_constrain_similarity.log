@@ -1,0 +1,7 @@
+2024-01-23 16:59:30,665 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Projecting knot1 to constrints
+2024-01-23 16:59:30,669 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:30,670 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Initial quality is 3.1870407867667163
+2024-01-23 16:59:30,670 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Average metric coordinate is -4.510146920793995
+2024-01-23 16:59:30,670 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:30,747 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/knot1_output/knot1_metric_coords
+2024-01-23 16:59:30,749 - output/closed_myles/knot1_output/knot1_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/knot1_output/knot1_flip_seq

@@ -1,0 +1,12 @@
+2024-01-23 17:05:48,900 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Converting sediapatch1_100K to vf
+2024-01-23 17:05:49,561 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_metric_coords
+2024-01-23 17:06:40,048 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_overlay_with_uv.obj
+2024-01-23 17:06:40,414 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:07:24,053 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_refined_with_uv.obj
+2024-01-23 17:07:24,271 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_is_cut_h
+2024-01-23 17:07:31,135 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_cut_to_sin_list.pickle
+2024-01-23 17:07:31,141 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:31,147 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:31,155 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_fn_to_f
+2024-01-23 17:07:31,364 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_vn_to_v
+2024-01-23 17:07:31,468 - output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/sediapatch1_100K_output/sediapatch1_100K_endpoints

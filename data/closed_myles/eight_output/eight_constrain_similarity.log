@@ -1,0 +1,7 @@
+2024-01-23 16:59:31,677 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Projecting eight to constrints
+2024-01-23 16:59:31,697 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:31,701 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Initial quality is 3.72781303563046
+2024-01-23 16:59:31,702 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Average metric coordinate is -6.4347029283126425
+2024-01-23 16:59:31,702 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:31,866 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/eight_output/eight_metric_coords
+2024-01-23 16:59:31,872 - output/closed_myles/eight_output/eight_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/eight_output/eight_flip_seq

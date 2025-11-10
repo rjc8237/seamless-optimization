@@ -1,0 +1,7 @@
+2024-01-23 16:59:09,093 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Projecting eros100K to constrints
+2024-01-23 16:59:10,268 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:10,458 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Initial quality is 17.495011899031116
+2024-01-23 16:59:10,458 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Average metric coordinate is 0.362340473734158
+2024-01-23 16:59:10,458 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:55,488 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/eros100K_output/eros100K_metric_coords
+2024-01-23 16:59:55,782 - output/closed_myles/eros100K_output/eros100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/eros100K_output/eros100K_flip_seq

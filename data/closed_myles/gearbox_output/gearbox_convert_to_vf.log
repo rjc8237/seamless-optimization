@@ -1,0 +1,12 @@
+2024-01-23 17:05:38,840 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Converting gearbox to vf
+2024-01-23 17:05:39,693 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/gearbox_output/gearbox_metric_coords
+2024-01-23 17:06:38,073 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/gearbox_output/gearbox_overlay_with_uv.obj
+2024-01-23 17:06:38,370 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:07:24,717 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/gearbox_output/gearbox_refined_with_uv.obj
+2024-01-23 17:07:24,968 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/gearbox_output/gearbox_is_cut_h
+2024-01-23 17:07:41,100 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/gearbox_output/gearbox_cut_to_sin_list.pickle
+2024-01-23 17:07:41,105 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/gearbox_output/gearbox_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:41,110 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/gearbox_output/gearbox_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:07:41,114 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/gearbox_output/gearbox_fn_to_f
+2024-01-23 17:07:41,310 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/gearbox_output/gearbox_vn_to_v
+2024-01-23 17:07:41,423 - output/closed_myles/gearbox_output/gearbox_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/gearbox_output/gearbox_endpoints

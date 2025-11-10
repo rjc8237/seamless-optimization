@@ -1,0 +1,7 @@
+2024-01-23 16:59:18,572 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Projecting smooth-feature to constrints
+2024-01-23 16:59:18,727 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:18,759 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Initial quality is 32.52572627484256
+2024-01-23 16:59:18,759 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Average metric coordinate is -5.30695802012078
+2024-01-23 16:59:18,759 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:22,590 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/smooth-feature_output/smooth-feature_metric_coords
+2024-01-23 16:59:22,630 - output/closed_myles/smooth-feature_output/smooth-feature_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/smooth-feature_output/smooth-feature_flip_seq

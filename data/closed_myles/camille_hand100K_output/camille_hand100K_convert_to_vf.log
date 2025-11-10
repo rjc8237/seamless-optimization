@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,224 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Converting camille_hand100K to vf
+2024-01-23 17:02:01,118 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/camille_hand100K_output/camille_hand100K_metric_coords
+2024-01-23 17:02:59,666 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/camille_hand100K_output/camille_hand100K_overlay_with_uv.obj
+2024-01-23 17:03:00,045 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:14,683 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/camille_hand100K_output/camille_hand100K_refined_with_uv.obj
+2024-01-23 17:05:14,905 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/camille_hand100K_output/camille_hand100K_is_cut_h
+2024-01-23 17:05:26,560 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/camille_hand100K_output/camille_hand100K_cut_to_sin_list.pickle
+2024-01-23 17:05:26,567 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/camille_hand100K_output/camille_hand100K_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:26,573 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/camille_hand100K_output/camille_hand100K_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:26,580 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/camille_hand100K_output/camille_hand100K_fn_to_f
+2024-01-23 17:05:26,835 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/camille_hand100K_output/camille_hand100K_vn_to_v
+2024-01-23 17:05:26,996 - output/closed_myles/camille_hand100K_output/camille_hand100K_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/camille_hand100K_output/camille_hand100K_endpoints

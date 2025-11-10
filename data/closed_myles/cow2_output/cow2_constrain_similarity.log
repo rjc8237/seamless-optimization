@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,558 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Projecting cow2 to constrints
+2024-01-23 16:59:06,705 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:06,720 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Initial quality is 17.509352718118084
+2024-01-23 16:59:06,720 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Average metric coordinate is -7.425600812884872
+2024-01-23 16:59:06,720 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:07,155 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/cow2_output/cow2_metric_coords
+2024-01-23 16:59:07,183 - output/closed_myles/cow2_output/cow2_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/cow2_output/cow2_flip_seq

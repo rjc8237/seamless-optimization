@@ -1,0 +1,12 @@
+2024-01-23 17:04:45,208 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Converting smooth-feature to vf
+2024-01-23 17:04:45,277 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/smooth-feature_output/smooth-feature_metric_coords
+2024-01-23 17:04:46,684 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/smooth-feature_output/smooth-feature_overlay_with_uv.obj
+2024-01-23 17:04:46,720 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:02,058 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/smooth-feature_output/smooth-feature_refined_with_uv.obj
+2024-01-23 17:05:02,082 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/smooth-feature_output/smooth-feature_is_cut_h
+2024-01-23 17:05:03,776 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/smooth-feature_output/smooth-feature_cut_to_sin_list.pickle
+2024-01-23 17:05:03,777 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/smooth-feature_output/smooth-feature_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:03,778 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/smooth-feature_output/smooth-feature_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:03,778 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/smooth-feature_output/smooth-feature_fn_to_f
+2024-01-23 17:05:03,811 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/smooth-feature_output/smooth-feature_vn_to_v
+2024-01-23 17:05:03,827 - output/closed_myles/smooth-feature_output/smooth-feature_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/smooth-feature_output/smooth-feature_endpoints

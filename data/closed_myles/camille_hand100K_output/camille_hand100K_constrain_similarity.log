@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,563 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Projecting camille_hand100K to constrints
+2024-01-23 16:59:08,062 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:08,241 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Initial quality is 36.96299322966116
+2024-01-23 16:59:08,242 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Average metric coordinate is 0.2173220895786515
+2024-01-23 16:59:08,242 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:18,468 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/camille_hand100K_output/camille_hand100K_metric_coords
+2024-01-23 16:59:18,810 - output/closed_myles/camille_hand100K_output/camille_hand100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/camille_hand100K_output/camille_hand100K_flip_seq

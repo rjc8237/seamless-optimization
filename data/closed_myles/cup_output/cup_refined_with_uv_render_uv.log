@@ -1,0 +1,19 @@
+2024-01-23 17:28:35,659 - multiprocessing - INFO - Rendering cup_refined_with_uv
+2024-01-23 17:28:35,660 - multiprocessing - INFO - Loading initial mesh at data/closed-Myles
+2024-01-23 17:28:35,737 - multiprocessing - INFO - Loading uv coordinates at output_sonic/closed_myles
+2024-01-23 17:28:35,840 - multiprocessing - INFO - Is double: False
+2024-01-23 17:28:35,840 - multiprocessing - INFO - Loading vertex map at output_sonic/closed_myles/cup_output/cup_refined_with_uv_vn_to_v
+2024-01-23 17:28:35,848 - multiprocessing - ERROR - Could not load vertex map
+2024-01-23 17:28:35,848 - multiprocessing - INFO - Loading endpoints at output_sonic/closed_myles/cup_output/cup_refined_with_uv_endpoints
+2024-01-23 17:28:35,851 - multiprocessing - ERROR - Could not load endpoints
+2024-01-23 17:28:35,851 - multiprocessing - INFO - Loading camera at data/cameras/cup_camera.pickle
+2024-01-23 17:28:35,896 - multiprocessing - INFO - Getting point matrices
+2024-01-23 17:28:57,508 - multiprocessing - INFO - Getting connectivity
+2024-01-23 17:29:00,372 - multiprocessing - INFO - Getting per corner uv coordinates
+2024-01-23 17:29:00,459 - multiprocessing - INFO - Getting scale_factors colormap
+2024-01-23 17:29:00,683 - multiprocessing - INFO - Using colormap scale 1
+2024-01-23 17:29:00,683 - multiprocessing - INFO - Rendering image
+2024-01-23 17:30:46,349 - multiprocessing - INFO - Saving plain image at output_sonic/closed_myles/cup_output/images/cup_refined_with_uv_plain.png
+2024-01-23 17:30:47,976 - multiprocessing - INFO - Adding shading
+2024-01-23 17:33:20,249 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/cup_output/images/cup_refined_with_uv.png
+2024-01-23 17:33:21,298 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/images/cup_refined_with_uv.png

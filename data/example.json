@@ -16,5 +16,7 @@
     "do_projection": false,
     "with_cons": true,
     "save_meshes": false,
-    "Lp": 1
+    "Lp": 1,
+    "percent": 5,
+    "p_energy": 5
 }

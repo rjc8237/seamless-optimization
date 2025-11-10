@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,557 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Projecting buste to constrints
+2024-01-23 16:59:07,733 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:07,876 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Initial quality is 27.292209765807236
+2024-01-23 16:59:07,876 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Average metric coordinate is 0.26792206523942896
+2024-01-23 16:59:07,876 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:15,838 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/buste_output/buste_metric_coords
+2024-01-23 16:59:16,180 - output/closed_myles/buste_output/buste_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/buste_output/buste_flip_seq

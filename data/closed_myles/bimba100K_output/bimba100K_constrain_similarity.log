@@ -1,0 +1,7 @@
+2024-01-23 16:59:07,739 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Projecting bimba100K to constrints
+2024-01-23 16:59:08,935 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:09,139 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Initial quality is 10.741798522862117
+2024-01-23 16:59:09,140 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Average metric coordinate is -10.049017571210936
+2024-01-23 16:59:09,140 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:18,177 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bimba100K_output/bimba100K_metric_coords
+2024-01-23 16:59:18,536 - output/closed_myles/bimba100K_output/bimba100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/bimba100K_output/bimba100K_flip_seq

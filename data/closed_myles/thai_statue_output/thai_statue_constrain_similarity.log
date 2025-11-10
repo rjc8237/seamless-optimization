@@ -1,0 +1,7 @@
+2024-01-23 16:59:23,780 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Projecting thai_statue to constrints
+2024-01-23 16:59:24,621 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:24,889 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Initial quality is 28.645606214712576
+2024-01-23 16:59:24,890 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Average metric coordinate is 1.6823813851869365
+2024-01-23 16:59:24,890 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:33,532 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/thai_statue_output/thai_statue_metric_coords
+2024-01-23 16:59:33,798 - output/closed_myles/thai_statue_output/thai_statue_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/thai_statue_output/thai_statue_flip_seq

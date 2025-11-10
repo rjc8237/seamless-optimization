@@ -1,0 +1,7 @@
+2024-01-23 16:59:06,556 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Projecting rolling_stage100K to constrints
+2024-01-23 16:59:07,953 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:09,428 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Initial quality is 13.275023784730886
+2024-01-23 16:59:09,428 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Average metric coordinate is -8.45955525000928
+2024-01-23 16:59:09,428 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:29,828 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/rolling_stage100K_output/rolling_stage100K_metric_coords
+2024-01-23 16:59:30,154 - output/closed_myles/rolling_stage100K_output/rolling_stage100K_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/rolling_stage100K_output/rolling_stage100K_flip_seq

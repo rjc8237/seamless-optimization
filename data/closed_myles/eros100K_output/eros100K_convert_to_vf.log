@@ -1,0 +1,12 @@
+2024-01-23 17:02:20,027 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Converting eros100K to vf
+2024-01-23 17:02:20,944 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/eros100K_output/eros100K_metric_coords
+2024-01-23 17:03:13,965 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/eros100K_output/eros100K_overlay_with_uv.obj
+2024-01-23 17:03:14,327 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:05:24,539 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/eros100K_output/eros100K_refined_with_uv.obj
+2024-01-23 17:05:24,771 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/eros100K_output/eros100K_is_cut_h
+2024-01-23 17:05:36,902 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/eros100K_output/eros100K_cut_to_sin_list.pickle
+2024-01-23 17:05:36,908 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/eros100K_output/eros100K_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:36,913 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/eros100K_output/eros100K_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:05:36,918 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/eros100K_output/eros100K_fn_to_f
+2024-01-23 17:05:37,139 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/eros100K_output/eros100K_vn_to_v
+2024-01-23 17:05:37,249 - output/closed_myles/eros100K_output/eros100K_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/eros100K_output/eros100K_endpoints

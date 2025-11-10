@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,228 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Converting fertility_tri to vf
+2024-01-23 17:02:00,445 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/fertility_tri_output/fertility_tri_metric_coords
+2024-01-23 17:02:03,375 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/fertility_tri_output/fertility_tri_overlay_with_uv.obj
+2024-01-23 17:02:03,444 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:12,360 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/fertility_tri_output/fertility_tri_refined_with_uv.obj
+2024-01-23 17:02:12,461 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/fertility_tri_output/fertility_tri_is_cut_h
+2024-01-23 17:02:19,809 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/fertility_tri_output/fertility_tri_cut_to_sin_list.pickle
+2024-01-23 17:02:19,810 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/fertility_tri_output/fertility_tri_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:19,811 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/fertility_tri_output/fertility_tri_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:19,811 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/fertility_tri_output/fertility_tri_fn_to_f
+2024-01-23 17:02:19,863 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/fertility_tri_output/fertility_tri_vn_to_v
+2024-01-23 17:02:19,890 - output/closed_myles/fertility_tri_output/fertility_tri_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/fertility_tri_output/fertility_tri_endpoints

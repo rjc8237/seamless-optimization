@@ -1,0 +1,11 @@
+2024-01-23 16:59:09,725 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Projecting blade to constrints
+2024-01-23 16:59:10,405 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:10,509 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Initial quality is 89.33844599207093
+2024-01-23 16:59:10,509 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Average metric coordinate is -10.244140550890943
+2024-01-23 16:59:10,532 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Quality is 53.51636299656858
+2024-01-23 16:59:10,555 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Quality is 35.83883117476027
+2024-01-23 16:59:10,586 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Final quality is 35.83883117476027
+2024-01-23 16:59:10,586 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Final average is -10.244140550890943
+2024-01-23 16:59:10,586 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:13,826 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/blade_output/blade_metric_coords
+2024-01-23 16:59:14,035 - output/closed_myles/blade_output/blade_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/blade_output/blade_flip_seq

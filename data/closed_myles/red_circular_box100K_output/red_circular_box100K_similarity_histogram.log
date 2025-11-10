@@ -1,0 +1,5 @@
+2024-01-24 12:00:16,251 - multiprocessing - INFO - Generating histograms for red_circular_box100K
+2024-01-24 12:00:20,542 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/red_circular_box100K_output/red_circular_box100K_metric_coords
+2024-01-24 12:00:20,930 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,153 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,154 - multiprocessing - INFO - process exiting with exitcode 0

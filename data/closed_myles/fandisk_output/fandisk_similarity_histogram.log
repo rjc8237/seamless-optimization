@@ -1,0 +1,5 @@
+2024-01-24 12:00:14,920 - multiprocessing - INFO - Generating histograms for fandisk
+2024-01-24 12:00:15,616 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/fandisk_output/fandisk_metric_coords
+2024-01-24 12:00:15,687 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,139 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,140 - multiprocessing - INFO - process exiting with exitcode 0

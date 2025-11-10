@@ -1,0 +1,7 @@
+2024-01-23 16:59:16,216 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Projecting lucy100k to constrints
+2024-01-23 16:59:17,318 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:17,522 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Initial quality is 23.2680699509073
+2024-01-23 16:59:17,523 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Average metric coordinate is 4.00523107672973
+2024-01-23 16:59:17,523 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:32,981 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/lucy100k_output/lucy100k_metric_coords
+2024-01-23 16:59:33,308 - output/closed_myles/lucy100k_output/lucy100k_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/lucy100k_output/lucy100k_flip_seq

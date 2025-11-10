@@ -1,0 +1,7 @@
+2024-01-23 16:59:21,580 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Projecting pegaso to constrints
+2024-01-23 16:59:21,929 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Using Delaunay connectivity
+2024-01-23 16:59:22,107 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Initial quality is 32.228534343113836
+2024-01-23 16:59:22,107 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Average metric coordinate is 0.8974333584861999
+2024-01-23 16:59:22,107 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Optimizing metric
+2024-01-23 16:59:26,182 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pegaso_output/pegaso_metric_coords
+2024-01-23 16:59:26,288 - output/closed_myles/pegaso_output/pegaso_constrain_similarity.log - INFO - Saving metric coordinates at output/closed_myles/pegaso_output/pegaso_flip_seq

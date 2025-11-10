@@ -1,0 +1,12 @@
+2024-01-23 17:02:00,224 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Converting shark to vf
+2024-01-23 17:02:00,383 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/shark_output/shark_metric_coords
+2024-01-23 17:02:10,810 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/shark_output/shark_overlay_with_uv.obj
+2024-01-23 17:02:10,993 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:34,651 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/shark_output/shark_refined_with_uv.obj
+2024-01-23 17:02:34,693 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/shark_output/shark_is_cut_h
+2024-01-23 17:02:35,965 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/shark_output/shark_cut_to_sin_list.pickle
+2024-01-23 17:02:35,968 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/shark_output/shark_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:35,970 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/shark_output/shark_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:35,972 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/shark_output/shark_fn_to_f
+2024-01-23 17:02:36,141 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/shark_output/shark_vn_to_v
+2024-01-23 17:02:36,214 - output/closed_myles/shark_output/shark_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/shark_output/shark_endpoints

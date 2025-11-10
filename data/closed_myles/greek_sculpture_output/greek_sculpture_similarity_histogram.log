@@ -1,0 +1,5 @@
+2024-01-24 12:00:13,724 - multiprocessing - INFO - Generating histograms for greek_sculpture
+2024-01-24 12:00:17,285 - multiprocessing - INFO - Loading metric coordinates from output_sonic/closed_myles/greek_sculpture_output/greek_sculpture_metric_coords
+2024-01-24 12:00:17,554 - multiprocessing - INFO - Computing symmetric stretches
+2024-01-24 12:00:25,141 - multiprocessing - INFO - process shutting down
+2024-01-24 12:00:25,141 - multiprocessing - INFO - process exiting with exitcode 0

@@ -20,6 +20,12 @@ struct Parameters
 
     bool use_max_energy = false;
     int Lp = 4;
+
+    // for worst n% triangles energies
+    double percent = 5.0;
+    // for p-norm (\sum_{T}(E_T)^p)^(1/p))
+    int p_energy = 5;
+    
     /* data */
     /* solver type*/
     std::string solver_type = "LDLT"; // "CG" or "LDLT"

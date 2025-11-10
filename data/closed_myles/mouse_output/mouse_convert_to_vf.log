@@ -1,0 +1,12 @@
+2024-01-23 17:05:26,818 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Converting mouse to vf
+2024-01-23 17:05:27,002 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/mouse_output/mouse_metric_coords
+2024-01-23 17:05:33,581 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/mouse_output/mouse_overlay_with_uv.obj
+2024-01-23 17:05:33,704 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:06:00,079 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/mouse_output/mouse_refined_with_uv.obj
+2024-01-23 17:06:00,140 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/mouse_output/mouse_is_cut_h
+2024-01-23 17:06:01,330 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/mouse_output/mouse_cut_to_sin_list.pickle
+2024-01-23 17:06:01,332 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/mouse_output/mouse_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:06:01,333 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/mouse_output/mouse_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:06:01,335 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/mouse_output/mouse_fn_to_f
+2024-01-23 17:06:01,407 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/mouse_output/mouse_vn_to_v
+2024-01-23 17:06:01,444 - output/closed_myles/mouse_output/mouse_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/mouse_output/mouse_endpoints

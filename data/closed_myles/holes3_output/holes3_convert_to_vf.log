@@ -1,0 +1,12 @@
+2024-01-23 17:02:36,392 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Converting holes3 to vf
+2024-01-23 17:02:36,486 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Loading metric coordinates from output/closed_myles/holes3_output/holes3_metric_coords
+2024-01-23 17:02:37,865 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving uv mesh at output/closed_myles/holes3_output/holes3_overlay_with_uv.obj
+2024-01-23 17:02:37,918 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Running refinement
+2024-01-23 17:02:43,031 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving refined uv mesh at output/closed_myles/holes3_output/holes3_refined_with_uv.obj
+2024-01-23 17:02:43,058 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving cut information at output/closed_myles/holes3_output/holes3_is_cut_h
+2024-01-23 17:02:43,934 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/holes3_output/holes3_cut_to_sin_list.pickle
+2024-01-23 17:02:43,936 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/holes3_output/holes3_overlay_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:43,936 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving cut to singularity information at output/closed_myles/holes3_output/holes3_refined_with_uv_cut_to_sin_list.pickle
+2024-01-23 17:02:43,937 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving new to old face map at output/closed_myles/holes3_output/holes3_fn_to_f
+2024-01-23 17:02:43,964 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving trivial new to old vertex map at output/closed_myles/holes3_output/holes3_vn_to_v
+2024-01-23 17:02:43,990 - output/closed_myles/holes3_output/holes3_convert_to_vf.log - INFO - Saving endpoints at output/closed_myles/holes3_output/holes3_endpoints

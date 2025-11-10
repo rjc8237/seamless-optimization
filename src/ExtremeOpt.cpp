@@ -496,6 +496,24 @@ double ExtremeOpt::get_quality_avg_for_smooth_only()
     return compute_energy(uv);
 }
 
+double ExtremeOpt::get_quality_avg_worst_for_smooth_only(double percent, int p)
+{
+    Eigen::MatrixXi F;
+    Eigen::MatrixXd V, uv;
+    export_mesh(V, F, uv);
+    Eigen::VectorXd area;
+    Eigen::SparseMatrix<double> G;
+    igl::doublearea(V, F, area);
+    get_grad_op(V, F, G);
+    auto compute_energy = [G, area, percent, p](Eigen::MatrixXd aaa) {
+        Eigen::MatrixXd Ji;
+        jacobian_from_uv(G, aaa, Ji);
+        return compute_worst_n_energy(Ji, area, percent, p);
+    };
+    return compute_energy(uv);
+}
+
+
 double ExtremeOpt::get_quality()
 {
     SymmetricDirichletEnergy E_eval(

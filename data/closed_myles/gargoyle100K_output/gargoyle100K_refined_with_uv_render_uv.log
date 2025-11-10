@@ -1,0 +1,20 @@
+2024-01-23 21:41:03,124 - multiprocessing - INFO - Rendering gargoyle100K_refined_with_uv
+2024-01-23 21:41:03,125 - multiprocessing - INFO - Loading initial mesh at data/closed-Myles
+2024-01-23 21:41:03,721 - multiprocessing - INFO - Loading uv coordinates at output_sonic/closed_myles
+2024-01-23 21:41:04,182 - multiprocessing - INFO - Is double: False
+2024-01-23 21:41:04,182 - multiprocessing - INFO - Loading vertex map at output_sonic/closed_myles/gargoyle100K_output/gargoyle100K_refined_with_uv_vn_to_v
+2024-01-23 21:41:04,183 - multiprocessing - ERROR - Could not load vertex map
+2024-01-23 21:41:04,183 - multiprocessing - INFO - Loading endpoints at output_sonic/closed_myles/gargoyle100K_output/gargoyle100K_refined_with_uv_endpoints
+2024-01-23 21:41:04,183 - multiprocessing - ERROR - Could not load endpoints
+2024-01-23 21:41:04,184 - multiprocessing - INFO - Loading camera at data/cameras/gargoyle100K_camera.pickle
+2024-01-23 21:41:04,311 - multiprocessing - INFO - Getting point matrices
+2024-01-23 21:41:15,559 - multiprocessing - INFO - Getting connectivity
+2024-01-23 21:41:25,704 - multiprocessing - INFO - Getting per corner uv coordinates
+2024-01-23 21:41:26,154 - multiprocessing - INFO - Getting scale_factors colormap
+2024-01-23 21:41:27,511 - multiprocessing - INFO - Using colormap scale 1
+2024-01-23 21:41:27,511 - multiprocessing - INFO - Rendering image
+2024-01-23 21:42:44,394 - multiprocessing - INFO - Saving plain image at output_sonic/closed_myles/gargoyle100K_output/images/gargoyle100K_refined_with_uv_plain.png
+2024-01-23 21:42:47,849 - multiprocessing - INFO - Adding shading
+2024-01-23 21:48:45,674 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/gargoyle100K_output/images/gargoyle100K_refined_with_uv.png
+2024-01-23 21:48:47,096 - multiprocessing - INFO - Saving final image at output_sonic/closed_myles/images/gargoyle100K_refined_with_uv.png
+2024-01-23 21:49:03,126 - multiprocessing - INFO - process shutting down
