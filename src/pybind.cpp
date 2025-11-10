@@ -11,13 +11,10 @@
 
 using namespace SymDir;
 
-#ifdef PYBIND
-#ifndef MULTIPRECISION
-
 using json = nlohmann::json;
 
 // wrap as Python module
-PYBIND11_MODULE(symdir_py, m)
+PYBIND11_MODULE(symdir, m)
 {
     m.doc() = "pybind for optimization module";
 
@@ -71,6 +68,7 @@ PYBIND11_MODULE(symdir_py, m)
     
     m.def("check_constraints", &check_constraints);
     m.def("transform_EE", &transform_EE);
+    m.def("symmetric_dirichlet_energy", &SymDir::symmetric_dirichlet_energy);
     m.def("transform_FE", &transform_FE);
 
     m.def("export_mesh", [](ExtremeOpt &extremeopt) {
@@ -81,6 +79,3 @@ PYBIND11_MODULE(symdir_py, m)
         return std::make_tuple(V, F, uv);
     });
 }
-
-#endif
-#endif

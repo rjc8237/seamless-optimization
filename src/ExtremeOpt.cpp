@@ -18,6 +18,22 @@
 
 namespace SymDir {
 
+Eigen::VectorXd symmetric_dirichlet_energy(
+    const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    double norm_p)
+{
+    Eigen::SparseMatrix<double> G;
+    get_grad_op(V, F, G);
+
+    Eigen::MatrixXd J;
+    jacobian_from_uv(G, uv, J);
+
+    return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p);
+}
+
+
 std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
 {
     std::vector<int> component_vertices(N, -1);

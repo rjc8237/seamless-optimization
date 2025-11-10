@@ -35,6 +35,12 @@ void get_grad_op(
     const Eigen::MatrixXi& F,
     Eigen::SparseMatrix<double>& grad_op);
 
+Eigen::VectorXd symmetric_dirichlet_energy(
+    const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    double norm_p);
+
 class VertexAttributes
 {
 public:
