@@ -9,11 +9,26 @@
 #include "spdlog/spdlog.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
+#include "polyscope/curve_network.h"
 
-using json = nlohmann::ordered_json;
+using json = nlohmann::json;
 
 
 namespace SymDir {
+
+/**
+ * @brief Find edges per connected component as aligned with the positive u-axis as possible
+ * 
+ * @param uv: parameterization vertices
+ * @param F: parameterization faces
+ * @return list of changes in the v coordinate per edge
+ * @return list of edge start vertices
+ * @return list of edge end vertices
+ */
+std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+find_u_aligned_edges(
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F);
 
 void get_grad_op(
     const Eigen::MatrixXd& V,
@@ -114,6 +129,7 @@ public:
         he2e.resize(num_halfedges);
         f2he.resize(num_faces);
         out.resize(num_vertices);
+        vv2he.resize(num_vertices, num_vertices);
 
         // iterate over faces to build halfedge connectivity
         typedef Eigen::Triplet<int> Trip;
@@ -136,7 +152,6 @@ public:
 
                 // face data
                 he2f[hjk] = fijk;
-                f2he[fijk] = hjk;
 
                 // vertex data
                 from[hjk] = vj;
@@ -144,10 +159,12 @@ public:
                 out[vk] = hki;
                 vv2he_triplets.push_back(Trip(vj, vk, hjk + 1)); // offset to 1 indexing
             }
+
+            // set face halfedge to point to F(fijk, 0)
+            f2he[fijk] = (3 * fijk) + 1;
         }
 
         // Create vertex  maps
-        Eigen::SparseMatrix<int> vv2he(num_vertices, num_vertices);
         vv2he.setFromTriplets(vv2he_triplets.begin(), vv2he_triplets.end());
 
         // build opposite mapping
@@ -155,28 +172,30 @@ public:
         {
             int vi = from[hij];
             int vj = to[hij];
-            int hji = vv2he.coeffRef(vj, vi) - 1; // return to 0 indexing
+            int hji = vv2he.coeff(vj, vi) - 1; // return to 0 indexing
             opposite[hij] = hji;
         }
 
         // build edge identification
         int edge_count = 0;
         e2he.reserve(num_halfedges);
-        for (int hij; hij < num_halfedges; ++hij)
+        for (int hij = 0; hij < num_halfedges; ++hij)
         {
             int hji = opposite[hij];
             if (hji < 0)
             {
-                e2he[edge_count] = hij;
+                e2he.push_back(hij);
                 he2e[hij] = edge_count;
                 ++edge_count;
             }
-
-            if (hij < hji) continue; // only process once
-            e2he[edge_count] = hij;
-            he2e[hij] = edge_count;
-            he2e[hji] = edge_count;
-            ++edge_count;
+            else
+            {
+                if (hij < hji) continue; // only process once
+                e2he.push_back(hij);
+                he2e[hij] = edge_count;
+                he2e[hji] = edge_count;
+                ++edge_count;
+            }
         }
 
         if (!is_valid_mesh())
@@ -311,6 +330,8 @@ public:
     std::vector<int> from;
     std::vector<int> he2e;
     std::vector<int> e2he;
+    Eigen::SparseMatrix<int> vv2he;
+    
 };
 
 class ExtremeOpt : public Mesh
@@ -336,21 +357,42 @@ public:
     std::vector<VertexAttributes> vertex_attrs;
     std::vector<FaceAttributes> face_attrs;
     std::vector<EdgeAttributes> edge_attrs;
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    Eigen::MatrixXi EE;
+    Eigen::MatrixXi FE;
+    Eigen::MatrixXi ME;
+    Eigen::SparseMatrix<double> G; // modified grad for use with symdir
+    Eigen::SparseMatrix<double> Grad; // original grad operator from igl::grad
+    Eigen::SparseMatrix<double> Aeq, AeqT, Beq;
+    Eigen::SparseMatrix<double> Q2, Q2T;
+    Eigen::VectorXd area;
+    Eigen::VectorXi matchings;
+    Eigen::MatrixXd PD1;
+    Eigen::MatrixXd PD2;
+    std::vector<double> min_v_diffs;
+    std::vector<int> min_v_diff_ids;
+    std::vector<int> min_v_diff_next_ids;
+    Eigen::VectorXi C;
+    int num_components;
 
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
+    double compute_energy(const Eigen::MatrixXd& aaa);
 
+    void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
+    void export_FE(Eigen::MatrixXi& FE);
     void export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv);
 
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
-    double get_quality_avg_worst_for_smooth_only(double percent = 5, int p = 5);
+    double get_quality_avg_worst_for_smooth_only(double percent, int p);
 
-    double smooth_global(int steps);
+    double smooth_global(bool& failed);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
 
@@ -361,18 +403,50 @@ public:
     // Writes a triangle mesh in OBJ format
     void write_obj(const std::string& path);
 
-    void view(std::string name) {
+    void view() {
         Eigen::MatrixXd V;
         Eigen::MatrixXi F;
         Eigen::MatrixXd uv;
         export_mesh(V, F, uv);
 
         polyscope::init();
-        polyscope::registerPointCloud(name + " vertices", V);
-        polyscope::registerSurfaceMesh(name + " mesh", V, F);
-        // polyscope::show();
+        polyscope::registerPointCloud("vertices", V);
+        polyscope::registerSurfaceMesh("mesh", V, F);
+        polyscope::registerCurveNetwork("features", V, FE.leftCols(2))
+        ->addEdgeScalarQuantity("alignment", FE.col(2));
+        polyscope::show();
     }
 
+    std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N);
+
+    std::tuple<
+    Eigen::MatrixXd, 
+    Eigen::VectorXd, 
+    Eigen::MatrixXi> load_reference_field(const std::string& ffield_file);
+
+    Eigen::VectorXd rotate_vector(
+                    const Eigen::VectorXd& V,
+                    double angle,
+                    const Eigen::VectorXd& B1,
+                    const Eigen::VectorXd& B2);
+    
+    std::tuple<std::deque<int>, Eigen::VectorXi> initialize_matchings(
+    const Eigen::MatrixXd frame_field, 
+    const Eigen::MatrixXd B1,
+    const Eigen::MatrixXd B2);
+    
+    void comb_matchings(const std::string& ffield_file);
+    
+    void check_cross_field_alignment();
+
+    double get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXd& Guv,
+    Eigen::VectorXd& grad,
+    Eigen::SparseMatrix<double>& hessian,
+    bool get_hessian);
+    Eigen::SparseMatrix<double> compute_area_weight_matrix();
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?

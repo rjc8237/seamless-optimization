@@ -1,6 +1,8 @@
 {
-    "max_iters": 500,
+    "max_iters": 100,
     "smooth_only_iters": 30,
+    "do_feature_alignment": true,
+    "fix_misaligned": false,
     "do_newton": true,
     "do_swap": false,
     "do_collapse": false,
@@ -17,6 +19,7 @@
     "with_cons": true,
     "save_meshes": false,
     "Lp": 1,
-    "percent": 5,
-    "p_energy": 5
+    "symdir_weight": 0.001,
+    "alignment_weight": 1.0,
+    "use_rref": false
 }

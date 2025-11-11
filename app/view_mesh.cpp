@@ -1,62 +1,325 @@
 #include <spdlog/common.h>
 #include "spdlog/spdlog.h"
 #include "ExtremeOpt.h"
+#include "polyscope/curve_network.h"
+#include "MeshCutter.h"
+#include <igl/grad.h>
 
 #include <igl/read_triangle_mesh.h>
 #include <CLI/CLI.hpp>
-using json = nlohmann::ordered_json;
+#include "energy.h"
+using json = nlohmann::json;
 
 using namespace SymDir;
+
+glm::vec3 BEIGE(0.867, 0.765, 0.647);
+glm::vec3 BLACK_BROWN(0.125, 0.118, 0.125);
+glm::vec3 TAN(0.878, 0.663, 0.427);
+glm::vec3 MUSTARD(0.890, 0.706, 0.282);
+glm::vec3 FOREST_GREEN(0.227, 0.420, 0.208);
+glm::vec3 TEAL(0., 0.375, 0.5);
+glm::vec3 DARK_TEAL(0., 0.5*0.375, 0.5*0.5);
+glm::vec3 BLUE(0., 0., 1.);
+glm::vec3 RED(1., 0., 0.);
+
+void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE);
+void transform_EE(
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXi& EE_v,
+    std::vector<std::vector<int>>& EE_e);
+bool find_edge_in_F(const Eigen::MatrixXi& F, int v0, int v1, int& fid, int& eid);
 
 int main(int argc, char** argv)
 {
     //ZoneScopedN("extreme_opt_main");
 
     CLI::App app{argv[0]};
-    std::string input_dir = "../data";
+    std::string input_dir = "";
     std::string model = "";
+    std::string ffield = "";
+    std::string suffix = "";
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
+    app.add_option("-f,--field", ffield, "Input frame field");
     app.add_option("-m,--model", model, "Input model name.");
-
-    std::string output_dir = "../out";
-    std::string model_out = ""; 
-    app.add_option("--output", output_dir, "Output mesh dir.");
-    app.add_option("--model-out", model_out, "Output model dir.");
+    app.add_option("--suffix", suffix, "suffix for model name.");
 
     CLI11_PARSE(app, argc, argv);
 
+    ffield = input_dir + "/" + ffield;
     std::string input_file = input_dir + "/" + model + ".obj";
+    if (suffix != "")
+    {
+        input_file = input_dir + "/" + model + "_" + suffix + ".obj";
+    }
     // Loading the input mesh
-    Eigen::MatrixXd V, uv;
-    Eigen::MatrixXi F;
-    igl::readOBJ(input_file, V, uv, uv, F, F, F);
+    Eigen::MatrixXd V, N, uv;
+    Eigen::MatrixXi F, FT, FN;
+    igl::readOBJ(input_file, V, uv, N, F, FT, FN);
     spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uv.rows());
 
     // Loading the seamless boundary constraints
-    Eigen::MatrixXi EE;
-    int EE_rows;
-    std::ifstream EE_in(input_dir + "/EE/" + model + "_EE.txt");
-    EE_in >> EE_rows;
-    EE.resize(EE_rows, 4);
-    for (int i = 0; i < EE.rows(); i++) {
-        EE_in >> EE(i, 0) >> EE(i, 1) >> EE(i, 2) >> EE(i, 3);
-    }
-    spdlog::info("Input EE size {}", EE.rows());
+    //Eigen::MatrixXi EE;
+    //int EE_rows;
+    //std::ifstream EE_in(input_dir + "/EE/" + model + "_EE.txt");
+    //EE_in >> EE_rows;
+    //EE.resize(EE_rows, 4);
+    //for (int i = 0; i < EE.rows(); i++) {
+    //    EE_in >> EE(i, 0) >> EE(i, 1) >> EE(i, 2) >> EE(i, 3);
+    //}
+    //spdlog::info("Input EE size {}", EE.rows());
 
-    ExtremeOpt extremeopt(V, F);
-    extremeopt.create_mesh(V, F, uv);
-    extremeopt.view("input");
+    //std::ifstream FE_in(input_dir + "/FE/" + model + "_FE.txt");
+    //if (!FE_in.is_open()) {
+    //    return -1;
+    //}
+    //std::vector<Eigen::Vector3i> rows;
+    //int a, b, c;
+
+    // Read data line by line
+    //while (FE_in >> a >> b >> c) {
+    //    rows.emplace_back(a, b, c);
+    //}
+    //FE_in.close();
+    //int FE_rows = rows.size();
+
+    //Eigen::MatrixXi FE(FE_rows, 3);
+
+    //for (int i = 0; i < FE_rows; ++i) {
+    //    FE.row(i) = rows[i];
+    //}
+    //spdlog::info("Input FE size {}", FE.rows());
+
+    MeshCutter meshcutter(V, uv, F, FT);
+    auto [V_cut, EE] = meshcutter.cut_mesh();
+    Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(input_file);
+    Eigen::MatrixXi FE = meshcutter.reindex_feature_edges(FE_i);
+
+    ExtremeOpt extremeopt(V_cut, FT);
+    extremeopt.create_mesh(V_cut, FT, uv);
+    extremeopt.EE = EE;
+    extremeopt.FE = FE;
+    extremeopt.m_params.do_feature_alignment = true;
+    if (ffield != "") extremeopt.comb_matchings(ffield);
     
-    std::string output_file = output_dir + "/" + model_out + ".obj";
-    Eigen::MatrixXd V_ou, uv_ou;
-    Eigen::MatrixXi F_ou;
-    igl::readOBJ(output_file, V_ou, uv_ou, uv_ou, F_ou, F_ou, F_ou);
-    spdlog::info("Input mesh F size {}, V size {}, uv size {}", F_ou.rows(), V_ou.rows(), uv_ou.rows());
+    
+    view(extremeopt, EE, FE);
+}
 
-    ExtremeOpt extremeopt_out(V_ou, F_ou);
-    extremeopt_out.create_mesh(V_ou, F_ou, uv_ou);
-    extremeopt_out.view("output");
 
+void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE)
+{
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    std::vector<Eigen::MatrixXd> uvs;
+
+    std::vector<double> alignment_energies;
+    std::vector<double> symdir_energies;
+    std::vector<Eigen::VectorXd> alignment_face_energies;
+    std::vector<Eigen::VectorXd> symdir_face_energies;
+
+    std::vector<Eigen::MatrixXd> G_us;
+    std::vector<Eigen::MatrixXd> G_vs;
+
+    Eigen::MatrixXd uv;
+    extremeopt.export_mesh(V, F, uv);
+    uvs.push_back(uv);
+    SymDir::get_grad_op(V, F, extremeopt.G);
+    igl::doublearea(V, F, extremeopt.area);
+
+    Eigen::MatrixXd Guv = extremeopt.Grad * uv;
+
+    Eigen::MatrixXd G_u = Eigen::Map<const Eigen::MatrixXd>(Guv.col(0).data(), F.rows(), 3);
+    Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
+    G_us.push_back(G_u);
+    G_vs.push_back(G_v);
+
+
+    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
+    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
+
+    Eigen::MatrixXd R = Guv - uT_vT;
+    Eigen::MatrixXd Rx = R.topRows(F.rows());
+    Eigen::MatrixXd Ry = R.middleRows(F.rows(), F.rows());
+    Eigen::MatrixXd Rz = R.bottomRows(F.rows());
+
+    alignment_energies.push_back(R.array().square().sum());
+    extremeopt.m_params.alignment_weight = 0.0;
+    extremeopt.m_params.symdir_weight = 1.0;
+    symdir_energies.push_back(extremeopt.compute_energy(uv));
+
+    Eigen::MatrixXd Ji;
+    SymDir::jacobian_from_uv(extremeopt.G, uv, Ji);
+    Eigen::VectorXd symdir_e(F.rows());
+    for (int i = 0; i < F.rows(); ++i)
+    {
+        Eigen::MatrixXd J = Ji.row(i);
+        symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), extremeopt.m_params.Lp);
+
+    }
+    symdir_face_energies.push_back(symdir_e);
+
+    Eigen::VectorXd residuals = (Rx.array().square() 
+                        + Ry.array().square() 
+                        + Rz.array().square()).rowwise().sum();
+    alignment_face_energies.push_back(residuals);
+    
+    std::unordered_set<int> unique_seamless_vertices;
+    std::unordered_set<int> unique_feature_vertices;
+
+    
+    for (int i = 0; i < EE.rows(); ++i)
+    {   
+        unique_seamless_vertices.insert(EE(i, 0));
+        unique_seamless_vertices.insert(EE(i, 1));
+    }
+    
+    std::vector<int> seamless_vertex_indices(unique_seamless_vertices.begin(), unique_seamless_vertices.end());
+    
+    std::unordered_map<int, int> old_to_new_index;
+    for (size_t i = 0; i < seamless_vertex_indices.size(); ++i)
+    {
+        old_to_new_index[seamless_vertex_indices[i]] = i;
+    }
+    
+    Eigen::MatrixXd V_seamless(seamless_vertex_indices.size(), 3);
+    for (size_t i = 0; i < seamless_vertex_indices.size(); ++i)
+    {
+        V_seamless.row(i) = V.row(seamless_vertex_indices[i]);
+    }
+    
+    std::vector<std::array<size_t, 2>> edges_seamless;
+    for (int i = 0; i < EE.rows(); ++i)
+    {
+        edges_seamless.push_back({
+            static_cast<size_t>(old_to_new_index[EE(i, 0)]), 
+            static_cast<size_t>(old_to_new_index[EE(i, 1)])
+        });
+    }
+
+    for (int i = 0; i < FE.rows(); ++i)
+    {   
+        unique_feature_vertices.insert(FE(i, 0));
+        unique_feature_vertices.insert(FE(i, 1));
+    }
+
+    std::vector<int> feature_vertex_indices(unique_feature_vertices.begin(), unique_feature_vertices.end());
+
+    old_to_new_index.clear();
+    for (size_t i = 0; i < feature_vertex_indices.size(); ++i)
+    {
+        old_to_new_index[feature_vertex_indices[i]] = i;
+    }
+
+    Eigen::MatrixXd V_feature(feature_vertex_indices.size(), 3);
+    for (size_t i = 0; i < feature_vertex_indices.size(); ++i)
+    {
+        V_feature.row(i) = V.row(feature_vertex_indices[i]);
+    }
+    
+    std::vector<std::array<size_t, 2>> edges_feature;
+    for (int i = 0; i < FE.rows(); ++i)
+    {
+        edges_feature.push_back({
+            static_cast<size_t>(old_to_new_index[FE(i, 0)]), 
+            static_cast<size_t>(old_to_new_index[FE(i, 1)])
+        });
+    }
+
+    /*
+    std::vector<std::vector<int>> EE_e;
+    transform_EE(F, EE, EE_e);
+    for (int i = 0; i < EE_e.size(); i++) {
+        auto t1 = extremeopt.tuple_from_edge(EE_e[i][0], EE_e[i][1]);
+        auto t2 = extremeopt.tuple_from_edge(EE_e[i][2], EE_e[i][3]);
+        int eid1 = t1.eid(extremeopt);
+        int eid2 = t2.eid(extremeopt);
+        e_scalar[eid1] = 1;
+        e_scalar[eid2] = 1;
+    }*/ 
+    
+    polyscope::init();
+    //polyscope::registerPointCloud("vertices", V);
+    auto mesh = polyscope::registerSurfaceMesh("mesh", V, F);
+    for (int i = 0; i < uvs.size(); ++i)
+    {
+        std::cout << i << " Total Alignment energy: " << alignment_energies[i] << '\n';
+        std::cout << i << " Total Symdir energy: " << symdir_energies[i] << '\n';
+        mesh->addVertexParameterizationQuantity("Seamless parameterization " + std::to_string(i), uvs[i]);
+        mesh->addFaceScalarQuantity("alignment_error " + std::to_string(i), alignment_face_energies[i]);
+        mesh->addFaceScalarQuantity("symdir_energy " + std::to_string(i), symdir_face_energies[i]);
+        mesh->addFaceVectorQuantity("grad_u" + std::to_string(i), G_us[i])
+            ->setVectorColor(BLUE)
+            ->setVectorRadius(0.0005)
+            ->setVectorLengthScale(0.005);
+        mesh->addFaceVectorQuantity("grad_v" + std::to_string(i), G_vs[i])
+            ->setVectorColor(RED)
+            ->setVectorRadius(0.0005)
+            ->setVectorLengthScale(0.005);
+    }
+
+    polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);
+    polyscope::registerCurveNetwork("feature edges", V_feature, edges_feature);
+    mesh->addFaceVectorQuantity("PD1", extremeopt.PD1)
+        ->setVectorColor(FOREST_GREEN)
+        ->setVectorRadius(0.0005)
+        ->setVectorLengthScale(0.005)
+        ->setEnabled(true);
+    mesh->addFaceVectorQuantity("PD2", extremeopt.PD2)
+        ->setVectorColor(BLACK_BROWN)
+        ->setVectorRadius(0.0005)
+        ->setVectorLengthScale(0.005)
+        ->setEnabled(true);
+    mesh->addFaceScalarQuantity("matching", extremeopt.matchings)->setEnabled(true);
+    
+    
+    //mesh->addEdgeScalarQuantity("seamless", e_scalar);
     polyscope::show();
+}
 
+bool find_edge_in_F(const Eigen::MatrixXi& F, int v0, int v1, int& fid, int& eid)
+{
+    fid = -1;
+    eid = -1;
+    for (int i = 0; i < F.rows(); i++) {
+        for (int j = 0; j < 3; j++) {
+            if (F(i, j) == v0 && F(i, (j + 1) % 3) == v1) {
+                fid = i;
+                eid = 3 - j - ((j + 1) % 3);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void transform_EE(
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXi& EE_v,
+    std::vector<std::vector<int>>& EE_e)
+{
+    EE_e.resize(EE_v.rows());
+    for (int i = 0; i < EE_v.rows(); i++) {
+        std::vector<int> one_row;
+        int v0 = EE_v(i, 0), v1 = EE_v(i, 1);
+        int fid, eid;
+        if (find_edge_in_F(F, v0, v1, fid, eid)) {
+            one_row.push_back(fid);
+            one_row.push_back(eid);
+            // one_row.push_back(3 * fid + eid);
+        } else {
+            std::cout << "Something Wrong in transform_EE: edge not found in F" << std::endl;
+        }
+
+        v0 = EE_v(i, 2);
+        v1 = EE_v(i, 3);
+        if (find_edge_in_F(F, v0, v1, fid, eid)) {
+            one_row.push_back(fid);
+            one_row.push_back(eid);
+            // one_row.push_back(3 * fid + eid);
+        } else {
+            std::cout << "Something Wrong in transform_EE: edge not found in F" << std::endl;
+        }
+        EE_e[i] = one_row;
+    }
 }

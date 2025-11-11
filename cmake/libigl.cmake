@@ -21,7 +21,8 @@ include(FetchContent)
 FetchContent_Declare(
     libigl
     GIT_REPOSITORY https://github.com/libigl/libigl.git
-    GIT_TAG 3ea7f9480967fcf6bf02ce9b993c0ea6d2fc45f6
+    GIT_TAG v2.4.0
+    #GIT_TAG 3ea7f9480967fcf6bf02ce9b993c0ea6d2fc45f6
     #GIT_REPOSITORY https://github.com/mtao/libigl.git
     #GIT_TAG mtao/warning_suppression
     #GIT_TAG ebdac2554f7d92143b98e1694cac603b4839348e 

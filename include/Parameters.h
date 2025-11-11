@@ -7,6 +7,9 @@ struct Parameters
     std::string model_name;
     bool save_meshes = false;
 
+    bool do_feature_alignment = true;
+    bool fix_misaligned = false;
+
     int max_iters = 500;
     int smooth_only_iters = 100;
     bool do_newton = false;
@@ -20,15 +23,19 @@ struct Parameters
 
     bool use_max_energy = false;
     int Lp = 4;
+    double symdir_weight = 0.001;
+    double alignment_weight = 1.0;
+    double norm_p = 1.0;
+    bool use_rref = true;
 
     // for worst n% triangles energies
     double percent = 5.0;
     // for p-norm (\sum_{T}(E_T)^p)^(1/p))
     int p_energy = 5;
-    
+    // solver type
+    std::string solver_type = "LDLT";
+
     /* data */
-    /* solver type*/
-    std::string solver_type = "LDLT"; // "CG" or "LDLT"
 };
 
 } // namespace SymDir

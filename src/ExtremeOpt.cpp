@@ -7,11 +7,70 @@
 #include <igl/local_basis.h>
 #include <igl/predicates/predicates.h>
 #include <igl/write_triangle_mesh.h>
+#include <igl/local_basis.h>
+#include <igl/rotate_vectors.h>
+#include <igl/boundary_loop.h>
+#include <igl/facet_components.h>
 #include <Eigen/Core>
 #include "energy.h"
 #include "SYMDIR_NEW.h"
+#include <igl/boundary_loop.h>
 
 namespace SymDir {
+
+std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
+{
+    std::vector<int> component_vertices(N, -1);
+    for (int f = 0; f < F.rows(); ++f)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            int vi = F(f, i);
+            component_vertices[vi] = C[f];
+        }
+    }
+    return component_vertices;
+}
+
+std::tuple<std::vector<double>, std::vector<int>, std::vector<int>>
+find_u_aligned_edges(
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F)
+{
+    std::vector<std::vector<int>> bds;
+    igl::boundary_loop(F, bds);
+
+    // get face components
+    int N = uv.rows();
+    Eigen::VectorXi C;
+    int num_components = igl::facet_components(F, C);
+    std::vector<int> component_vertices{ propagate_component_labels(F, C, N) };
+    std::vector<double> min_v_diffs(num_components, 1e10);
+    std::vector<int> min_v_diff_ids(num_components, -1);
+    std::vector<int> min_v_diff_next_ids(num_components, -1);
+
+    for (const auto& l : bds)
+    {
+        for (int i = 0; i < l.size(); i++) {
+            double j = (i + 1) % l.size();
+            double signed_u_diff = uv(l[j], 0) - uv(l[i], 0);
+            if (signed_u_diff < 0.) continue; // only check for positive orientation edge
+
+            // see if most aligned
+            double v_diff = abs(uv(l[j], 1) - uv(l[i], 1));
+            int component = component_vertices[l[i]];
+            if (v_diff < min_v_diffs[component]) {
+                min_v_diffs[component] = v_diff;
+                min_v_diff_ids[component] = l[i];
+                min_v_diff_next_ids[component] = l[(i + 1) % l.size()];
+            }
+        }
+    }
+
+    return std::make_tuple(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids);
+}
+
+
 
 std::vector<int> compose(const std::vector<int>& right_f, const std::vector<int>& left_f)
 {
@@ -263,6 +322,7 @@ void ExtremeOpt::create_mesh(
     Eigen::VectorXd dblarea;
     igl::doublearea(V, F, dblarea);
 
+    igl::grad(V, F, Grad);
     // Convert from eigen to internal representation (TODO: move to utils and remove it from all
     // app)
     std::vector<std::array<size_t, 3>> tri(F.rows());
@@ -306,6 +366,23 @@ void ExtremeOpt::create_mesh(
     //         vertex_attrs[vec].fixed = true;
     //     }
     // }
+
+    num_components = igl::facet_components(F, C);
+    std::tie(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids) = find_u_aligned_edges(uv, F);
+}
+
+std::vector<int> ExtremeOpt::propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
+{
+    std::vector<int> component_vertices(N, -1);
+    for (int f = 0; f < F.rows(); ++f)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            int vi = F(f, i);
+            component_vertices[vi] = C[f];
+        }
+    }
+    return component_vertices;
 }
 
 void ExtremeOpt::init_constraints(const std::vector<std::vector<int>>& EE_e)
@@ -384,6 +461,20 @@ void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Matr
         auto vs = oriented_tri_vertices(t);
         for (int j = 0; j < 3; j++) {
             F(i, j) = vs[j].vid(*this);
+        }
+    }
+}
+
+void ExtremeOpt::export_uv(Eigen::MatrixXd& uv)
+{
+    uv = Eigen::MatrixXd::Zero(vert_capacity(), 2);
+    for (auto& t : get_vertices()) {
+        auto i = t.vid(*this);
+        auto muv = uv.row(i) = vertex_attrs[i].pos;
+
+        if (!muv.array().isFinite().all()) {
+            spdlog::warn("muv {} is not finite: {}", i, fmt::join(muv, ","));
+            ;
         }
     }
 }
@@ -467,6 +558,12 @@ void ExtremeOpt::export_EE(Eigen::MatrixXi& EE)
                 edge_attrs[loc.eid(*this)].pair.switch_vertex(*this).vid(*this);
         }
     }
+    //EE = this->EE;
+}
+
+void ExtremeOpt::export_FE(Eigen::MatrixXi& FE)
+{
+    FE = this->FE;
 }
 
 void ExtremeOpt::write_obj(const std::string& path)
@@ -484,15 +581,6 @@ double ExtremeOpt::get_quality_avg_for_smooth_only()
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
-    Eigen::VectorXd area;
-    Eigen::SparseMatrix<double> G;
-    igl::doublearea(V, F, area);
-    get_grad_op(V, F, G);
-    auto compute_energy = [G, area](Eigen::MatrixXd aaa) {
-        Eigen::MatrixXd Ji;
-        jacobian_from_uv(G, aaa, Ji);
-        return compute_energy_from_jacobian(Ji, area);
-    };
     return compute_energy(uv);
 }
 
@@ -505,14 +593,13 @@ double ExtremeOpt::get_quality_avg_worst_for_smooth_only(double percent, int p)
     Eigen::SparseMatrix<double> G;
     igl::doublearea(V, F, area);
     get_grad_op(V, F, G);
-    auto compute_energy = [G, area, percent, p](Eigen::MatrixXd aaa) {
+    auto compute_energy = [G, area, percent, p](Eigen::MatrixXd aaa, double Lp) {
         Eigen::MatrixXd Ji;
         jacobian_from_uv(G, aaa, Ji);
-        return compute_worst_n_energy(Ji, area, percent, p);
+        return compute_worst_n_energy(Ji, area, Lp, percent, p);
     };
-    return compute_energy(uv);
+    return compute_energy(uv, m_params.Lp);
 }
-
 
 double ExtremeOpt::get_quality()
 {
@@ -830,4 +917,166 @@ bool ExtremeOpt::check_constraints(double eps)
     // return true;
 }
 
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_reference_field(const std::string& ffield_file)
+{
+    std::ifstream inf(ffield_file);
+    if (!inf) {
+        spdlog::error("Failed to load frame field file\n");
+        exit(EXIT_FAILURE);
+    }
+    spdlog::info("aligning to frame field file\n");
+    Eigen::MatrixXd reference_field(input_F.rows(), 3);
+    Eigen::VectorXd thetas(input_F.rows());
+    Eigen::MatrixXi period_jumps(input_F.rows(), 3);
+    
+    int i = 0;
+    int num_vectors;
+    inf >> num_vectors;
+    assert(num_vectors == input_F.rows());
+    inf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::string line{};
+    while (std::getline(inf, line)) {
+        std::istringstream iss(line);
+        double ref_1;
+        double ref_2;
+        double ref_3;
+        double theta;
+        double kappa_1;
+        double kappa_2;
+        double kappa_3;
+        int period_1;
+        int period_2;
+        int period_3;
+
+        iss >> ref_1 >> ref_2 >> ref_3 >> theta >> kappa_1 >> kappa_2 >> kappa_3 >> period_1 >> period_2 >> period_3;
+        reference_field.row(i) << ref_1, ref_2, ref_3;
+        thetas[i] = theta;
+        period_jumps.row(i) << period_1, period_2, period_3;
+
+        ++i;
+    }
+
+    return { reference_field, thetas, period_jumps };
+}
+
+Eigen::VectorXd ExtremeOpt::rotate_vector(
+                    const Eigen::VectorXd& vec,
+                    double angle,
+                    const Eigen::VectorXd& B1,
+                    const Eigen::VectorXd& B2)
+{
+    double norm = vec.norm();
+
+    // project onto the tangent plane and convert to angle
+    double a = atan2(B2.dot(vec), B1.dot(vec));
+
+    // rotate
+    a += angle;
+
+    // move it back to global coordinates
+    return norm*cos(a) * B1 + norm*sin(a) * B2;
+}
+
+std::tuple<std::deque<int>, Eigen::VectorXi> ExtremeOpt::initialize_matchings(
+    const Eigen::MatrixXd frame_field, 
+    const Eigen::MatrixXd B1,
+    const Eigen::MatrixXd B2)
+{   
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    Eigen::MatrixXd uv;
+    export_mesh(V, F, uv);
+
+    Eigen::VectorXi seen_components = Eigen::VectorXi::Constant(num_components, 0);
+    matchings = Eigen::VectorXi::Constant(F.rows(), 0);
+    std::deque<int> d;
+    Eigen::VectorXi mark = Eigen::VectorXi::Constant(F.rows(), 0);
+
+    for (int ci = 0; ci < num_components; ++ci)
+    {
+        int vi = min_v_diff_ids[ci];
+        int vj = min_v_diff_next_ids[ci];
+        int hij = vv2he.coeff(vi, vj) - 1;
+        int fijk = he2f[hij];
+        if (seen_components[C[fijk]] || mark[fijk])
+        {
+            continue;
+        }
+        Eigen::VectorXd dij = V.row(vj) - V.row(vi);
+        dij.normalize();
+        double min = (frame_field.row(fijk) - dij.transpose()).norm();
+        for (int i = 1; i < 4; ++i)
+        {
+            Eigen::VectorXd rot_dfijk = rotate_vector(frame_field.row(fijk), i * (igl::PI / 2.0), B1.row(fijk), B2.row(fijk));
+            double curr_diff = (rot_dfijk - dij).norm();
+            if (curr_diff < min)
+            {
+                min = curr_diff;
+                matchings[fijk] = i;
+            }
+        }
+        d.push_back(fijk);
+        mark[fijk] = 1;
+        seen_components[C[fijk]] = 1;
+    }
+    return { d, mark };
+}
+
+void ExtremeOpt::comb_matchings(const std::string& ffield_file)
+{
+    
+    auto [ reference_field, thetas, period_jumps ] = load_reference_field(ffield_file);
+    Eigen::MatrixXd B1, B2, B3;
+    igl::local_basis(input_V, input_F, B1, B2, B3);
+    Eigen::MatrixXd frame_field = igl::rotate_vectors(reference_field, thetas, B1, B2);
+    auto [ d, mark ] = initialize_matchings(frame_field, B1, B2);
+    while (!d.empty())
+    {
+        int fijk = d.at(0);
+        d.pop_front();
+        int hij = f2he[fijk];
+        int hji = opposite[hij];
+        for (int k = 0; k < 3; ++k)
+        {
+            if ((hji >= 0) && (mark[he2f[hji]] == 0) && (C[he2f[hji]] == C[fijk]))
+            {
+                int fjil = he2f[hji];
+                int local_hij = hij - (3 * fijk);
+                matchings[fjil] = matchings[fijk] - period_jumps(fijk, local_hij);
+                while (matchings[fjil] < 0)
+                {
+                    matchings[fjil] += 4;
+                }
+                matchings[fjil] = matchings[fjil] % 4;
+                mark[fjil] = 1;
+                d.push_back(fjil);
+            }
+            hij = next[hij];
+            hji = opposite[hij];
+        }
+    }
+    Eigen::VectorXd u_angles = (matchings.cast<double>().array()) * (igl::PI / 2.0);
+    Eigen::VectorXd v_angles = (matchings.cast<double>().array() + 1) * (igl::PI / 2.0);
+    PD1 = igl::rotate_vectors(frame_field, u_angles, B1, B2);
+    PD2 = igl::rotate_vectors(frame_field, v_angles, B1, B2);
+    //check_cross_field_alignment();
+}
+
+void ExtremeOpt::check_cross_field_alignment()
+{
+    for (int i = 0; i < FE.rows(); ++i)
+    {
+        int vi = FE(i, 0);
+        int vj = FE(i, 1);
+        int hij = vv2he.coeff(vi, vj) - 1;
+        int fijk = he2f[hij];
+        Eigen::VectorXd dij = input_V.row(vj) - input_V.row(vi);
+        dij.normalize();
+        if (FE(i, 2) == 0)
+        {
+            Eigen::VectorXd diff = PD1.row(fijk) - dij.transpose();
+            std::cout << "vector " << diff.transpose() << '\n';
+        }
+    }
+}
 } // namespace SymDir
