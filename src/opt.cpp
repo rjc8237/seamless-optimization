@@ -13,6 +13,7 @@
 #include "ExtremeOpt.h"
 #include "spdlog/spdlog.h"
 #include "rref.h"
+#include <math.h>       
 
 #include <igl/facet_components.h>
 
@@ -221,16 +222,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
     spdlog::info("Start Energy E = {}", E);
     
     double E_worst = get_quality_avg_worst_for_smooth_only(m_params.percent, m_params.p_energy);
-    double E_max = get_quality_max();
-    spdlog::info("Start E_max = {}", E_max);
+    // double E_max = get_quality_max();
+    spdlog::info("Start E_worst = {}", E_worst);
 
     opt_log["opt_log"].push_back(
         {{"F_size", get_faces().size()},
-         {"V_size", get_vertices().size()},
-         {"E_max", E_max},
-         {"E_worst", E_worst},
-         {"E", E}});
-    double E_old = E;
+         {"V_size", get_vertices().size()}, {"E", E},
+         {"E_worst", E_worst}});
+    double E_old = E_worst;
     int V_size, F_size;
 
     // get input operators
@@ -253,6 +252,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
     double max_grad = 0;
     total_timer.start();
     for (int i = 1; i <= m_params.max_iters; i++) {
+        E_old = E_worst;
         double E_max;
         bool failed = false;
         if (this->m_params.global_smooth) {
@@ -264,15 +264,17 @@ void ExtremeOpt::do_optimization(json& opt_log)
             // E = get_quality();
             E = get_quality_avg_for_smooth_only();
             E_worst = get_quality_avg_worst_for_smooth_only(m_params.percent, m_params.p_energy);
-            E_max = get_quality_max();
+            //E_max = get_quality_max();
 
-            spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
-            spdlog::info("E_max = {}", E_max);
+            // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
+            // spdlog::info("E_max = {}", E_max);
             spdlog::info("max gradient = {}", max_grad);
         }
-
+        
+        // opt_log["opt_log"].push_back(
+        //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
         opt_log["opt_log"].push_back(
-            {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
+            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
 
     
         double grad_thres = 1e-4;
@@ -284,10 +286,10 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
 
         // TODO: terminate criteria
-        if (E < m_params.E_target) {
+        if (fabs(E_worst - E_old) / fmax(1.0, fabs(E_old)) < m_params.E_rel_tol) {
             spdlog::info(
-                "Reach target energy({}), optimization succeed!",
-                m_params.E_target);
+                "Reach target energy({}) in {} iters, optimization succeed!",
+                E_worst, i);
             break;
         }
         if (failed) {
@@ -297,11 +299,12 @@ void ExtremeOpt::do_optimization(json& opt_log)
             break;
         }
 
-        E_old = E;
+        E_old = E_worst;
         std::cout << std::endl;
     }
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
-    opt_log["total_time"] = total_time;
+    double total_time_rounded = std::round(total_time);
+    opt_log["total_time"] = total_time_rounded;
 }
 } // namespace SymDir

@@ -96,12 +96,14 @@ int main(int argc, char** argv)
 
     ExtremeOpt extremeopt(V_cut, FT);
     extremeopt.create_mesh(V_cut, FT, uv);
+    spdlog::warn("PD1 = {}, PD2 = {} expected {}", extremeopt.PD1.size(), extremeopt.PD2.size(), 3 * F.rows());
+
     extremeopt.EE = EE;
     extremeopt.FE = FE;
     extremeopt.m_params.do_feature_alignment = true;
     if (ffield != "") extremeopt.comb_matchings(ffield);
     
-    
+    spdlog::warn("PD1 = {}, PD2 = {} expected {}", extremeopt.PD1.size(), extremeopt.PD2.size(), 3 * F.rows());
     view(extremeopt, EE, FE);
 }
 
@@ -135,6 +137,7 @@ void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
 
 
     Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+    
     uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
 

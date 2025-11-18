@@ -68,9 +68,11 @@ int main(int argc, char** argv)
     param.alignment_weight = config["alignment_weight"];
     param.fix_misaligned = config["fix_misaligned"];
     param.use_rref = config["use_rref"];
-    param.solver_type = config["solver_type"];
+    // param.solver_type = config["solver_type"];
     param.percent = config["percent"];
     param.p_energy = config["p_energy"];
+    param.E_rel_tol = config["E_rel_tol"];
+    param.cg_rel_err = config["cg_rel_err"];
     
     if (ffield == "")
     {
@@ -103,8 +105,9 @@ int main(int argc, char** argv)
 
     json opt_log;
     opt_log["model_name"] = model;
+    opt_log["solver_type"] = param.solver_type;
     opt_log["args"] = config;
-    std::ofstream js_out(output_dir + "/" + model + ".json");
+    std::ofstream js_out(output_dir + "/" + model + "_" + param.solver_type + ".json");
 
     //std::vector<std::vector<int>> bds;
     //igl::boundary_loop(F, bds);
@@ -162,7 +165,7 @@ int main(int argc, char** argv)
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
-    igl::writeOBJ(output_dir + "/" + model + "_out.obj", V_init, F_init, N, FN, uv, F);
+    igl::writeOBJ(output_dir + "/" + model + "_out_" + param.solver_type + ".obj", V_init, F_init, N, FN, uv, F);
 
     // open output file
     std::string output_filename = output_dir + "/" + model + "_out.obj";

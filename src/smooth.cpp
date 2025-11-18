@@ -184,6 +184,7 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa) {
     }
 
     return m_params.alignment_weight*energy + m_params.symdir_weight*SymDir::compute_energy_from_jacobian(Ji, area, m_params.Lp);
+    // return compute_worst_n_energy(Ji, area, m_params.Lp, m_params.percent, m_params.p_energy);
 }
 
 
@@ -253,20 +254,18 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
 
 class Solver {
 public:
-    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name): solver_name_(solver_name) 
-    {
-        compute(A);
+    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err): solver_name_(solver_name){
+        if (solver_name_ == "CG") {
+            cg_.setTolerance(cg_rel_err);
+            // cg_.setMaxIterations(cg_max_iter);
+        }
     }
 
     void compute(const Eigen::SparseMatrix<double>& A) {
         if (solver_name_ == "CG") {
             cg_.compute(A);
-            if (cg_.info() != Eigen::Success)
-                throw std::runtime_error("CG decomposition failed");
         } else if (solver_name_ == "LDLT") {
             ldlt_.compute(A);
-            if (ldlt_.info() != Eigen::Success)
-                throw std::runtime_error("LDLT decomposition failed");
         } 
         else {
             throw std::invalid_argument("Unknown solver name: " + solver_name_);
@@ -443,7 +442,7 @@ double ExtremeOpt::smooth_global(bool& failed)
                 rhs.topRows(grad.rows()) << -grad;
 
                 // solve the system
-                Solver solver(mat, m_params.solver_type);
+                Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
                 solver.analyzePattern(kkt);
                 solver.factorize(kkt);
                 newton = solver.solve(rhs);
@@ -485,52 +484,58 @@ double ExtremeOpt::smooth_global(bool& failed)
             spdlog::debug("{}x{} reduced matrix", Q2.rows(), Q2.cols());
             std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
                     << std::endl;
-            //hessian = Q2T * hessian * Q2;
+            hessian = Q2T * hessian * Q2;
             Eigen::VectorXd rhs = Q2T* grad;
 
             // Compute corrected descent direction
             double a = 0;
-            while (true)
-            {
-            Eigen::SparseMatrix<double> mat;
-            if (a == 0)
-            {
-                //mat = hessian; // Use newton step
-                mat = Q2T * hessian * Q2;
-            }
-            else 
-            {     
-                // Create identity
-                Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
-                id.setIdentity();
-                
-                // Create matrix with correction
-                mat = Q2T * ((hessian + a*id) * Q2);
-            }
-            mat.makeCompressed();
-            //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-            //solver.compute(mat);
-            //newton = -solver.solve(rhs);
-            int status{};
-            newton = -UMFPACK_solve(mat, rhs, status);
-            newton = Q2 * newton;
-            double newton_decr = newton.dot(grad);
-            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
-            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
-            std::cout << "projected gradient is " << newton_decr << std::endl;
-            if (status == UMFPACK_OK && newton_decr < 0)
-            {
-                break;
-            }
-            else if (a == 0)
-            {
-                a = 1; // We did not try the correction yet, start from arbitrary value 1
-                spdlog::info(" Starting correction.");
-            }
-            else
-            {
-                a *= 2; // Correction was not enough, increase weight of id
-            }
+            while (true){
+                Eigen::SparseMatrix<double> mat;
+                if (a == 0)
+                {
+                    mat = hessian; // Use newton step
+                    // mat = Q2T * hessian * Q2;
+                }
+                else 
+                {     
+                    // Create identity
+                    Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                    id.setIdentity();
+                    
+                    // Create matrix with correction
+                    // mat = Q2T * ((hessian + a*id) * Q2);
+                    mat = (hessian + a*id);
+                }
+                mat.makeCompressed();
+                // Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+                Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+
+                solver.compute(mat);
+                newton = -solver.solve(rhs);
+                // int status{};
+                // newton = -UMFPACK_solve(mat, rhs, status);
+                newton = Q2 * newton;
+                double newton_decr = newton.dot(grad);
+                std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+                std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+                std::cout << "projected gradient is " << newton_decr << std::endl;
+                // if (status == UMFPACK_OK && newton_decr < 0)
+                // {
+                //     break;
+                // }
+                if (solver.info() == Eigen::Success && newton_decr < 0)
+                {
+                    break;
+                }
+                else if (a == 0)
+                {
+                    a = 1; // We did not try the correction yet, start from arbitrary value 1
+                    spdlog::info(" Starting correction.");
+                }
+                else
+                {
+                    a *= 2; // Correction was not enough, increase weight of id
+                }
             }
             grad = rhs;
         }

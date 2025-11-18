@@ -66,7 +66,6 @@ namespace SymDir{
 
         // Calculate how many triangles to include
         int num_tris = static_cast<int>(std::ceil(percent / 100.0 * indices.size()));
-        
         // Compute p-norm of the N% largest energies
         Scalar p_norm_sum = 0;
         Scalar area_sum = 0;
