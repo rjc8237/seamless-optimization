@@ -41,6 +41,7 @@ include(eigen)
 include(spdlog)
 include(polyscope)
 include(suitesparse)
+include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
 
@@ -50,6 +51,7 @@ add_library(SymmetricDirichletLib
     src/opt.cpp
     src/rref.cpp
     src/smooth.cpp
+    src/smooth_utils.cpp
     src/SYMDIR_NEW.cpp
     src/MeshCutter.cpp
 )

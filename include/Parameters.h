@@ -32,7 +32,7 @@ struct Parameters
     double percent = 5.0;
     int p_energy = 5; // for p-norm (\sum_{T}(E_T)^p)^(1/p))
     std::string solver_type = "LDLT"; // solver type
-    double E_rel_tol = 1e-3; //tolerance for E_worst convergence
+    double E_rel_err = 1e-3; //tolerance for E_worst convergence
     double cg_rel_err = 5e-4; // relative error for cg solver
 
     /* data */

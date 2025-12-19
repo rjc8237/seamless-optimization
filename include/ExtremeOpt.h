@@ -391,8 +391,26 @@ public:
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
     double get_quality_avg_worst_for_smooth_only(double percent, int p);
+    
+    //statistics for solver
+    struct HessianStats {
+        int iteration;
+        double condition_number;
+        double residual;
+        double correction;
+        double time_solver;
+        int iter_solver;
+        double time_ls;
+        double ls_step_size;
+        double newton_decr;
 
-    double smooth_global(bool& failed);
+        // Add JSON serialization
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
+            iteration, condition_number, residual, correction, time_solver, iter_solver, time_ls, ls_step_size, newton_decr)
+
+    };
+
+    double smooth_global(bool& failed, std::vector<HessianStats>& hessian_log);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
 
@@ -447,6 +465,7 @@ public:
     Eigen::SparseMatrix<double>& hessian,
     bool get_hessian);
     Eigen::SparseMatrix<double> compute_area_weight_matrix();
+
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?

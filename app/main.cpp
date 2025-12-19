@@ -10,11 +10,32 @@
 #include <igl/writeOBJ.h>
 #include <CLI/CLI.hpp>
 #include "main_helper.h"
+#include <filesystem>
 
 //#include "json.hpp"
 using json = nlohmann::json;
 
 using namespace SymDir;
+
+static std::string sci_short(double x)
+{
+    if (x == 0.0) return "0";
+    int exp = static_cast<int>(std::floor(std::log10(std::fabs(x))));
+    double mant = x / std::pow(10.0, exp);
+
+    // Trim trailing zeros in mantissa
+    std::ostringstream ms;
+    ms << std::fixed << std::setprecision(6) << mant; // cap decimals
+    std::string m = ms.str();
+    // remove trailing zeros and possible trailing dot
+    while (!m.empty() && m.back() == '0') m.pop_back();
+    if (!m.empty() && m.back() == '.') m.pop_back();
+    if (m.empty()) m = "1"; // fallback
+
+    std::ostringstream out;
+    out << m << "e" << exp; // exp already has sign if negative
+    return out.str();
+}
 
 int main(int argc, char** argv)
 {
@@ -37,6 +58,9 @@ int main(int argc, char** argv)
     app.add_option("-s,--solver", param.solver_type, "Solver type");
     CLI11_PARSE(app, argc, argv);
 
+    // Ensure base output directory exists
+    std::error_code ec;
+    std::filesystem::create_directories(output_dir, ec);
 
     std::string input_file = input_dir + "/" + model + ".obj";
     std::string ffield_path = input_dir + "/" + ffield;
@@ -71,13 +95,13 @@ int main(int argc, char** argv)
     // param.solver_type = config["solver_type"];
     param.percent = config["percent"];
     param.p_energy = config["p_energy"];
-    param.E_rel_tol = config["E_rel_tol"];
+    param.E_rel_err = config["E_rel_err"];
     param.cg_rel_err = config["cg_rel_err"];
     
     if (ffield == "")
     {
         spdlog::info("no field provided: disabling alignment");
-        param.alignment_weight = config["alignment_weight"];
+        param.alignment_weight = 0.;
     }
 
 	MeshCutter meshcutter(V_init, uv, F_init, F);
@@ -107,7 +131,17 @@ int main(int argc, char** argv)
     opt_log["model_name"] = model;
     opt_log["solver_type"] = param.solver_type;
     opt_log["args"] = config;
-    std::ofstream js_out(output_dir + "/" + model + "_" + param.solver_type + ".json");
+
+    // Choose output JSON filename
+    std::string json_name = output_dir + "/" + model + "_" + param.solver_type;
+    
+    if (param.solver_type == "CG") {
+        // append cg_rel_err for CG runs
+        json_name += "_" + sci_short(param.cg_rel_err);
+    }
+    json_name += ".json";
+
+    std::ofstream js_out(json_name);
 
     //std::vector<std::vector<int>> bds;
     //igl::boundary_loop(F, bds);
@@ -165,10 +199,16 @@ int main(int argc, char** argv)
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
-    igl::writeOBJ(output_dir + "/" + model + "_out_" + param.solver_type + ".obj", V_init, F_init, N, FN, uv, F);
+    std::string obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
+    if (param.solver_type == "CG") {
+        // append cg_rel_err for CG runs
+        obj_name += "_" + sci_short(param.cg_rel_err);
+    }
+    obj_name += ".obj";
+    igl::writeOBJ(obj_name, V_init, F_init, N, FN, uv, F);
 
     // open output file
-    std::string output_filename = output_dir + "/" + model + "_out.obj";
+    std::string output_filename = obj_name;
     std::ofstream output_file(output_filename, std::ios::out | std::ios::app);
 
     // write all feature edge vertices

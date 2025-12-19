@@ -1,5 +1,6 @@
 # Script to generate histograms for per-vertex colormaps used for rendering meshes
 
+import glob
 import igl
 import matplotlib
 import seaborn as sns
@@ -25,6 +26,10 @@ def add_histogram_arguments(parser):
         "--uv_path",
         help="path for mesh with uv coordinates"
     )
+    parser.add_argument(
+        "--mesh_dir",
+        help="directory containing multiple .obj files to process"
+    ) # argument to process all files in a directory
     parser.add_argument(
         "--bin_min",
         help="minimum value for bin",
@@ -61,23 +66,18 @@ def add_histogram_arguments(parser):
         default=12.80
     )
 
-if __name__ == "__main__":
-    # Parse arguments for the script
-    parser = argparse.ArgumentParser("Generate histograms for mesh")
-    add_histogram_arguments(parser)
-    args = vars(parser.parse_args())
-
-    # Get mesh and test name
-    fname = os.path.basename(args['uv_path'])
+def process_single_mesh(uv_path, output_dir, bin_min, bin_max, ylim, label, color, width, height):
+        # Get mesh and test name
+    fname = os.path.basename(uv_path)
     dot_index = fname.rfind(".")
     m = fname[:dot_index]
 
     # Load uv information
     try:
-        uv_path = args['uv_path']
-        v3d, uv, _, f, fuv, _ = igl.readOBJ(args['uv_path'])
+        v3d, uv, _, f, fuv, _ = igl.readOBJ(uv_path)
     except:
-        exit()
+        print(f"Error loading mesh: {uv_path}")
+        return
 
     # Get histogram color
     color_dict = {
@@ -98,6 +98,8 @@ if __name__ == "__main__":
     # X_sort = np.sort(X)
     # X_worst = X_sort[int(0.95*len(X_sort)):]
     # X_worst_log = np.log(np.maximum(X_worst, 1e-10))
+    # if X_worst_log[-1] < 3:
+    #     return
 
     # Get bin range (or None if no range values provided)
     if (args['bin_min'] and args['bin_max']):
@@ -110,13 +112,13 @@ if __name__ == "__main__":
         binrange = None
 
     # Generate histogram and save to file
-    os.makedirs(args['output_dir'], exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(
-        args['output_dir'],
+        output_dir,
         m+"_sym_dir.png"
     )
 
-    matplotlib.rcParams['figure.figsize'] = (args['width'], args['height'])
+    matplotlib.rcParams['figure.figsize'] = (width, height)
 
     # Set percentage or absolute scale for y axis
     fig, ax = plt.subplots(1)
@@ -133,3 +135,47 @@ if __name__ == "__main__":
     
     # Save figure to file
     fig.savefig(output_path, bbox_inches='tight')
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    # Parse arguments for the script
+    parser = argparse.ArgumentParser("Generate histograms for mesh")
+    add_histogram_arguments(parser)
+    args = vars(parser.parse_args())
+    
+    if args['mesh_dir']:
+        # Process all .obj files in directory
+        obj_files = glob.glob(os.path.join(args['mesh_dir'], "*.obj"))
+        if not obj_files:
+            print(f"[error] No .obj files found in {args['mesh_dir']}")
+            exit(1)
+        print(f"[info] Found {len(obj_files)} .obj file(s) in {args['mesh_dir']}")
+        for obj_path in obj_files:
+            process_single_mesh(
+                obj_path,
+                args['output_dir'],
+                args['bin_min'],
+                args['bin_max'],
+                args['ylim'],
+                args['label'],
+                args['color'],
+                args['width'],
+                args['height']
+            )
+    elif args['uv_path']:
+        # Process single file
+        process_single_mesh(
+            args['uv_path'],
+            args['output_dir'],
+            args['bin_min'],
+            args['bin_max'],
+            args['ylim'],
+            args['label'],
+            args['color'],
+            args['width'],
+            args['height']
+        )
+    else:
+        print("[error] Must provide --uv_path or --mesh_dir")
+        exit(1)

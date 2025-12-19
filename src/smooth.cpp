@@ -6,7 +6,9 @@
 #include "energy.h"
 #include "spdlog/spdlog.h"
 #include <Eigen/CholmodSupport>
+#include <Eigen/Core>
 #include <umfpack.h>
+#include "smooth_utils.h"
 
 namespace SymDir {
 
@@ -252,73 +254,8 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     return energy;
 }
 
-class Solver {
-public:
-    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err): solver_name_(solver_name){
-        if (solver_name_ == "CG") {
-            cg_.setTolerance(cg_rel_err);
-            // cg_.setMaxIterations(cg_max_iter);
-        }
-    }
 
-    void compute(const Eigen::SparseMatrix<double>& A) {
-        if (solver_name_ == "CG") {
-            cg_.compute(A);
-        } else if (solver_name_ == "LDLT") {
-            ldlt_.compute(A);
-        } 
-        else {
-            throw std::invalid_argument("Unknown solver name: " + solver_name_);
-        }
-    }
-
-    void analyzePattern(const Eigen::SparseMatrix<double>& A) {
-        if (solver_name_ == "CG") {
-            cg_.analyzePattern(A);
-        } else if (solver_name_ == "LDLT") {
-            ldlt_.analyzePattern(A);
-        } 
-        else {
-            throw std::invalid_argument("Unknown solver name: " + solver_name_);
-        }
-    }
-
-    void factorize(const Eigen::SparseMatrix<double>& A) {
-        if (solver_name_ == "CG") {
-            cg_.factorize(A);
-        } else if (solver_name_ == "LDLT") {
-            ldlt_.factorize(A);
-        } 
-        else {
-            throw std::invalid_argument("Unknown solver name: " + solver_name_);
-        }
-    }
-
-    Eigen::VectorXd solve(const Eigen::VectorXd& b) {
-        if (solver_name_ == "CG") return cg_.solve(b);
-        else if (solver_name_ == "LDLT") return ldlt_.solve(b);
-        throw std::invalid_argument("Unknown solver: " + solver_name_);
-    }
-
-    Eigen::ComputationInfo info() const {
-        if (solver_name_ == "CG") return cg_.info();
-        else if (solver_name_ == "LDLT") return ldlt_.info();
-        return Eigen::InvalidInput;
-    }
-
-
-private:
-    std::string solver_name_;
-
-    // Solvers
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg_;
-    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> ldlt_;
-    // Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> cholmod_llt_;
-
-
-};
-
-double ExtremeOpt::smooth_global(bool& failed)
+double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessian_log)
 {
     Eigen::MatrixXd uv;
     export_uv(uv);
@@ -332,6 +269,16 @@ double ExtremeOpt::smooth_global(bool& failed)
     double misalignment_weight = 1.;
 
     bool use_rref = m_params.use_rref;
+
+    double cond_num = 0;
+    double residual = 0;
+
+    igl::Timer timer;
+    double time_solver = 0;
+    int iter_solver = 0;
+    double correction = 0;
+    double newton_decr = 0;
+    timer.start();
     if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
 
@@ -394,7 +341,7 @@ double ExtremeOpt::smooth_global(bool& failed)
             //newton = -solver.solve(rhs);
 
             spdlog::trace("Extracting unreduced newton direction");
-            double newton_decr = newton.dot(rhs);
+            newton_decr = newton.dot(rhs);
             std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
             std::cout << "newton norm is " << newton.dot(newton) << std::endl;
             std::cout << "projected gradient is " << newton_decr << std::endl;
@@ -442,33 +389,33 @@ double ExtremeOpt::smooth_global(bool& failed)
                 rhs.topRows(grad.rows()) << -grad;
 
                 // solve the system
-                Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
-                solver.analyzePattern(kkt);
-                solver.factorize(kkt);
-                newton = solver.solve(rhs);
-                // int status{};
-                // newton = UMFPACK_solve(kkt, rhs, status);
-                if (solver.info() != Eigen::Success) {
-                   std::cout << "cannot solve newton system" << std::endl;
-                   hessian.setIdentity();
-                   buildkkt(hessian, Aeq, AeqT, kkt);
-                   solver.analyzePattern(kkt);
-                   solver.factorize(kkt);
-                   newton = solver.solve(rhs);
-                }
+                // Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+                // solver.analyzePattern(kkt);
+                // solver.factorize(kkt);
+                // newton = solver.solve(rhs);
+                int status{};
+                newton = UMFPACK_solve(kkt, rhs, status);
+                // if (solver.info() != Eigen::Success) {
+                //    std::cout << "cannot solve newton system" << std::endl;
+                //    hessian.setIdentity();
+                //    buildkkt(hessian, Aeq, AeqT, kkt);
+                //    solver.analyzePattern(kkt);
+                //    solver.factorize(kkt);
+                //    newton = solver.solve(rhs);
+                // }
 
-                double newton_decr = newton.topRows(grad.rows()).dot(grad);
+                newton_decr = newton.topRows(grad.rows()).dot(grad);
                 std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
                 std::cout << "newton norm is " << newton.dot(newton) << std::endl;
                 std::cout << "projected gradient is " << newton_decr << std::endl;
-                // if (status == UMFPACK_OK && newton_decr < 0)
-                // {
-                //     break;
-                // }
-                if (solver.info() == Eigen::Success && newton_decr < 0)
+                if (status == UMFPACK_OK && newton_decr < 0)
                 {
                     break;
                 }
+                // if (solver.info() == Eigen::Success && newton_decr < 0)
+                // {
+                //     break;
+                // }
                 else if (a == 0)
                 {
                     a = 1; // We did not try the correction yet, start from arbitrary value 1
@@ -484,63 +431,125 @@ double ExtremeOpt::smooth_global(bool& failed)
             spdlog::debug("{}x{} reduced matrix", Q2.rows(), Q2.cols());
             std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
                     << std::endl;
-            hessian = Q2T * hessian * Q2;
+            // hessian = Q2T * hessian * Q2;
             Eigen::VectorXd rhs = Q2T* grad;
 
             // Compute corrected descent direction
             double a = 0;
-            while (true){
-                Eigen::SparseMatrix<double> mat;
-                if (a == 0)
-                {
-                    mat = hessian; // Use newton step
-                    // mat = Q2T * hessian * Q2;
-                }
-                else 
-                {     
-                    // Create identity
-                    Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
-                    id.setIdentity();
-                    
-                    // Create matrix with correction
-                    // mat = Q2T * ((hessian + a*id) * Q2);
-                    mat = (hessian + a*id);
-                }
-                mat.makeCompressed();
-                // Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-                Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+            if (m_params.solver_type == "GS") {
+                newton.setZero(uv.rows() * 2);  // initialize as zero vector with correct size
+                while (true){
+                    Eigen::SparseMatrix<double> mat;
+                    if (a == 0)
+                    {
+                        // mat = hessian; // Use newton step
+                        mat = Q2T * hessian * Q2;
+                    }
+                    else 
+                    {     
+                        // Create identity
+                        Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                        id.setIdentity();
+                        
+                        // Create matrix with correction
+                        mat = Q2T * ((hessian + a*id) * Q2);
+                        // mat = (hessian + a*id);
+                    }
+                    mat.makeCompressed();
 
-                solver.compute(mat);
-                newton = -solver.solve(rhs);
-                // int status{};
-                // newton = -UMFPACK_solve(mat, rhs, status);
-                newton = Q2 * newton;
-                double newton_decr = newton.dot(grad);
-                std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
-                std::cout << "newton norm is " << newton.dot(newton) << std::endl;
-                std::cout << "projected gradient is " << newton_decr << std::endl;
-                // if (status == UMFPACK_OK && newton_decr < 0)
-                // {
-                //     break;
-                // }
-                if (solver.info() == Eigen::Success && newton_decr < 0)
-                {
-                    break;
+                    bool result = solveGaussSeidel(mat, rhs, newton);
+                    newton = -newton;
+                    if (result){
+                        spdlog::info("Gauss-Seidel iteration converged");
+                        residual = (mat * newton + rhs).norm();
+                    }
+
+                    newton = Q2 * newton;
+
+                    newton_decr = newton.dot(grad);
+                    std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+                    std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+                    std::cout << "projected gradient is " << newton_decr << std::endl;
+                    if (result && newton_decr < 0)
+                    {
+                        break;
+                    }
+                    else if (a == 0)
+                    {
+                        a = 1; // We did not try the correction yet, start from arbitrary value 1
+                        spdlog::info("Starting correction.");
+                    }
+                    else
+                    {
+                        a *= 2; // Correction was not enough, increase weight of id
+                        spdlog::info("Correction {}.", a);
+                    }
                 }
-                else if (a == 0)
-                {
-                    a = 1; // We did not try the correction yet, start from arbitrary value 1
-                    spdlog::info(" Starting correction.");
-                }
-                else
-                {
-                    a *= 2; // Correction was not enough, increase weight of id
-                }
+            } else {
+                while (true){
+                    Eigen::SparseMatrix<double> mat;
+                    if (a == 0)
+                    {
+                        // mat = hessian; // Use newton step
+                        mat = Q2T * hessian * Q2;
+                    }
+                    else 
+                    {     
+                        // Create identity
+                        Eigen::SparseMatrix<double> id(hessian.rows(), hessian.rows());
+                        id.setIdentity();
+                        
+                        // Create matrix with correction
+                        mat = Q2T * ((hessian + a*id) * Q2);
+                        // mat = (hessian + a*id);
+                    }
+                    mat.makeCompressed();
+                    // Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+                    Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+                    solver.compute(mat);
+                    newton = -solver.solve(rhs);
+                    
+                    residual = (mat * newton + rhs).norm();
+
+                    // int status{};
+                    // newton = -UMFPACK_solve(mat, rhs, status);
+                    newton = Q2 * newton;
+
+                    newton_decr = newton.dot(grad);
+                    std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+                    std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+                    std::cout << "projected gradient is " << newton_decr << std::endl;
+                    // if (status == UMFPACK_OK && newton_decr < 0)
+                    // {
+                    //     break;
+                    // }
+                    if (solver.info() == Eigen::Success && newton_decr < 0)
+                    {
+                        // cond_num = get_cond_num_from_hessian(hessian);
+                        if (m_params.solver_type == "CG") {
+                            iter_solver = solver.iterations();
+                        }
+                        break;
+                    }
+                    else if (a == 0)
+                    {
+                        a = 1; // We did not try the correction yet, start from arbitrary value 1
+                        spdlog::info("Starting correction.");
+                    }
+                    else
+                    {
+                        a *= 2; // Correction was not enough, increase weight of id
+                    }
+                }                
             }
+            correction = a;
             grad = rhs;
         }
     }
+    time_solver = timer.getElapsedTimeInSec();
 
+    double time_ls = 0;
+    timer.start();
     // do lineserach
     Eigen::MatrixXd search_dir = Eigen::Map<Eigen::MatrixXd>(newton.data(), V.rows(), 2);
     auto new_x = uv;
@@ -580,6 +589,21 @@ double ExtremeOpt::smooth_global(bool& failed)
         std::cout << "smooth failed" << std::endl;
         failed = true;
     }
+    time_ls = timer.getElapsedTimeInSec();
+    // Store in log
+
+    hessian_log.push_back({
+        static_cast<int>(hessian_log.size()),
+        cond_num,
+        residual,
+        correction,
+        time_solver,
+        iter_solver,
+        time_ls,
+        ls_step_size,
+        fabs(newton_decr)
+    });
+
 
     return grad.cwiseAbs().maxCoeff();
 }

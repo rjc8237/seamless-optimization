@@ -1,6 +1,7 @@
 #include "energy.h"
 #include "spdlog/spdlog.h"
 #include <numeric>
+#include <smooth_utils.h>
 
 // From AutoDiff
 namespace jakob
@@ -108,6 +109,7 @@ namespace SymDir{
             if (with_hessian)
             {
                 local_hessian *= area(i) / total_area;
+                projected_local_hessian(local_hessian);
                 all_hessian[i] = local_hessian;
             }
         }

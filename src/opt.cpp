@@ -202,8 +202,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     igl::Timer total_timer;
     double total_time = 0;
+    int iters = 0;
     opt_log["total_time"] = total_time;
-
+    opt_log["iters"] = iters;
 
     // get edge length thresholds for collapsing operation
     Eigen::MatrixXd uv;
@@ -218,19 +219,13 @@ void ExtremeOpt::do_optimization(json& opt_log)
     elen_threshold *= m_params.elen_alpha;
     elen_threshold_3d *= m_params.elen_alpha;
 
-    double E = get_quality();
-    spdlog::info("Start Energy E = {}", E);
-    
-    double E_worst = get_quality_avg_worst_for_smooth_only(m_params.percent, m_params.p_energy);
-    // double E_max = get_quality_max();
-    spdlog::info("Start E_worst = {}", E_worst);
+    // double E = get_quality();
+    double E, E_worst;
 
-    opt_log["opt_log"].push_back(
-        {{"F_size", get_faces().size()},
-         {"V_size", get_vertices().size()}, {"E", E},
-         {"E_worst", E_worst}});
-    double E_old = E_worst;
-    int V_size, F_size;
+    int V_size = get_vertices().size();
+    int F_size = get_faces().size();
+
+    double E_old = 0;
 
     // get input operators
     spdlog::info("Building constraints");
@@ -251,13 +246,22 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     double max_grad = 0;
     total_timer.start();
+    std::vector<HessianStats> hessian_log;
+
+    std::vector<double> residuals;
     for (int i = 1; i <= m_params.max_iters; i++) {
-        E_old = E_worst;
+        // if times exceeds 3 minutes, stop optimization
+        if (total_timer.getElapsedTime() > 180.0) {
+            spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", 180);
+            iters = i; // last completed iteration
+            break;
+        }
+
         double E_max;
         bool failed = false;
         if (this->m_params.global_smooth) {
             timer.start();
-            max_grad = smooth_global(failed);
+            max_grad = smooth_global(failed, hessian_log);
             time = timer.getElapsedTime();
             spdlog::info("GLOBAL smoothing operation time serial: {}s", time);
 
@@ -275,8 +279,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
         opt_log["opt_log"].push_back(
             {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
-
-    
+        iters = i;
         double grad_thres = 1e-4;
         if (max_grad < grad_thres) {
             spdlog::info(
@@ -286,12 +289,33 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
 
         // TODO: terminate criteria
-        if (fabs(E_worst - E_old) / fmax(1.0, fabs(E_old)) < m_params.E_rel_tol) {
-            spdlog::info(
-                "Reach target energy({}) in {} iters, optimization succeed!",
-                E_worst, i);
+
+        // double cg_thres = 1e-2;
+        // if (fabs(E - E_old) < cg_thres * E_old) {
+        //     m_params.cg_rel_err *= 0.1;
+        // }
+
+        if (fabs(E_worst - E_old) < m_params.E_rel_err * E_old) {
+            spdlog::info("Relative energy change {} < {}, optimization converge!", fabs(E_worst - E_old), m_params.E_rel_err * E_old);
             break;
         }
+
+        if (E_worst < m_params.E_target) {
+            spdlog::info(
+                "Reach target energy({}) in {} iters, optimization succeed!",
+                0, i);
+            break;
+        }
+
+        if (hessian_log.size() > 0) {
+            if (hessian_log.back().newton_decr < 1e-6) {
+                spdlog::info(
+                    "Newton decrement too small ({}), optimization converge!",
+                    hessian_log.back().newton_decr);
+                break;
+            }
+        }   
+
         if (failed) {
             spdlog::info(
                 "Line search step failed. stopping optimization early."
@@ -306,5 +330,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
     spdlog::info("Total optimization time: {}s", total_time);
     double total_time_rounded = std::round(total_time);
     opt_log["total_time"] = total_time_rounded;
+    opt_log["iters"] = iters;
+    opt_log["hessian_log"] = hessian_log;
+
 }
 } // namespace SymDir
