@@ -381,7 +381,7 @@ public:
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
     double compute_energy(const Eigen::MatrixXd& aaa);
-
+    double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double norm_p, double percent, bool soft_max = false, double t = 1.0);
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
     void export_FE(Eigen::MatrixXi& FE);
@@ -390,7 +390,7 @@ public:
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
-    double get_quality_avg_worst_for_smooth_only(double percent, int p);
+    double get_quality_avg_worst_for_smooth_only();
     
     //statistics for solver
     struct HessianStats {
@@ -403,6 +403,8 @@ public:
         double time_ls;
         double ls_step_size;
         double newton_decr;
+        Eigen::VectorXd newton;
+
 
         // Add JSON serialization
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 

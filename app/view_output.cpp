@@ -217,7 +217,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         {
             Eigen::MatrixXd J = Ji.row(i);
             symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), extremeopt.m_params.Lp);
-            symdir_e[i] = std::log(std::max(symdir_e[i], 1e-10));
         }
         symdir_face_energies.push_back(symdir_e);
         // symdir_face_worst.push_back(get_worst_faces(symdir_e, 0.05));

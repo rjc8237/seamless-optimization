@@ -44,6 +44,8 @@ include(suitesparse)
 include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(SymmetricDirichletLib
     src/energy.cpp
@@ -65,6 +67,7 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     Eigen3::Eigen
     spdlog::spdlog
     polyscope
+    ${Boost_LIBRARIES}
 )
 
 

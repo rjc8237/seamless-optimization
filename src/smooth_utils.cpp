@@ -8,18 +8,23 @@
 #include <Spectra/MatOp/SparseSymMatProd.h>
 #include <Spectra/MatOp/SparseSymShiftSolve.h>
 
+
 namespace SymDir {
     Solver::Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err): solver_name_(solver_name){
         if (solver_name_ == "CG") {
             cg_.setTolerance(cg_rel_err);
-            cg_.setMaxIterations(1000);
+            cg_.setMaxIterations(4000);
         }
         if (solver_name_ == "CG_GS") {
             cg_gs.setTolerance(cg_rel_err);
-            cg_gs.setMaxIterations(1000);
+            cg_gs.setMaxIterations(4000);
         }
         if (solver_name_ == "BiCGSTAB") {
             bicgstab.setTolerance(cg_rel_err);
+        }
+        if (solver_name_ == "CG_LLT") {
+            cg_llt.setTolerance(cg_rel_err);
+            cg_llt.setMaxIterations(4000);
         }
     }
 
@@ -36,6 +41,8 @@ namespace SymDir {
             bicgstab.compute(A);
         } else if (solver_name_ == "CG_GS") {
             cg_gs.compute(A);
+        } else if (solver_name_ == "CG_LLT") {
+            cg_llt.compute(A);
         } else {
             throw std::invalid_argument("Unknown solver name: " + solver_name_);
         }
@@ -48,7 +55,14 @@ namespace SymDir {
         else if (solver_name_ == "LLT") return llt_.solve(b);
         else if (solver_name_ == "BiCGSTAB") return bicgstab.solve(b);
         else if (solver_name_ == "CG_GS") return cg_gs.solve(b);
+        else if (solver_name_ == "CG_LLT") return cg_llt.solve(b);
         throw std::invalid_argument("Unknown solver: " + solver_name_);
+    }
+    Eigen::VectorXd Solver::solve_with_guess(const Eigen::VectorXd& b, const Eigen::VectorXd& x0) {
+        if (solver_name_ == "CG") {
+            return cg_.solveWithGuess(b, x0);
+        }
+        throw std::invalid_argument("Solver does not support initial guess: " + solver_name_);
     }
 
     Eigen::ComputationInfo Solver::info() const {
@@ -58,6 +72,7 @@ namespace SymDir {
         else if (solver_name_ == "LLT") return llt_.info();
         else if (solver_name_ == "BiCGSTAB") return bicgstab.info();
         else if (solver_name_ == "CG_GS") return cg_gs.info();
+        else if (solver_name_ == "CG_LLT") return cg_llt.info();
         return Eigen::InvalidInput;
     }
 
@@ -65,6 +80,7 @@ namespace SymDir {
         if (solver_name_ == "CG") return cg_.iterations();
         else if (solver_name_ == "BiCGSTAB") return bicgstab.iterations();
         else if (solver_name_ == "CG_GS") return cg_gs.iterations();
+        else if (solver_name_ == "CG_LLT") return cg_llt.iterations();
         throw std::invalid_argument("iterations is only available for iterative solvers");
     }
 
@@ -108,15 +124,11 @@ namespace SymDir {
         const Scalar rel_eps = Scalar(1e-12);
         const Scalar eps = std::max(rel_eps, std::abs(local_hessian.trace()) * rel_eps);
 
-        Scalar min_eval = evals.minCoeff();
-        Scalar shift = Scalar(0);
-        if (min_eval < eps) {
-            shift = -2 * min_eval;  // shift so smallest eigenvalue becomes eps
-        }
-
         // Add shift to all eigenvalues and reconstruct
         for (int i = 0; i < 4; i++) {
-            evals[i] += shift;
+            if (evals[i] < eps) {
+                evals[i] = eps;
+            }
         }
 
         // Reconstruct the projected Hessian
@@ -181,6 +193,7 @@ namespace SymDir {
         std::cout << "Gauss-Seidel reached max iterations without full convergence." << std::endl;
         return false;
     }
+    
     template void SymDir::projected_local_hessian<double>(Eigen::Matrix<double, 4, 4>& local_hessian);
 }
 

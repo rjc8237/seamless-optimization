@@ -12,6 +12,8 @@
 #include "main_helper.h"
 #include <filesystem>
 
+#include <stdlib.h>  // for setenv
+
 //#include "json.hpp"
 using json = nlohmann::json;
 
@@ -39,8 +41,6 @@ static std::string sci_short(double x)
 
 int main(int argc, char** argv)
 {
-    //ZoneScopedN("extreme_opt_main");
-
     CLI::App app{argv[0]};
     std::string input_dir = "../data";
     std::string output_dir = "./";
@@ -94,9 +94,14 @@ int main(int argc, char** argv)
     param.use_rref = config["use_rref"];
     // param.solver_type = config["solver_type"];
     param.percent = config["percent"];
-    param.p_energy = config["p_energy"];
+    param.E_abs_err = config["E_abs_err"];
     param.E_rel_err = config["E_rel_err"];
+    param.grad_abs_err = config["grad_abs_err"];
+    param.grad_rel_err = config["grad_rel_err"];
     param.cg_rel_err = config["cg_rel_err"];
+    param.projected_newton = config["projected_newton"];
+    param.soft_max = config["soft_max"];
+    param.t = config["t"];
     
     if (ffield == "")
     {
@@ -134,8 +139,8 @@ int main(int argc, char** argv)
 
     // Choose output JSON filename
     std::string json_name = output_dir + "/" + model + "_" + param.solver_type;
-    
-    if (param.solver_type == "CG") {
+
+    if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS") {
         // append cg_rel_err for CG runs
         json_name += "_" + sci_short(param.cg_rel_err);
     }
@@ -200,7 +205,7 @@ int main(int argc, char** argv)
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
     std::string obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
-    if (param.solver_type == "CG") {
+    if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS") {
         // append cg_rel_err for CG runs
         obj_name += "_" + sci_short(param.cg_rel_err);
     }

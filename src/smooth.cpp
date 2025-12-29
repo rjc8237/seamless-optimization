@@ -185,10 +185,15 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa) {
         energy = (R.transpose() * (weights * R)).trace();
     }
 
-    return m_params.alignment_weight*energy + m_params.symdir_weight*SymDir::compute_energy_from_jacobian(Ji, area, m_params.Lp);
+    return m_params.alignment_weight*energy + m_params.symdir_weight*SymDir::compute_energy_from_jacobian(Ji, area, m_params.Lp, m_params.soft_max, m_params.t);
     // return compute_worst_n_energy(Ji, area, m_params.Lp, m_params.percent, m_params.p_energy);
 }
 
+double ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa, double norm_p, double percent, bool soft_max, double t) {
+    Eigen::MatrixXd Ji;
+    SymDir::jacobian_from_uv(G, aaa, Ji);
+    return compute_worst_n_energy_from_jacobian(Ji, area, norm_p, percent, soft_max, t);
+}
 
 double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
@@ -199,7 +204,7 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     bool get_hessian)
 {
     Eigen::SparseMatrix<double> weights = compute_area_weight_matrix();
-    double energy = m_params.symdir_weight * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian, m_params.Lp);
+    double energy = m_params.symdir_weight * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian, m_params.Lp, m_params.projected_newton, m_params.soft_max, m_params.t);
     grad *= m_params.symdir_weight;
     hessian *= m_params.symdir_weight;
 
@@ -261,11 +266,12 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     export_uv(uv);
     Eigen::MatrixXd Guv = Grad * uv;
 
-    Eigen::VectorXd newton;
+    Eigen::VectorXd newton, initial_guess;
     // get grad and hessian
     Eigen::SparseMatrix<double> hessian;
     Eigen::VectorXd grad;
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
+
     double misalignment_weight = 1.;
 
     bool use_rref = m_params.use_rref;
@@ -432,10 +438,15 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
                     << std::endl;
             // hessian = Q2T * hessian * Q2;
-            Eigen::VectorXd rhs = Q2T* grad;
+            Eigen::VectorXd rhs = Q2T * grad;
+            initial_guess.setZero(rhs.size());  // initialize as zero vector with correct size
 
             // Compute corrected descent direction
             double a = 0;
+            if (hessian_log.size() > 0) {
+                a = hessian_log.back().correction;
+            }
+
             if (m_params.solver_type == "GS") {
                 newton.setZero(uv.rows() * 2);  // initialize as zero vector with correct size
                 while (true){
@@ -501,6 +512,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                         
                         // Create matrix with correction
                         mat = Q2T * ((hessian + a*id) * Q2);
+                        // mat = mat + a * id;
                         // mat = (hessian + a*id);
                     }
                     mat.makeCompressed();
@@ -508,14 +520,15 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
                     solver.compute(mat);
                     newton = -solver.solve(rhs);
-                    
-                    residual = (mat * newton + rhs).norm();
+
+                    residual = (mat * newton + rhs).norm();                    
 
                     // int status{};
                     // newton = -UMFPACK_solve(mat, rhs, status);
                     newton = Q2 * newton;
 
                     newton_decr = newton.dot(grad);
+                    
                     std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
                     std::cout << "newton norm is " << newton.dot(newton) << std::endl;
                     std::cout << "projected gradient is " << newton_decr << std::endl;
@@ -526,7 +539,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     if (solver.info() == Eigen::Success && newton_decr < 0)
                     {
                         // cond_num = get_cond_num_from_hessian(hessian);
-                        if (m_params.solver_type == "CG") {
+                        if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
                             iter_solver = solver.iterations();
                         }
                         break;
@@ -555,9 +568,11 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     auto new_x = uv;
     double ls_step_size = 1.0;
     bool ls_good = false;
+    double E_worst_0 = compute_worst_n_energy(uv, m_params.Lp, m_params.percent, m_params.soft_max, m_params.t);
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
         double new_E = compute_energy(new_x);
+        double new_E_worst = compute_worst_n_energy(new_x, m_params.Lp, m_params.percent, m_params.soft_max, m_params.t);
         if (ME.rows() > 0) 
         {
             Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
@@ -601,11 +616,13 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         iter_solver,
         time_ls,
         ls_step_size,
-        fabs(newton_decr)
+        fabs(newton_decr),
+        newton
     });
 
-
-    return grad.cwiseAbs().maxCoeff();
+    double grad_norm;
+    grad_norm = grad.cwiseAbs().maxCoeff();
+    return grad_norm;
 }
 
 /*

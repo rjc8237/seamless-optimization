@@ -27,8 +27,6 @@ public:
 
     // 1. Compute: Converts input matrix to RowMajor and pre-calcs diagonals
     void compute(const MatrixType& A) {
-        // Create a Row-Major copy. 
-        // This is necessary because iterating rows on a Col-Major matrix is very slow.
         m_rowMajorA = A; 
 
         Index n = m_rowMajorA.rows();
@@ -82,12 +80,14 @@ public:
 
     void compute(const Eigen::SparseMatrix<double>& A);
     Eigen::VectorXd solve(const Eigen::VectorXd& b);
+    Eigen::VectorXd solve_with_guess(const Eigen::VectorXd& b, const Eigen::VectorXd& x0);
     Eigen::ComputationInfo info() const;
     int iterations() const;
 
 private:
     std::string solver_name_;
     Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg_;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, Eigen::IncompleteCholesky<double>> cg_llt;
     Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, 
     SymmetricGaussSeidelPreconditioner<Eigen::SparseMatrix<double>>> cg_gs;
     Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Upper> ldlt_;
