@@ -4,7 +4,7 @@
 /py/*.so
 *DS_Store
 *__pycache__*
-/py_codes/
+/py_codes/venv*
 /venv/
 /.vscode/
 /data/closed_myles/

@@ -10,6 +10,7 @@
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
 #include "polyscope/curve_network.h"
+#include "energy.h"
 
 using json = nlohmann::json;
 
@@ -380,8 +381,9 @@ public:
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
-    double compute_energy(const Eigen::MatrixXd& aaa);
-    double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double norm_p, double percent, bool soft_max = false, double t = 1.0);
+    double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
+    double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
+    double compute_threshold_energy(const Eigen::MatrixXd& aaa);
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
     void export_FE(Eigen::MatrixXi& FE);
@@ -389,8 +391,10 @@ public:
 
     double get_quality();
     double get_quality_max();
-    double get_quality_avg_for_smooth_only();
-    double get_quality_avg_worst_for_smooth_only();
+    double get_quality_avg_for_smooth_only(double Lp = 0);
+    double get_quality_avg_worst_for_smooth_only(double Lp = 0);
+    double get_threshold_energy();
+
     
     //statistics for solver
     struct HessianStats {

@@ -13,7 +13,7 @@ namespace jakob
   Scalar gradient_and_hessian_from_J(const Eigen::Matrix<Scalar, 1, 4> &J,
                                      Eigen::Matrix<Scalar, 1, 4> &local_grad,
                                      Eigen::Matrix<Scalar, 4, 4> &local_hessian,
-                                     double norm_p, bool soft_max = false, double t = 1.0)
+                                     double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0)
   {
       typedef DScalar2<Scalar, Eigen::Matrix<Scalar, 4, 1>, Eigen::Matrix<Scalar, 4, 4>> DScalar;
       DiffScalarBase::setVariableCount(4);
@@ -22,7 +22,7 @@ namespace jakob
       DScalar b(1, J(1));
       DScalar c(2, J(2));
       DScalar d(3, J(3));
-      auto sd = SymDir::symmetric_dirichlet_energy_t(a, b, c, d, norm_p, soft_max, t);
+      auto sd = SymDir::symmetric_dirichlet_energy_t(a, b, c, d, norm_p, soft_max, t, E_min);
 
       local_grad = sd.getGradient();
       local_hessian = sd.getHessian();
@@ -41,9 +41,9 @@ namespace SymDir{
     }
     
     template <typename Scalar>
-    Scalar compute_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1> &J, const Eigen::Matrix<Scalar, -1, 1> &area, double norm_p, bool soft_max, double t, bool uniform)
+    Scalar compute_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1> &J, const Eigen::Matrix<Scalar, -1, 1> &area, double norm_p, bool soft_max, double t, double E_min, bool uniform)
     {
-        Scalar energy = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p, soft_max, t).dot(area) / area.sum();
+        Scalar energy = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p, soft_max, t, E_min).dot(area) / area.sum();
         if (!uniform)
         {
             if (soft_max) {
@@ -58,10 +58,10 @@ namespace SymDir{
     }
     
     template <typename Scalar>
-    Scalar compute_worst_n_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, int norm_p, double percent, bool soft_max, double t)
+    Scalar compute_worst_n_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, int norm_p, double percent, bool soft_max, double t, double E_min)
     {
         // Compute per-triangle energy vector
-        Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p, soft_max, t).array() * area.array();
+        Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p, soft_max, t, E_min).array();
         // Sort indices based on energy values
         std::vector<int> indices(energy_per_tri.size());
         std::iota(indices.begin(), indices.end(), 0);
@@ -74,18 +74,37 @@ namespace SymDir{
         // Compute p-norm of the N% largest energies
         Scalar p_norm_sum = 0;
         Scalar area_sum = 0;
+        for (int i = 0; i < indices.size(); i++) {
+            area_sum += area[indices[i]];
+        }
         for (int i = 0; i < num_tris; i++) {
-            p_norm_sum += energy_per_tri[indices[i]];
-            area_sum += area[indices[i]]; 
+            p_norm_sum += energy_per_tri[indices[i]] * area[indices[i]];
         }
         // Return average of worst N% triangles
         return p_norm_sum / area_sum;
     }
+    template <typename Scalar>
+    Scalar compute_threshold_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, int norm_p, double percent, bool soft_max, double t){
+                // Compute per-triangle energy vector
+        Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), 1, soft_max, t).array();
+        // Sort indices based on energy values
+        std::vector<int> indices(energy_per_tri.size());
+        std::iota(indices.begin(), indices.end(), 0);
 
+        std::sort(indices.begin(), indices.end(),
+                [&](int i1, int i2) { return energy_per_tri[i1] > energy_per_tri[i2]; });
+
+        // Calculate how many triangles to include
+        int num_tris = static_cast<int>(std::ceil(percent / 100.0 * indices.size()));
+        
+        // Return average of worst N% triangles
+        return energy_per_tri[num_tris - 1];
+
+    }
 
     template <typename Scalar>
     Scalar grad_and_hessian_from_jacobian(const Eigen::Matrix<Scalar, -1, 1> &area, const Eigen::Matrix<Scalar, -1, -1> &jacobian,
-                                      Eigen::Matrix<Scalar, -1, -1> &total_grad, Eigen::SparseMatrix<Scalar> &hessian, bool with_hessian, double norm_p, bool projected_newton, bool soft_max = false, double t = 1.0)
+                                      Eigen::Matrix<Scalar, -1, -1> &total_grad, Eigen::SparseMatrix<Scalar> &hessian, bool with_hessian, double norm_p, bool projected_newton, bool soft_max = false, double t = 1.0, double E_min = 1.0)
     {
         int f_num = area.rows();
         total_grad.resize(f_num, 4);
@@ -103,7 +122,7 @@ namespace SymDir{
             Eigen::Matrix<Scalar, 1, 4> J = jacobian.row(i);
             Eigen::Matrix<Scalar, 4, 4> local_hessian;
             Eigen::Matrix<Scalar, 1, 4> local_grad;
-            energy += jakob::gradient_and_hessian_from_J(J, local_grad, local_hessian, norm_p, soft_max, t) * area(i) / total_area;
+            energy += jakob::gradient_and_hessian_from_J(J, local_grad, local_hessian, norm_p, soft_max, t, E_min) * area(i) / total_area;
             SPDLOG_TRACE("total area is {}", total_area);
             SPDLOG_TRACE("jacobian is {}, {}, {}, {}", J[0], J[1], J[2], J[3]);
             SPDLOG_TRACE("local gradient is {}, {},...", local_grad[0], local_grad[1]);
@@ -124,7 +143,7 @@ namespace SymDir{
             std::vector<Scalar> weights(f_num);
             for (int i = 0; i < f_num; i++){
                 Eigen::Matrix<Scalar, 1, 4> J = jacobian.row(i);
-                weights[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), norm_p, soft_max, t);
+                weights[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), norm_p, soft_max, t, E_min);
             }
             // Apply weights to compute proper gradient and hessian
             for (int i = 0; i < f_num; i++){
@@ -167,13 +186,13 @@ namespace SymDir{
                                 Eigen::Matrix<Scalar, -1, 1> &grad,
                                 Eigen::SparseMatrix<Scalar> &hessian,
                                 bool get_hessian,
-                                double norm_p, bool projected_newton, bool soft_max, double t)
+                                double norm_p, bool projected_newton, bool soft_max, double t, double E_min)
     {
         int f_num = area.rows();
         Eigen::Matrix<Scalar, -1, -1> Ji, total_grad;
         jacobian_from_uv(G, uv, Ji);
         Scalar energy;
-        energy = grad_and_hessian_from_jacobian(area, Ji, total_grad, hessian, get_hessian, norm_p, projected_newton, soft_max, t);
+        energy = grad_and_hessian_from_jacobian(area, Ji, total_grad, hessian, get_hessian, norm_p, projected_newton, soft_max, t, E_min);
 
         Eigen::Matrix<Scalar, -1, 1> vec_grad = Eigen::Map<Eigen::Matrix<Scalar, -1, 1>>(total_grad.data(), total_grad.size());
         
@@ -191,11 +210,17 @@ namespace SymDir{
                                              Eigen::Matrix<double, -1, 1> &,
                                              Eigen::SparseMatrix<double> &,
                                              bool,
-                                             double, bool, bool, double);
-    template double compute_energy_from_jacobian<double>(const Eigen::Matrix<double, -1, -1> &, const Eigen::Matrix<double, -1, 1> &, double, bool, double, bool);
+                                             double, bool, bool, double, double);
+    template double compute_energy_from_jacobian<double>(const Eigen::Matrix<double, -1, -1> &, const Eigen::Matrix<double, -1, 1> &, double, bool, double, double, bool);
     template double compute_worst_n_energy_from_jacobian<double>(
         const Eigen::Matrix<double, -1, -1>&,
         const Eigen::Matrix<double, -1, 1>&, 
         int,
+        double, bool, double, double);
+    template double compute_threshold_energy_from_jacobian<double>(        
+        const Eigen::Matrix<double, -1, -1>&,
+        const Eigen::Matrix<double, -1, 1>&, 
+        int,
         double, bool, double);
+
 } // namespace SymDir

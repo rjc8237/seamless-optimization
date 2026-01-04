@@ -10,18 +10,16 @@
 // #define TEST_AMIPS_OLD
 namespace SymDir {
 template <typename T>
-T symmetric_dirichlet_energy_t(T a, T b, T c, T d, double norm_p, bool soft_max = false, double t = 1.0)
+T symmetric_dirichlet_energy_t(T a, T b, T c, T d, double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0)
 {
     auto det = a * d - b * c;
     auto frob2 = a * a + b * b + c * c + d * d;
-#ifndef TEST_AMIPS_OLD
+    auto energy = frob2 * (1.0 + 1.0 / (det * det)) - 4.0;
+    #ifndef TEST_AMIPS_OLD
     if (soft_max) {
-        auto energy = frob2 * (1.0 + 1.0 / (det * det));
-        return exp(energy / t);
-    } else {
-        return pow(frob2 * (1 + 1 / (det * det)), norm_p);
+        return exp(energy / t / E_min);
     }
-    return pow(frob2 * (1 + 1 / (det * det)), norm_p);
+    return pow(energy / E_min, norm_p);
 #else
     return pow((frob2 / det), norm_p);
 #endif
@@ -34,20 +32,17 @@ inline Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixBase<Derived>& b,
     const Eigen::MatrixBase<Derived>& c,
     const Eigen::MatrixBase<Derived>& d,
-    double norm_p, bool soft_max = false, double t = 1.0)
+    double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0)
 {
     auto det = a.array() * d.array() - b.array() * c.array();
     auto frob2 = a.array().abs2() + b.array().abs2() + c.array().abs2() + d.array().abs2();
+    auto energy = frob2 * (1.0 + det.abs2().inverse()) - 4.0;
 #ifndef TEST_AMIPS_OLD
     if (soft_max) {
-        auto energy = frob2 * (1.0 + det.abs2().inverse());
-        auto energy_exp = (energy / t).array().exp();
+        auto energy_exp = (energy / t / E_min).array().exp();
         return energy_exp.matrix();
-    } else {
-        auto energy = frob2 * (1.0 + det.abs2().inverse()).pow(norm_p);
-        return energy.matrix();
     }
-    return (frob2 * (1 + (det).abs2().inverse())).pow(norm_p).matrix();
+    return (energy / E_min).pow(norm_p).matrix();
 #else
     auto result = (frob2 * det.inverse()).pow(norm_p);
     return result.matrix();
@@ -59,14 +54,21 @@ template <typename Scalar>
 Scalar compute_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, -1>& J,
     const Eigen::Matrix<Scalar, -1, 1>& areas,
-    double norm_p, bool soft_max = false, double t = 1.0,
+    double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0,
     bool uniform = false);
 template <typename Scalar> 
 Scalar compute_worst_n_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, -1>& J,
     const Eigen::Matrix<Scalar, -1, 1>& area,
     int norm_p,
+    double percent, bool soft_max = false, double t = 1.0, double E_min = 1.0);
+template <typename Scalar>
+Scalar compute_threshold_energy_from_jacobian(
+    const Eigen::Matrix<Scalar, -1, -1>& J,
+    const Eigen::Matrix<Scalar, -1, 1>& area,
+    int norm_p,
     double percent, bool soft_max = false, double t = 1.0);
+
 template <typename Scalar>
 Scalar get_grad_and_hessian(
     const Eigen::SparseMatrix<Scalar>& G,
@@ -75,7 +77,7 @@ Scalar get_grad_and_hessian(
     Eigen::Matrix<Scalar, -1, 1>& grad,
     Eigen::SparseMatrix<Scalar>& hessian,
     bool get_hessian,
-    double norm_p, bool projected_newton, bool soft_max = false, double t = 1.0);
+    double norm_p, bool projected_newton, bool soft_max = false, double t = 1.0, double E_min = 1.0);
 
 template <typename Scalar>
 void jacobian_from_uv(

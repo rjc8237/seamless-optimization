@@ -240,36 +240,44 @@ void ExtremeOpt::do_optimization(json& opt_log)
     }
 
     total_timer.start();
-
-    double E = get_quality_avg_for_smooth_only();
-    double E_worst = get_quality_avg_worst_for_smooth_only();
-
-    spdlog::info("Initial E = {}, E_worst = {}", E, E_worst);
     
     std::vector<HessianStats> hessian_log;
     bool failed = false;
-    
+
+    double val_e_min = 0.1;
     double max_grad_0 = smooth_global(failed, hessian_log);
     double max_grad = max_grad_0;
+
+    double E = get_quality_avg_for_smooth_only();
+    double E_worst = get_quality_avg_worst_for_smooth_only();
+    spdlog::info("Initial E = {}, E_worst = {}, E_min = {}", E, E_worst, m_params.E_min);
 
     max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
     E = std::pow(E, 1.0 / (2 * m_params.Lp));
     E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
-
+    double E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
+    double E_2 = get_quality_avg_for_smooth_only(1.0);
     opt_log["opt_log"].push_back(
-        {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
+        {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E_2}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
 
     std::vector<double> residuals;
     double E_0 = E_worst;
-
+    bool reached_one = false;
     for (int i = 1; i <= m_params.max_iters; i++) {
         double E_old = E_worst;
+    
+        if (E_worst_2 < 1.0 && reached_one == false) {
+            total_time = total_timer.getElapsedTime();
+            reached_one = true;
+        }
+
         // if times exceeds 3 minutes, stop optimization
         if (total_timer.getElapsedTime() > 180.0) {
             spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", 180);
             iters = i; // last completed iteration
             break;
         }
+
 
         double E_max;
         failed = false;
@@ -282,6 +290,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
             // E = get_quality();
             E = get_quality_avg_for_smooth_only();
             E_worst = get_quality_avg_worst_for_smooth_only();
+
+            E_2 = get_quality_avg_for_smooth_only(1.0);
+            E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
             //E_max = get_quality_max();
 
             // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
@@ -295,33 +306,26 @@ void ExtremeOpt::do_optimization(json& opt_log)
         // opt_log["opt_log"].push_back(
         //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
         opt_log["opt_log"].push_back(
-            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
-        iters = i;
+            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E_2}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
         
+        iters = i;
+
+        // TODO: terminate criteria
         if (max_grad < m_params.grad_abs_err || max_grad < max_grad_0 * m_params.grad_rel_err) {
             spdlog::info(
                 "Reach target gradient({}), optimization succeed!",
                 m_params.grad_abs_err);
             break;
         }
-
-        // TODO: terminate criteria
-
+        if (fabs(E_worst - E_old) < 1e-4) {
+            spdlog::info("Energy change too small ({}), optimization converge!", fabs(E_worst - E_old));
+            break;
+        }
         if (fabs(E_worst) < m_params.E_rel_err * E_0 || fabs(E_worst) < m_params.E_abs_err) {
             spdlog::info("Energy converged!", fabs(E_worst), m_params.E_rel_err * E_0, m_params.E_abs_err);
             break;
         }
-
-        // if (hessian_log.size() > 0) {
-        //     if (hessian_log.back().newton_decr < m_params.E_abs_err * m_params.E_abs_err || 
-        //     hessian_log.back().newton_decr < m_params.E_rel_err * m_params.E_rel_err * hessian_log[0].newton_decr) {
-        //         spdlog::info(
-        //             "Newton decrement too small ({}), optimization converge!",
-        //             hessian_log.back().newton_decr);
-        //         break;
-        //     }
-        // }   
-
+        
         if (failed) {
             spdlog::info(
                 "Line search step failed. stopping optimization early."
@@ -331,12 +335,17 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
         std::cout << std::endl;
     }
+    if (reached_one == true) {
+        opt_log["E_worst=1.0"] = total_time;
+    }
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
     double total_time_rounded = std::round(total_time);
     opt_log["total_time"] = total_time_rounded;
     opt_log["iters"] = iters;
     opt_log["hessian_log"] = hessian_log;
+    E_worst = get_quality_avg_worst_for_smooth_only(1.0);
+    opt_log["E_worst"] = E_worst;
 
 }
 } // namespace SymDir
