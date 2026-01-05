@@ -71,7 +71,7 @@ int main(int argc, char** argv)
     if (ffield == "")
     {
         spdlog::info("no field provided: disabling alignment");
-        param.alignment_weight = config["alignment_weight"];
+        param.alignment_weight = 0.;
     }
 
 	MeshCutter meshcutter(V_init, uv, F_init, F);
@@ -94,8 +94,6 @@ int main(int argc, char** argv)
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
     
-    double cons_residual = check_constraints(EE, FE, uv, F);
-    spdlog::info("Initial constraints error {}", cons_residual);
 
     json opt_log;
     opt_log["model_name"] = model;
@@ -138,7 +136,7 @@ int main(int argc, char** argv)
         //extremeopt.FE = FE;
     }
     //extremeopt.view();
-    if (ffield == "") extremeopt.comb_matchings(ffield_path);
+    if (ffield != "") extremeopt.comb_matchings(ffield_path);
     extremeopt.do_optimization(opt_log);
 
     if (extremeopt.m_params.with_cons)
@@ -152,9 +150,6 @@ int main(int argc, char** argv)
     }
 
     extremeopt.export_mesh(V, F, uv);
-
-    cons_residual = check_constraints(EE, FE, uv, F);
-    spdlog::info("Final constraints error {}", cons_residual);
 
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 

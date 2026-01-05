@@ -1,5 +1,5 @@
 {
-    "max_iters": 100,
+    "max_iters": 2,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
     "fix_misaligned": false,
@@ -21,5 +21,5 @@
     "Lp": 1,
     "symdir_weight": 0.001,
     "alignment_weight": 1.0,
-    "use_rref": false
+    "use_rref": true 
 }

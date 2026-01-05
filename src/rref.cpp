@@ -442,8 +442,8 @@ void elim_constr(
     Eigen::VectorXi dep, indep;
     igl::list_to_matrix(dep_list, dep);
     igl::list_to_matrix(indep_list, indep);
-    spdlog::info("independent constraints are {}", indep.transpose().head(10));
-    spdlog::info("dependent constraints are {}", dep.transpose().head(10));
+    //spdlog::info("independent constraints are {}", indep.transpose().head(10));
+    //spdlog::info("dependent constraints are {}", dep.transpose().head(10));
     Eigen::VectorXi all_rows = get_seq(0, R.rows() - 1);
     int num_dep = dep_list.size();
     // std::cout << "dep list:" << dep << std::endl;
@@ -588,4 +588,3 @@ void elim_constr(
     igl::slice(T, dep_indep_rev, 1, T_out);
     igl::slice(rb, dep_indep_rev, 1, b);
 }
-

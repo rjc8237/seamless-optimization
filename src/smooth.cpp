@@ -486,9 +486,12 @@ double ExtremeOpt::smooth_global(bool& failed)
         ls_step_size *= 0.8;
     }
 
+    Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.transpose().data(), 2*V.rows());
+    double constraint_error =  (Aeq * uv_flat).cwiseAbs().maxCoeff();
+    //double constraint_error =  (uv_flat).cwiseAbs().maxCoeff();
+    spdlog::info("seamless error is {}", constraint_error);
     if (ME.rows() > 0) 
     {
-        Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
         double misalignment_energy = 0.5 * (Beq * uv_flat).squaredNorm();
         spdlog::info("Misalignment error is {}", misalignment_energy);
     }

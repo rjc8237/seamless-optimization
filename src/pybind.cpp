@@ -66,7 +66,7 @@ PYBIND11_MODULE(symdir, m)
         .def_readwrite("use_max_energy", &Parameters::use_max_energy)
         .def_readwrite("Lp", &Parameters::Lp);
     
-    m.def("check_constraints", &check_constraints);
+    //m.def("check_constraints", &check_constraints);
     m.def("transform_EE", &transform_EE);
     m.def("symmetric_dirichlet_energy", &SymDir::symmetric_dirichlet_energy);
     m.def("transform_FE", &transform_FE);
