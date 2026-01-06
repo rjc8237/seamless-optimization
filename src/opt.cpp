@@ -13,108 +13,14 @@
 #include "ExtremeOpt.h"
 #include "spdlog/spdlog.h"
 #include "rref.h"
+#include <math.h>       
 
 #include <igl/facet_components.h>
+#include "polyscope/curve_network.h"
+#include "polyscope/point_cloud.h"
+#include "polyscope/surface_mesh.h"
 
 namespace SymDir{
-
-/*
-void buildAeq_explicit(
-    const Eigen::MatrixXi& EE,
-    const Eigen::MatrixXd& uv,
-    const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double>& Aeq)
-{
-    int N = uv.rows();
-    int c = 0;
-    int m = EE.rows() / 2;
-
-    // get u aligned edges for each component
-    auto [min_v_diffs, min_v_diff_ids, min_v_diff_next_ids] = find_u_aligned_edges(uv, F);
-    int num_components = min_v_diffs.size();
-
-    int n_fix_dof = 3 * num_components;
-
-    std::set<std::pair<int, int>> added_e;
-    typedef Eigen::Triplet<double> Trip;
-    std::vector<Trip> trips;
-    trips.reserve(12 * EE.rows());
-
-    Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
-    int A2, B2, C2, D2;
-    for (int i = 0; i < EE.rows(); i++) {
-        int A2 = EE(i, 0);
-        int B2 = EE(i, 1);
-        int C2 = EE(i, 2);
-        int D2 = EE(i, 3);
-        auto e0 = std::make_pair(A2, B2);
-        auto e1 = std::make_pair(C2, D2);
-        if (added_e.find(e0) != added_e.end() || added_e.find(e1) != added_e.end()) continue;
-        added_e.insert(e0);
-        added_e.insert(e1);
-
-        Eigen::Matrix<double, 2, 1> e_ab = uv.row(B2) - uv.row(A2);
-        Eigen::Matrix<double, 2, 1> e_dc = uv.row(C2) - uv.row(D2);
-
-        Eigen::Matrix<double, 2, 1> e_ab_perp;
-        e_ab_perp(0) = -e_ab(1);
-        e_ab_perp(1) = e_ab(0);
-        double angle = atan2(-e_ab_perp.dot(e_dc), e_ab.dot(e_dc));
-        int r = (int)(round(2 * angle / double(igl::PI)) + 2) % 4;
-
-        std::vector<Eigen::Matrix<double, 2, 2>> r_mat(4);
-        r_mat[0] << -1, 0, 0, -1;
-        r_mat[1] << 0, 1, -1, 0;
-        r_mat[2] << 1, 0, 0, 1;
-        r_mat[3] << 0, -1, 1, 0;
-
-        trips.push_back(Trip(c, A2, 1));
-        trips.push_back(Trip(c, B2, -1));
-        trips.push_back(Trip(c + 1, A2 + N, 1));
-        trips.push_back(Trip(c + 1, B2 + N, -1));
-
-        trips.push_back(Trip(c, C2, r_mat[r](0, 0)));
-        trips.push_back(Trip(c, D2, -r_mat[r](0, 0)));
-        trips.push_back(Trip(c, C2 + N, r_mat[r](0, 1)));
-        trips.push_back(Trip(c, D2 + N, -r_mat[r](0, 1)));
-        trips.push_back(Trip(c + 1, C2, r_mat[r](1, 0)));
-        trips.push_back(Trip(c + 1, D2, -r_mat[r](1, 0)));
-        trips.push_back(Trip(c + 1, C2 + N, r_mat[r](1, 1)));
-        trips.push_back(Trip(c + 1, D2 + N, -r_mat[r](1, 1)));
-        c = c + 2;
-    }
-
-    for (int ci = 0; ci < num_components; ++ci)
-    {
-        int min_v_diff_id = min_v_diff_ids[ci];
-        if (min_v_diff_id == -1)
-        {
-            spdlog::warn("for component {}, skipping edge fix", ci);
-            n_fix_dof -= 2;
-            continue;
-        }
-        spdlog::debug("for component {}, fixing {}", ci, min_v_diff_id);
-        trips.push_back(Trip(c, min_v_diff_id, 1));
-        trips.push_back(Trip(c + 1, min_v_diff_id + N, 1));
-        c = c + 2;
-    }
-
-    for (int ci = 0; ci < num_components; ++ci)
-    {
-        int min_v_diff_id = min_v_diff_ids[ci];
-        if (min_v_diff_id == -1)
-        {
-            n_fix_dof -= 1;
-            continue;
-        }
-        spdlog::info("for component {}, fixing rotation {}", ci, min_v_diff_next_ids[ci]);
-        trips.push_back(Trip(c, min_v_diff_next_ids[ci], 1));
-        c = c + 1;
-    }
-    Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
-    Aeq.setFromTriplets(trips.begin(), trips.end());
-}
-*/
 
 struct CoordinateVector
 {
@@ -128,20 +34,129 @@ struct CoordinateVector
 };
 
 
-Eigen::SparseMatrix<double> build_seamless_subspace(
-    const Eigen::MatrixXi& EE,
-    const Eigen::MatrixXd& uv,
-    const Eigen::MatrixXi& F)
-{
-    int num_vertices = uv.rows();
-    int num_seam_edges = EE.rows();
+class SeamlessSubspaceGenerator {
+public:
+SeamlessSubspaceGenerator() {}
 
-    // mark all seam vertices
-    std::vector<bool> is_seam_vertex(num_vertices, false);
-    std::vector<bool> is_independent_vertex(num_vertices, false);
-    std::vector<bool> is_dependent_vertex(num_vertices, false);
-    std::vector<int> out(num_vertices, -1);
-    std::vector<int> in(num_vertices, -1);
+void view(
+    const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    const std::vector<int>& v_map
+)
+{
+    int num_vertices = seam_vertices.size();
+    Eigen::MatrixXd P(num_vertices, 3);
+    std::vector<int> u_nonzeros(V.rows(), 0); 
+    std::vector<int> v_nonzeros(V.rows(), 0); 
+    for (int i = 0; i < num_vertices; ++i)
+    {
+        int vi = seam_vertices[i];
+        P.row(i) = V.row(vi);
+        u_nonzeros[vi] = coords[2 * i].nonZeros();
+        v_nonzeros[vi] = coords[2 * i + 1].nonZeros();
+        //if (is_independent_vertex[vi]) independent[vi] = 1;
+    }
+
+    std::vector<int> feature_degrees = compute_feature_degrees(v_map);
+    std::vector<int> cut_degrees(uv.rows());
+    for (int vi = 0; vi < uv.rows(); ++vi)
+    {
+        cut_degrees[vi] = feature_degrees[v_map[vi]];
+    }
+
+    polyscope::init();
+    polyscope::registerSurfaceMesh("seam mesh", V, F);
+    polyscope::getSurfaceMesh("seam mesh")->addVertexParameterizationQuantity("uv", uv);
+    polyscope::getSurfaceMesh("seam mesh")->addVertexScalarQuantity("is independent", is_independent_vertex);
+    polyscope::getSurfaceMesh("seam mesh")->addVertexScalarQuantity("u nonzeros", u_nonzeros);
+    polyscope::getSurfaceMesh("seam mesh")->addVertexScalarQuantity("v nonzeros", v_nonzeros);
+    polyscope::getSurfaceMesh("seam mesh")->addVertexScalarQuantity("order", seam_order);
+    polyscope::getSurfaceMesh("seam mesh")->addVertexScalarQuantity("degree", cut_degrees);
+    polyscope::registerPointCloud("seam vertices", P);
+    //polyscope::getPointCloud("seam vertices")->addScalarQuantity("is independent", independent);
+    polyscope::show();
+}
+
+typedef Eigen::SparseVector<double> CoordVector;
+int count;
+std::vector<int> seam_vertices;
+std::vector<int> seam_index;
+std::vector<bool> is_seam_vertex;
+std::vector<bool> is_independent_vertex;
+std::vector<bool> is_dependent_vertex;
+std::vector<int> seam_order;
+std::vector<CoordVector> coords;
+
+std::deque<int> edges_to_process;
+std::vector<bool> is_edge_seen;
+std::vector<int> out;
+std::vector<int> in;
+
+void set_independent_leaves(const Eigen::MatrixXi& EE)
+{
+    for (int e = 0; e < EE.rows(); e++)
+    {
+        int A2 = EE(e, 0);
+        int B2 = EE(e, 1);
+        int C2 = EE(e, 2);
+        int D2 = EE(e, 3);
+        int vi = -1;
+        if (A2 == D2) vi = A2;
+        else if (B2 == C2) vi = B2;
+        else continue;
+
+        make_ind_coord(seam_index[vi]);
+        seam_order[vi] = count;
+        ++count;
+        is_edge_seen[e] = true;
+        edges_to_process.push_back(e);
+    }
+}
+
+int get_leaf_vertex(const Eigen::MatrixXi& EE)
+{
+    int e_start = 0;
+    while ((EE(e_start, 0) != EE(e_start, 3)) && (EE(e_start, 1) != EE(e_start, 2)))
+    {
+        e_start++;
+    }
+
+    return (EE(e_start, 0) == EE(e_start, 3)) ? EE(e_start, 0) : EE(e_start, 2);
+}
+
+void traverse_tree(const Eigen::MatrixXi& EE)
+{
+    int num_seam_edges = EE.rows();
+    int v_start = get_leaf_vertex(EE);
+    int v_curr = v_start;
+    do
+    {
+        int e = out[v_curr];
+
+        // get next vertex
+        if (EE(e, 0) == v_curr) v_curr = EE(e, 1);
+        else v_curr = EE(e, 3);
+
+        // determine if vertex is dependent or independent (if not already set)
+        if (!is_independent_vertex[v_curr])
+        {
+            if (!is_edge_seen[e])
+            {
+                make_ind_coord(seam_index[v_curr]);
+                seam_order[v_curr] = count;
+                ++count;
+            }
+        }
+        is_edge_seen[e] = true;
+    } while (v_curr != v_start);
+    edges_to_process.resize(num_seam_edges);
+    std::iota(edges_to_process.begin(), edges_to_process.end(), 0);
+}
+
+void build_seam_connectivity(const Eigen::MatrixXi& EE)
+{
+    int num_seam_edges = EE.rows();
     for (int eij = 0; eij < num_seam_edges; ++eij)
     {
         for (int i = 0; i < 4; ++i)
@@ -157,11 +172,84 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
         out[C2] = eij;
         in[D2] = eij;
     }
+}
+
+void make_ind_coord(int index) {
+    int i = index;
+    coords[2 * i].coeffRef(2 * i) = 1.; 
+    coords[(2 * i) + 1].coeffRef((2 * i) + 1) = 1.; 
+    is_independent_vertex[seam_vertices[i]] = true;
+}
+
+int get_edge_rotation(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& EE, int e)
+{
+    int A2 = EE(e, 0);
+    int B2 = EE(e, 1);
+    int C2 = EE(e, 2);
+    int D2 = EE(e, 3);
+
+    // get oriented eddge positions
+    Eigen::Matrix<double, 2, 1> e_ab = uv.row(B2) - uv.row(A2);
+    Eigen::Matrix<double, 2, 1> e_dc = uv.row(C2) - uv.row(D2);
+
+    // get ccw rotation of edge ab
+    Eigen::Matrix<double, 2, 1> e_ab_perp;
+    e_ab_perp(0) = -e_ab(1);
+    e_ab_perp(1) = e_ab(0);
+    double angle = atan2(-e_ab_perp.dot(e_dc), e_ab.dot(e_dc));
+    int r = (int)(round(2 * angle / double(igl::PI)) + 2) % 4;
+    return r;
+}
+
+int count_set(
+    const std::vector<bool>& is_set_vertex,
+    const Eigen::MatrixXi& EE,
+    int e)
+{
+    int num_set = 0;
+    for (int i = 0; i < 4; ++i)
+    {
+        if (is_set_vertex[EE(e, i)]) ++num_set;
+    }
+    return num_set;
+}
+
+std::vector<int> compute_feature_degrees(
+    const std::vector<int>& v_map)
+{
+    int num_vertices = (*std::max_element(v_map.begin(), v_map.end())) + 1;
+    spdlog::info("computing degree for mesh with {} vertices", num_vertices);
+    std::vector<int> feature_degrees(num_vertices, 0);
+    for (int vi : seam_vertices)
+    {
+        feature_degrees[v_map[vi]] += 1;
+    }
+
+    return feature_degrees;
+}
+
+Eigen::SparseMatrix<double> run(
+    const Eigen::MatrixXi& EE,
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F,
+    const std::vector<int>& v_map)
+{
+    int num_vertices = uv.rows();
+    int num_seam_edges = EE.rows();
+
+    // mark all seam vertices
+    is_seam_vertex = std::vector<bool>(num_vertices, false);
+    is_independent_vertex = std::vector<bool>(num_vertices, false);
+    is_dependent_vertex = std::vector<bool>(num_vertices, false);
+    seam_order = std::vector<int>(num_vertices, -1);
+    out = std::vector<int>(num_vertices, -1);
+    in = std::vector<int>(num_vertices, -1);
 
     // get reduced seam subspace
-    std::vector<int> seam_index(num_vertices, -1);
-    std::vector<int> seam_vertices = {};
+    seam_vertices = {};
     seam_vertices.reserve(num_vertices);
+    seam_index = std::vector<int>(num_vertices, -1);
+    build_seam_connectivity(EE);
     for (int vi = 0; vi < num_vertices; ++vi)
     {
         if (is_seam_vertex[vi])
@@ -173,79 +261,28 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
     int num_seam_vertices = seam_vertices.size();
     spdlog::info("{} seam vertices", num_seam_vertices);
 
-    // set all leaves as independent
-    std::vector<int> edges_to_process = {};
-    std::vector<bool> is_edge_seen(num_seam_edges, false);
-    bool use_independent_leaves = true;
-    if (use_independent_leaves)
-    {
-        for (int e = 0; e < EE.rows(); e++)
-        {
-            int A2 = EE(e, 0);
-            int B2 = EE(e, 1);
-            int C2 = EE(e, 2);
-            int D2 = EE(e, 3);
-            int vi = -1;
-            if (A2 == D2) vi = A2;
-            else if (B2 == C2) vi = B2;
-            else continue;
+    // compute junctions
+    std::vector<int> feature_degrees = compute_feature_degrees(v_map);
 
-            is_independent_vertex[vi] = true;
-            is_edge_seen[e] = true;
-            edges_to_process.push_back(e);
-        }
-    }
-
-    bool use_tree_traversal = false;
-    if (use_tree_traversal)
-    {
-        int e_start = 0;
-        while ((EE(e_start, 0) != EE(e_start, 3)) && (EE(e_start, 1) != EE(e_start, 2)))
-        {
-            e_start++;
-        }
-
-        int v_start = (EE(e_start, 0) == EE(e_start, 3)) ? EE(e_start, 0) : EE(e_start, 2);
-        int v_curr = v_start;
-        do
-        {
-            int e = out[v_curr];
-
-            // get next vertex
-            if (EE(e, 0) == v_curr) v_curr = EE(e, 1);
-            else v_curr = EE(e, 3);
-
-            // determine if vertex is dependent or independent (if not already set)
-            if (!is_independent_vertex[v_curr])
-            {
-                if (!is_edge_seen[e]) is_independent_vertex[v_curr] = true;
-                else is_dependent_vertex[v_curr] = true;
-            }
-            is_edge_seen[e] = true;
-        } while (v_curr != v_start);
-        edges_to_process.resize(num_seam_edges);
-        std::iota(edges_to_process.begin(), edges_to_process.end(), 0);
-    }
-    //typedef Eigen::VectorXd CoordVector;
-    typedef Eigen::SparseVector<double> CoordVector;
-    std::vector<CoordVector> coords(2 * num_seam_vertices); 
-    auto make_ind_coord = [&](int i) {
-        coords[2 * i].coeffRef(2 * i) = 1.; 
-        coords[(2 * i) + 1].coeffRef((2 * i) + 1) = 1.; 
-    };
-
-    int count = 0;
+    // set coordinate vector
+    coords.resize(2 * num_seam_vertices); 
     for (int i = 0; i < num_seam_vertices; ++i)
     {
         int vi = seam_vertices[i];
         coords[2 * i].resize(2 * num_seam_vertices); 
         coords[2 * i + 1].resize(2 * num_seam_vertices); 
-        if (is_independent_vertex[vi])
-        {
-            make_ind_coord(i);
-            ++count;
-        }
     }
+
+    // set all leaves as independent
+    count = 0;
+    edges_to_process.clear();
+    is_edge_seen = std::vector<bool>(num_seam_edges, false);
+
+    bool use_independent_leaves = false;
+    if (use_independent_leaves) set_independent_leaves(EE);
+
+    bool use_tree_traversal = false;
+    if (use_tree_traversal) traverse_tree(EE);
 
     // build rotation matrix for different matchings
     std::vector<Eigen::Matrix<double, 2, 2>> r_mat(4);
@@ -263,11 +300,105 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
     std::vector<bool> is_set_vertex = is_independent_vertex;
     std::vector<bool> is_set_edge(num_seam_edges, false);
     //int safety_count = 0;
+
+    int v_start = get_leaf_vertex(EE);
+    int v_curr = v_start;
+    do
+    {
+        int e = out[v_curr];
+
+        // get next vertex
+        if (EE(e, 0) == v_curr) v_curr = EE(e, 1);
+        else v_curr = EE(e, 3);
+
+        int degree = feature_degrees[v_map[v_curr]];
+
+        if ((count_set(is_set_vertex, EE, e) != 3) || (degree != 2))
+        {
+            int index = seam_index[v_curr];
+            make_ind_coord(index);
+        }
+        else
+        {
+
+            int A2 = EE(e, 0);
+            int B2 = EE(e, 1);
+            int C2 = EE(e, 2);
+            int D2 = EE(e, 3);
+            int r = get_edge_rotation(uv, EE, e);
+
+            // get current coordinate vectors
+            CoordVector& Au = coords[2 * seam_index[A2]];
+            CoordVector& Bu = coords[2 * seam_index[B2]];
+            CoordVector& Cu = coords[2 * seam_index[C2]];
+            CoordVector& Du = coords[2 * seam_index[D2]];
+            CoordVector& Av = coords[2 * seam_index[A2] + 1];
+            CoordVector& Bv = coords[2 * seam_index[B2] + 1];
+            CoordVector& Cv = coords[2 * seam_index[C2] + 1];
+            CoordVector& Dv = coords[2 * seam_index[D2] + 1];
+
+            // build constrained values
+            if (v_curr == EE(e, 1))
+            {
+                Bu = Au + r_mat[r](0, 0) * (Du - Cu) + r_mat[r](0, 1) * (Dv - Cv);
+                Bv = Av + r_mat[r](1, 0) * (Du - Cu) + r_mat[r](1, 1) * (Dv - Cv);
+            }
+            else
+            {
+                Du = Cu + r_rev[r](0, 0) * (Bu - Au) + r_rev[r](0, 1) * (Bv - Av);
+                Dv = Cv + r_rev[r](1, 0) * (Bu - Au) + r_rev[r](1, 1) * (Bv - Av);
+            }
+
+            //if (coords[2 * seam_index[v_curr]].nonZeros() > 100)
+            if (false)
+            {
+                coords[2 * seam_index[v_curr]].setZero();
+                coords[2 * seam_index[v_curr] + 1].setZero();
+                make_ind_coord(seam_index[v_curr]);
+            }
+            else
+            {
+                is_dependent_vertex[v_curr] = true;
+            }
+        }
+
+        is_set_vertex[v_curr] = true;
+        seam_order[v_curr] = count;
+        ++count;
+    } while (v_curr != v_start);
+
     while (count < num_seam_vertices)
     {
-        if (edges_to_process.empty()) break;
-        int e = edges_to_process.back();
-        edges_to_process.pop_back();
+        break;
+        if (edges_to_process.empty())
+        {
+            bool edge_found = false;
+            for (int e = 0; e < num_seam_edges; ++e)
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (!is_set_vertex[EE(e, i)])
+                    {
+                        int v = EE(e, i);
+                        is_independent_vertex[v] = true;
+                        is_dependent_vertex[v] = false;
+                        int index = seam_index[v];
+                        make_ind_coord(index);
+                        is_set_vertex[v] = true;
+                        seam_order[v] = count;
+                        ++count;
+                        edges_to_process.push_back(in[v]);
+                        edges_to_process.push_back(out[v]);
+                        edge_found = true;
+                    }
+                    if (edge_found) break;
+                }
+                if (edge_found) break;
+            }
+        }
+
+        int e = edges_to_process.front();
+        edges_to_process.pop_front();
 
         // only process edges with one unset vertex
         int num_set = 0;
@@ -282,10 +413,10 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
         if ((EE(e, 1) == EE(e, 2)) && (!is_set_vertex[EE(e, 1)])) num_v_in_edge--;
         //if (num_set == 4) continue;
         //if (num_set == 2) spdlog::info("{} has 2 set vertices", e);
-        spdlog::info("{} set in {}", num_set, e);
-        if (num_set == (num_v_in_edge - 2))
+        spdlog::debug("{} set in {}", num_set, e);
+        if ((!use_tree_traversal) && (num_set == (num_v_in_edge - 2)))
         {
-            spdlog::info("setting independent vertex in {}", e);
+            spdlog::debug("setting independent vertex in {}", e);
             int i = 0;
             while (is_set_vertex[EE(e, i)]) ++i;
             int v = EE(e, i);
@@ -294,6 +425,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
             int index = seam_index[v];
             make_ind_coord(index);
             is_set_vertex[v] = true;
+            seam_order[v] = count;
             ++count;
             edges_to_process.push_back(in[v]);
             edges_to_process.push_back(out[v]);
@@ -301,23 +433,13 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
         }
         if (num_set != (num_v_in_edge - 1)) continue;
         if (num_v_in_edge < 4) spdlog::warn("{} vertices in edge", num_v_in_edge);
-        spdlog::info("Setting dependent vertex in {}", e);
+        spdlog::debug("Setting dependent vertex in {}", e);
 
         int A2 = EE(e, 0);
         int B2 = EE(e, 1);
         int C2 = EE(e, 2);
         int D2 = EE(e, 3);
-
-        // get oriented eddge positions
-        Eigen::Matrix<double, 2, 1> e_ab = uv.row(B2) - uv.row(A2);
-        Eigen::Matrix<double, 2, 1> e_dc = uv.row(C2) - uv.row(D2);
-
-        // get ccw rotation of edge ab
-        Eigen::Matrix<double, 2, 1> e_ab_perp;
-        e_ab_perp(0) = -e_ab(1);
-        e_ab_perp(1) = e_ab(0);
-        double angle = atan2(-e_ab_perp.dot(e_dc), e_ab.dot(e_dc));
-        int r = (int)(round(2 * angle / double(igl::PI)) + 2) % 4;
+        int r = get_edge_rotation(uv, EE, e);
 
         // get current coordinate vectors
         CoordVector& Au = coords[2 * seam_index[A2]];
@@ -353,6 +475,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
             edges_to_process.push_back(in[A2]);
             is_set_vertex[A2] = true;
             is_set_edge[e] = true;
+            seam_order[A2] = count;
             ++count;
         }
         else if (!is_set_vertex[B2])
@@ -378,6 +501,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
             edges_to_process.push_back(out[B2]);
             is_set_vertex[B2] = true;
             is_set_edge[e] = true;
+            seam_order[B2] = count;
             ++count;
         }
         else if (!is_set_vertex[C2])
@@ -401,6 +525,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
             edges_to_process.push_back(in[C2]);
             is_set_vertex[C2] = true;
             is_set_edge[e] = true;
+            seam_order[C2] = count;
             ++count;
         }
         else if (!is_set_vertex[D2])
@@ -424,6 +549,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
             edges_to_process.push_back(out[D2]);
             is_set_vertex[D2] = true;
             is_set_edge[e] = true;
+            seam_order[D2] = count;
             ++count;
         }
         else
@@ -469,12 +595,10 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
         {
             CoordVector& Au = coords[2 * seam_index[vi]];
             CoordVector& Av = coords[2 * seam_index[vi] + 1];
-            //Au.prune([&](int /*i*/, double val) { return std::abs(val) > 1e-12; });
-            //Av.prune([&](int /*i*/, double val) { return std::abs(val) > 1e-12; });
             Au.prune(1e-12);
             Av.prune(1e-12);
-            spdlog::info("{} u coord nonzeros for dependent {}", Au.nonZeros(), vi);
-            spdlog::info("{} v coord nonzeros for dependent {}", Av.nonZeros(), vi);
+            spdlog::debug("{} u coord nonzeros for dependent {}", Au.nonZeros(), vi);
+            spdlog::debug("{} v coord nonzeros for dependent {}", Av.nonZeros(), vi);
             for (CoordVector::InnerIterator it(Au); it; ++it)
             {
                 int i = it.index() >> 1;
@@ -532,6 +656,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace(
 
     return basis;
 }
+};
 
 Eigen::SparseMatrix<double> build_seamless_subspace_(
     const Eigen::MatrixXi& EE,
@@ -717,7 +842,7 @@ Eigen::SparseMatrix<double> build_seamless_subspace_(
                         ++count;
                     }
                 }
-                spdlog::info("{}/{} variables set", count, num_seam_vertices);
+                spdlog::debug("{}/{} variables set", count, num_seam_vertices);
             }
         }
     }
@@ -952,6 +1077,11 @@ void ExtremeOpt::do_optimization(json& opt_log)
     igl::Timer timer;
     double time;
 
+    igl::Timer total_timer;
+    double total_time = 0;
+    int iters = 0;
+    opt_log["total_time"] = total_time;
+    opt_log["iters"] = iters;
 
     // get edge length thresholds for collapsing operation
     Eigen::MatrixXd uv;
@@ -966,19 +1096,13 @@ void ExtremeOpt::do_optimization(json& opt_log)
     elen_threshold *= m_params.elen_alpha;
     elen_threshold_3d *= m_params.elen_alpha;
 
-    double E = get_quality();
-    spdlog::info("Start Energy E = {}", E);
+    // double E = get_quality();
+    double E, E_worst;
 
-    double E_max = get_quality_max();
-    spdlog::info("Start E_max = {}", E_max);
+    int V_size = get_vertices().size();
+    int F_size = get_faces().size();
 
-    opt_log["opt_log"].push_back(
-        {{"F_size", get_faces().size()},
-         {"V_size", get_vertices().size()},
-         {"E_max", E_max},
-         {"E", E}});
-    double E_old = E;
-    int V_size, F_size;
+    double E_old = 0;
 
     // get input operators
     spdlog::info("Building constraints");
@@ -989,12 +1113,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
     AeqT = Aeq.transpose();
 
     // build reduced system
+    timer.start();
     if (m_params.use_rref)
     {
-        bool precompute_explicit = true;
-        if (precompute_explicit)
+        if (m_params.precompute_seamless)
         {
-            Eigen::SparseMatrix<double> Q1 = build_seamless_subspace(EE, uv, F);
+            SeamlessSubspaceGenerator seamless_subspace_generator;
+            Eigen::SparseMatrix<double> Q1 = seamless_subspace_generator.run(EE, uv, F, v_map);
+            //seamless_subspace_generator.view(V, F, uv, v_map);
             spdlog::info("partially reduced system matrix has {} nonzeros", Q1.nonZeros());
             Eigen::SparseMatrix<double> Ared = Aeq * Q1;
 
@@ -1015,34 +1141,49 @@ void ExtremeOpt::do_optimization(json& opt_log)
             spdlog::info("reduced system matrix has {} nonzeros", Q2.nonZeros());
         }
     }
+    time = timer.getElapsedTime();
+    spdlog::info("constraint elimination time serial: {}s", time);
 
     if (m_params.use_rref)
     {
     }
 
     double max_grad = 0;
+    total_timer.start();
+    std::vector<HessianStats> hessian_log;
+
+    std::vector<double> residuals;
     for (int i = 1; i <= m_params.max_iters; i++) {
+        // if times exceeds 3 minutes, stop optimization
+        if (total_timer.getElapsedTime() > 180.0) {
+            spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", 180);
+            iters = i; // last completed iteration
+            break;
+        }
+
         double E_max;
         bool failed = false;
         if (this->m_params.global_smooth) {
             timer.start();
-            max_grad = smooth_global(failed);
+            max_grad = smooth_global(failed, hessian_log);
             time = timer.getElapsedTime();
             spdlog::info("GLOBAL smoothing operation time serial: {}s", time);
 
             // E = get_quality();
             E = get_quality_avg_for_smooth_only();
-            E_max = get_quality_max();
+            E_worst = get_quality_avg_worst_for_smooth_only(m_params.percent, m_params.p_energy);
+            //E_max = get_quality_max();
 
-            spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
-            spdlog::info("E_max = {}", E_max);
+            // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
+            // spdlog::info("E_max = {}", E_max);
             spdlog::info("max gradient = {}", max_grad);
         }
-
+        
+        // opt_log["opt_log"].push_back(
+        //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
         opt_log["opt_log"].push_back(
-            {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"max_grad", max_grad}});
-
-    
+            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
+        iters = i;
         double grad_thres = 1e-4;
         if (max_grad < grad_thres) {
             spdlog::info(
@@ -1052,10 +1193,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
 
         // TODO: terminate criteria
-        if (E < m_params.E_target) {
-            spdlog::info(
-                "Reach target energy({}), optimization succeed!",
-                m_params.E_target);
+
+        // double cg_thres = 1e-2;
+        // if (fabs(E - E_old) < cg_thres * E_old) {
+        //     m_params.cg_rel_err *= 0.1;
+        // }
+
+        if (fabs(E_worst - E_old) < m_params.E_rel_err * E_old) {
+            spdlog::info("Relative energy change {} < {}, optimization converge!", fabs(E_worst - E_old), m_params.E_rel_err * E_old);
             break;
         }
         if (failed) {
@@ -1065,8 +1210,38 @@ void ExtremeOpt::do_optimization(json& opt_log)
             break;
         }
 
-        E_old = E;
+        if (E_worst < m_params.E_target) {
+            spdlog::info(
+                "Reach target energy({}) in {} iters, optimization succeed!",
+                0, i);
+            break;
+        }
+
+        if (hessian_log.size() > 0) {
+            if (hessian_log.back().newton_decr < 1e-6) {
+                spdlog::info(
+                    "Newton decrement too small ({}), optimization converge!",
+                    hessian_log.back().newton_decr);
+                break;
+            }
+        }   
+
+        if (failed) {
+            spdlog::info(
+                "Line search step failed. stopping optimization early."
+            );
+            break;
+        }
+
+        E_old = E_worst;
         std::cout << std::endl;
     }
+    total_time = total_timer.getElapsedTime();
+    spdlog::info("Total optimization time: {}s", total_time);
+    double total_time_rounded = std::round(total_time);
+    opt_log["total_time"] = total_time_rounded;
+    opt_log["iters"] = iters;
+    opt_log["hessian_log"] = hessian_log;
+
 }
 } // namespace SymDir

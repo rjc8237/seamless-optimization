@@ -387,6 +387,23 @@ void ExtremeOpt::create_mesh(
     std::tie(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids) = find_u_aligned_edges(uv, F);
 }
 
+void ExtremeOpt::set_v_map(
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXi& FT
+) {
+    int num_faces = F.rows();
+    int num_vertices = FT.maxCoeff() + 1;
+    v_map.resize(num_vertices);
+    for (int fijk = 0; fijk < num_faces; ++fijk)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            v_map[FT(fijk, i)] = F(fijk, i);
+        }
+    }
+    spdlog::info("built map of {} vertices", num_vertices);
+}
+
 std::vector<int> ExtremeOpt::propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
 {
     std::vector<int> component_vertices(N, -1);
@@ -598,6 +615,23 @@ double ExtremeOpt::get_quality_avg_for_smooth_only()
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
     return compute_energy(uv);
+}
+
+double ExtremeOpt::get_quality_avg_worst_for_smooth_only(double percent, int p)
+{
+    Eigen::MatrixXi F;
+    Eigen::MatrixXd V, uv;
+    export_mesh(V, F, uv);
+    Eigen::VectorXd area;
+    Eigen::SparseMatrix<double> G;
+    igl::doublearea(V, F, area);
+    get_grad_op(V, F, G);
+    auto compute_energy = [G, area, percent, p](Eigen::MatrixXd aaa, double Lp) {
+        Eigen::MatrixXd Ji;
+        jacobian_from_uv(G, aaa, Ji);
+        return compute_worst_n_energy(Ji, area, Lp, percent, p);
+    };
+    return compute_energy(uv, m_params.Lp);
 }
 
 double ExtremeOpt::get_quality()

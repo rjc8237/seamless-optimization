@@ -45,7 +45,12 @@ Scalar compute_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, 1>& areas,
     double norm_p,
     bool uniform = false);
-
+template <typename Scalar> 
+Scalar compute_worst_n_energy(
+    const Eigen::Matrix<Scalar, -1, -1>& J,
+    const Eigen::Matrix<Scalar, -1, 1>& area,
+    double norm_p,
+    double percent, int p);
 template <typename Scalar>
 Scalar get_grad_and_hessian(
     const Eigen::SparseMatrix<Scalar>& G,

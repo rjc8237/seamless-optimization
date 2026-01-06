@@ -27,6 +27,16 @@ struct Parameters
     double alignment_weight = 1.0;
     double norm_p = 1.0;
     bool use_rref = true;
+
+    // for worst n% triangles energies
+    double percent = 5.0;
+    int p_energy = 5; // for p-norm (\sum_{T}(E_T)^p)^(1/p))
+    std::string solver_type = "LDLT"; // solver type
+    double E_rel_err = 1e-3; //tolerance for E_worst convergence
+    double cg_rel_err = 5e-4; // relative error for cg solver
+
+    bool precompute_seamless = false; // use explicit seamless subspace construction
+ 
     /* data */
 };
 

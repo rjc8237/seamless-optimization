@@ -8,7 +8,6 @@
 #include <igl/upsample.h>
 #include <igl/writeOBJ.h>
 
-
 // TODO: This is very redundant-replace
 double check_constraints(
     const Eigen::MatrixXi& EE,

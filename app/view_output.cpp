@@ -8,6 +8,8 @@
 #include <igl/read_triangle_mesh.h>
 #include <CLI/CLI.hpp>
 #include "energy.h"
+#include <numeric>
+
 using json = nlohmann::json;
 
 using namespace SymDir;
@@ -28,6 +30,7 @@ void transform_EE(
     const Eigen::MatrixXi& EE_v,
     std::vector<std::vector<int>>& EE_e);
 bool find_edge_in_F(const Eigen::MatrixXi& F, int v0, int v1, int& fid, int& eid);
+Eigen::VectorXd get_worst_faces(const Eigen::VectorXd& face_energies, double percentile = 0.05);
 
 int main(int argc, char** argv)
 {
@@ -47,17 +50,18 @@ int main(int argc, char** argv)
     Eigen::MatrixXi F, FT, FN;
     std::vector<Eigen::MatrixXd> uvs;
     std::vector<json> json_configs;
-    
+
     for (const auto& m : models)
     {
-        std::string input_file = m + "_" + suffix + ".obj";
+        // std::string input_file = m + "_" + suffix + ".obj";
+        std::string input_file = m + ".obj";
         Eigen::MatrixXd uv;
         igl::readOBJ(input_file, V, uv, N, F, FT, FN);
         uvs.push_back(uv);
-        std::string input_json = m + ".json";
-        std::ifstream js_in(input_json);
-        json config = json::parse(js_in);
-        json_configs.push_back(config);
+        // std::string input_json = m + ".json";
+        // std::ifstream js_in(input_json);
+        // json config = json::parse(js_in);
+        // json_configs.push_back(config);
     }
     spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V.rows(), uvs[0].rows());
 
@@ -97,7 +101,8 @@ int main(int argc, char** argv)
 
     MeshCutter meshcutter(V, uvs[0], F, FT);
     auto [V_cut, EE] = meshcutter.cut_mesh();
-    Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(models[0] + "_" + suffix + ".obj");
+    // Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(models[0] + "_" + suffix + ".obj");
+    Eigen::MatrixXi FE_i = meshcutter.load_feature_edges(models[0] + ".obj");
     Eigen::MatrixXi FE = meshcutter.reindex_feature_edges(FE_i);
 
     std::vector<ExtremeOpt> extremeopts;
@@ -105,12 +110,15 @@ int main(int argc, char** argv)
     {
         ExtremeOpt extremeopt(V_cut, FT);
         extremeopt.create_mesh(V_cut, FT, uvs[i]);
+
         extremeopt.EE = EE;
         extremeopt.FE = FE;
         extremeopt.m_params.do_feature_alignment = true;
-        extremeopt.comb_matchings(ffield);
-        extremeopt.m_params.Lp = json_configs[i]["args"]["Lp"];
+        if (ffield != "") extremeopt.comb_matchings(ffield);
+        // extremeopt.m_params.Lp = json_configs[i]["args"]["Lp"];
         extremeopts.push_back(extremeopt);
+        spdlog::warn("PD1 = {}, PD2 = {} expected {}", extremeopt.PD1.size(), extremeopt.PD2.size(), 3 * F.rows());
+
     }
     
     
@@ -119,9 +127,45 @@ int main(int argc, char** argv)
 
 }
 
+Eigen::VectorXd get_worst_faces(const Eigen::VectorXd& face_energies, double percent)
+{
+    // Sort indices based on energy values
+    std::vector<int> indices(face_energies.size());
+    std::iota(indices.begin(), indices.end(), 0);
+
+    std::sort(indices.begin(), indices.end(),
+            [&](int i1, int i2) { return face_energies[i1] > face_energies[i2]; });
+
+    // Calculate how many triangles to include
+    int num_tris = static_cast<int>(std::ceil(percent / 100.0 * indices.size()));
+
+    // Create vector with energy for worst faces, zero otherwise
+    Eigen::VectorXd worst_faces = Eigen::VectorXd::Zero(face_energies.size());
+    double threshold_energy = face_energies[indices[num_tris - 1]];
+    double log_threshold = std::log(std::max(threshold_energy, 1e-10)); // avoid log(0)
+
+    for (int i = 0; i < num_tris; ++i) {
+        int face_idx = indices[i];
+        worst_faces[face_idx] = std::log(std::max(face_energies[face_idx], 1e-10));
+    }
+
+    for (int i = num_tris; i < indices.size(); ++i) {
+        int face_idx = indices[i];
+        worst_faces[face_idx] = log_threshold;
+    }
+    spdlog::info("Top {:.1f}% worst faces: {} faces, max energy {}", 
+                 percent * 100.0, num_tris, face_energies[indices[0]]);
+    
+    return worst_faces;
+}
 
 void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE)
 {
+    if (extremeopts.empty()) {
+        spdlog::error("No ExtremeOpt instances; aborting view.");
+        return;
+    }
+
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
     std::vector<Eigen::MatrixXd> uvs;
@@ -130,6 +174,7 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
     std::vector<double> symdir_energies;
     std::vector<Eigen::VectorXd> alignment_face_energies;
     std::vector<Eigen::VectorXd> symdir_face_energies;
+    std::vector<Eigen::VectorXd> symdir_face_worst;
 
     std::vector<Eigen::MatrixXd> G_us;
     std::vector<Eigen::MatrixXd> G_vs;
@@ -148,8 +193,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
         G_us.push_back(G_u);
         G_vs.push_back(G_v);
-
-
         Eigen::MatrixXd uT_vT(3*F.rows(), 2);
         uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
         uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
@@ -167,13 +210,15 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         Eigen::MatrixXd Ji;
         SymDir::jacobian_from_uv(extremeopt.G, uv, Ji);
         Eigen::VectorXd symdir_e(F.rows());
+        
         for (int i = 0; i < F.rows(); ++i)
         {
             Eigen::MatrixXd J = Ji.row(i);
             symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), extremeopt.m_params.Lp);
-
+            symdir_e[i] = std::log(std::max(symdir_e[i], 1e-10));
         }
         symdir_face_energies.push_back(symdir_e);
+        // symdir_face_worst.push_back(get_worst_faces(symdir_e, 0.05));
 
         Eigen::VectorXd residuals = (Rx.array().square() 
                             + Ry.array().square() 
@@ -234,7 +279,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
     {
         V_feature.row(i) = V.row(feature_vertex_indices[i]);
     }
-    
     std::vector<std::array<size_t, 2>> edges_feature;
     for (int i = 0; i < FE.rows(); ++i)
     {

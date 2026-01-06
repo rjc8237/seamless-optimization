@@ -379,6 +379,7 @@ public:
     std::vector<double> min_v_diffs;
     std::vector<int> min_v_diff_ids;
     std::vector<int> min_v_diff_next_ids;
+    std::vector<int> v_map;
     Eigen::VectorXi C;
     int num_components;
 
@@ -396,10 +397,30 @@ public:
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only();
+    double get_quality_avg_worst_for_smooth_only(double percent, int p);
+    
+    //statistics for solver
+    struct HessianStats {
+        int iteration;
+        double condition_number;
+        double residual;
+        double correction;
+        double time_solver;
+        int iter_solver;
+        double time_ls;
+        double ls_step_size;
+        double newton_decr;
 
-    double smooth_global(bool& failed);
+        // Add JSON serialization
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
+            iteration, condition_number, residual, correction, time_solver, iter_solver, time_ls, ls_step_size, newton_decr)
+
+    };
+
+    double smooth_global(bool& failed, std::vector<HessianStats>& hessian_log);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
+    void set_v_map(const Eigen::MatrixXi& F, const Eigen::MatrixXi& FT);
 
     void init_constraints(const std::vector<std::vector<int>>& EE_e);
     void consolidate_mesh_cons();
@@ -452,6 +473,7 @@ public:
     Eigen::SparseMatrix<double>& hessian,
     bool get_hessian);
     Eigen::SparseMatrix<double> compute_area_weight_matrix();
+    
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?

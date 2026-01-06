@@ -42,6 +42,7 @@ include(spdlog)
 include(polyscope)
 include(suitesparse)
 include(pybind11)
+include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
 
@@ -51,6 +52,7 @@ add_library(SymmetricDirichletLib
     src/opt.cpp
     src/rref.cpp
     src/smooth.cpp
+    src/smooth_utils.cpp
     src/SYMDIR_NEW.cpp
     src/MeshCutter.cpp
 )
@@ -86,6 +88,7 @@ target_link_libraries(view_mesh
 add_executable(cut_mesh
     app/cut_mesh.cpp
 )
+
 target_link_libraries(cut_mesh
     SymmetricDirichletLib
     CLI11::CLI11
@@ -107,4 +110,12 @@ set_target_properties(symdir PROPERTIES LIBRARY_OUTPUT_DIRECTORY
 )
 set_target_properties(symdir PROPERTIES PREFIX
   "${PYTHON_MODULE_PREFIX}"
+)
+
+add_executable(view_output
+    app/view_output.cpp
+)
+target_link_libraries(view_output
+    SymmetricDirichletLib
+    CLI11::CLI11
 )
