@@ -30,7 +30,8 @@ namespace SymDir {
 
     void Solver::compute(const Eigen::SparseMatrix<double>& A) {
         if (solver_name_ == "CG") {
-            cg_.compute(A);
+            Eigen::SparseMatrix<double, Eigen::RowMajor> A_rowmajor = A;
+            cg_.compute(A_rowmajor);
         } else if (solver_name_ == "Ch_LLT") {
             cholmod_super_llt_.compute(A);
         } else if (solver_name_ == "LDLT") {

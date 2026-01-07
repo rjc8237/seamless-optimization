@@ -41,6 +41,17 @@ static std::string sci_short(double x)
 
 int main(int argc, char** argv)
 {
+    std::cout << "========================================" << std::endl;
+    std::cout << "Is OpenMP recognized? ";
+    #ifdef _OPENMP
+        std::cout << "YES (Version: " << _OPENMP << ")" << std::endl;
+    #else
+        std::cout << "NO (Macro not defined)" << std::endl;
+    #endif
+
+    std::cout << "Max Threads available: " << omp_get_max_threads() << std::endl;
+    std::cout << "========================================" << std::endl;
+    
     CLI::App app{argv[0]};
     std::string input_dir = "../data";
     std::string output_dir = "./";

@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.25)
 project(SymmetricDirichlet)
+# --- FORCE OPENBLAS ---
+set(BLA_VENDOR "OpenBLAS")
 
+# Point CMake to the Homebrew installation of OpenBLAS
+if(APPLE)
+    set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/openblas;${CMAKE_PREFIX_PATH}")
+    include_directories("/opt/homebrew/opt/openblas/include")
+    link_directories("/opt/homebrew/opt/openblas/lib")
+endif()
+
+find_package(BLAS REQUIRED)
+
+# Check what we found (This is for your sanity)
+message(STATUS ">> BLAS Libraries Found: ${BLAS_LIBRARIES}")
+# ----------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -45,6 +59,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
 find_package(Boost REQUIRED)
+find_package(OpenMP REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(SymmetricDirichletLib
@@ -68,7 +83,11 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     spdlog::spdlog
     polyscope
     ${Boost_LIBRARIES}
+    ${BLAS_LIBRARIES}
 )
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(SymmetricDirichletLib PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 
 add_executable(symmetric_dirichlet

@@ -245,6 +245,8 @@ def plot_combined_histogram(meshes, mesh_data, lp_value, metric="total_time", ax
     else:
         ax.set_ylim(0, 1)
 
+    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Plot histogram grid and scatter distribution for all meshes."

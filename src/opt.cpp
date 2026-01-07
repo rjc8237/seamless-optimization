@@ -200,6 +200,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
     igl::Timer timer;
     double time;
 
+    std::cout << "Number of threads: " << Eigen::nbThreads() << std::endl;
+
     igl::Timer total_timer;
     double total_time = 0;
     int iters = 0;
@@ -244,8 +246,10 @@ void ExtremeOpt::do_optimization(json& opt_log)
     std::vector<HessianStats> hessian_log;
     bool failed = false;
 
-    double val_e_min = 0.1;
+    double val_e_min = 1.0;
+    m_params.E_min = val_e_min;
     double max_grad_0 = smooth_global(failed, hessian_log);
+    m_params.E_min = 1.0;
     double max_grad = max_grad_0;
 
     double E = get_quality_avg_for_smooth_only();
@@ -283,7 +287,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
         failed = false;
         if (this->m_params.global_smooth) {
             timer.start();
+            m_params.E_min = val_e_min;
             max_grad = smooth_global(failed, hessian_log);
+            m_params.E_min = 1.0;
             time = timer.getElapsedTime();
             spdlog::info("GLOBAL smoothing operation time serial: {}s", time);
 

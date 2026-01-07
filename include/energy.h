@@ -19,6 +19,7 @@ T symmetric_dirichlet_energy_t(T a, T b, T c, T d, double norm_p, bool soft_max 
     if (soft_max) {
         return exp(energy / t / E_min);
     }
+    
     return pow(energy / E_min, norm_p);
 #else
     return pow((frob2 / det), norm_p);
@@ -68,6 +69,8 @@ Scalar compute_threshold_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, 1>& area,
     int norm_p,
     double percent, bool soft_max = false, double t = 1.0);
+template <typename Scalar>
+    Eigen::ArrayXd get_sym_dirich_per_triangle_from_jacobian(const Eigen::Matrix<Scalar, -1, -1> &J);
 
 template <typename Scalar>
 Scalar get_grad_and_hessian(

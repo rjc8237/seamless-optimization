@@ -101,7 +101,12 @@ namespace SymDir{
         return energy_per_tri[num_tris - 1];
 
     }
-
+    template <typename Scalar>
+    Eigen::ArrayXd get_sym_dirich_per_triangle_from_jacobian(const Eigen::Matrix<Scalar, -1, -1> &J)
+    {
+        return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), 1.0).array();
+    }
+    
     template <typename Scalar>
     Scalar grad_and_hessian_from_jacobian(const Eigen::Matrix<Scalar, -1, 1> &area, const Eigen::Matrix<Scalar, -1, -1> &jacobian,
                                       Eigen::Matrix<Scalar, -1, -1> &total_grad, Eigen::SparseMatrix<Scalar> &hessian, bool with_hessian, double norm_p, bool projected_newton, bool soft_max = false, double t = 1.0, double E_min = 1.0)
@@ -222,5 +227,5 @@ namespace SymDir{
         const Eigen::Matrix<double, -1, 1>&, 
         int,
         double, bool, double);
-
+    template Eigen::ArrayXd get_sym_dirich_per_triangle_from_jacobian(const Eigen::Matrix<double, -1, -1>&);
 } // namespace SymDir

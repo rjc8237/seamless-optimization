@@ -7,7 +7,7 @@ repo_root = Path(__file__).resolve().parent.parent
 build_dir = repo_root / "build"
 BIN = str(build_dir / "bin" / "symmetric_dirichlet")
 DATA_ROOT = repo_root / "data" / "closed_myles"
-OUTPUT_DIR = repo_root / "output" / "Lp_shifted"
+OUTPUT_DIR = repo_root / "output"
 BASE_JSON = repo_root / "app" / "example.json"
 
 #find all meshes in closed_myles
@@ -24,8 +24,20 @@ def get_mesh_folders():
         # Check if folder contains .obj files
         obj_files = list(folder.glob("*_refined_with_uv.obj"))
         if obj_files:
-            obj_name = obj_files[0].name.replace(".obj", "")
-            mesh_folders[folder.name] = obj_name
+            obj_path = obj_files[0]
+            obj_name = obj_path.name.replace(".obj", "")
+        
+            # Count faces in the OBJ file
+            face_count = 0
+            with open(obj_path, 'r') as f:
+                for line in f:
+                    if line.startswith('f '):
+                        face_count += 1
+        
+            # Only include meshes with ~100K faces (allowing ±10% tolerance)
+            if 90000 <= face_count <= 110000:
+                mesh_folders[folder.name] = obj_name
+                print(f"  Added {folder.name} with {face_count} faces")
 
     return mesh_folders
 
@@ -40,7 +52,7 @@ def run_solver(args):
         print(f"[warn] Skipping {obj_name}: missing folder {folder_name}")
         return
     
-    output_dir = OUTPUT_DIR / ("Lp_" + str(cfg.get("Lp", 0))) / folder_name / s
+    output_dir = OUTPUT_DIR / ("Lp_" + str(cfg.get("Lp", 0))) / s / folder_name
     (output_dir / "logs").mkdir(parents=True, exist_ok=True)
     
     cfg_copy = cfg.copy()
@@ -64,10 +76,15 @@ def run_solver(args):
         "-o", str(output_dir),
         "-s", s
     ]
+
+    # Set environment variables for OpenMP
+    env = os.environ.copy()
+    env["OMP_NUM_THREADS"] = "16"
+    
     print(f"Running model: {obj_name} with solver: {s}" + (f" and cg_rel_err: {cgerr}" if cgerr else ""))
     
     with open(log_path, "w") as lf:
-        result = subprocess.run(cmd, stdout=lf, stderr=lf, cwd=build_dir)
+        result = subprocess.run(cmd, stdout=lf, stderr=lf, cwd=build_dir, env=env)
         if result.returncode != 0:
             print(f"[error] {tag} exited code {result.returncode}")
         else:

@@ -384,6 +384,8 @@ public:
     double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
     double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
     double compute_threshold_energy(const Eigen::MatrixXd& aaa);
+    Eigen::ArrayXd get_sym_dirich_per_triangle(const Eigen::MatrixXd& aaa);
+
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
     void export_FE(Eigen::MatrixXi& FE);
@@ -407,12 +409,10 @@ public:
         double time_ls;
         double ls_step_size;
         double newton_decr;
-        Eigen::VectorXd newton;
-
-
+        std::array<int, 4> num_triangles;
         // Add JSON serialization
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
-            iteration, condition_number, residual, correction, time_solver, iter_solver, time_ls, ls_step_size, newton_decr)
+            iteration, condition_number, residual, correction, time_solver, iter_solver, time_ls, ls_step_size, newton_decr, num_triangles)
 
     };
 
