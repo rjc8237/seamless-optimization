@@ -405,6 +405,7 @@ public:
         double residual;
         double correction;
         double time_solver;
+        std::vector<double> solver_times;
         int iter_solver;
         double time_ls;
         double ls_step_size;
@@ -412,7 +413,7 @@ public:
         std::array<int, 4> num_triangles;
         // Add JSON serialization
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
-            iteration, condition_number, residual, correction, time_solver, iter_solver, time_ls, ls_step_size, newton_decr, num_triangles)
+            iteration, condition_number, residual, correction, time_solver, solver_times, iter_solver, time_ls, ls_step_size, newton_decr, num_triangles)
 
     };
 

@@ -13,11 +13,11 @@ namespace SymDir {
     Solver::Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err): solver_name_(solver_name){
         if (solver_name_ == "CG") {
             cg_.setTolerance(cg_rel_err);
-            cg_.setMaxIterations(4000);
+            cg_.setMaxIterations(10000);
         }
         if (solver_name_ == "CG_GS") {
             cg_gs.setTolerance(cg_rel_err);
-            cg_gs.setMaxIterations(4000);
+            cg_gs.setMaxIterations(10000);
         }
         if (solver_name_ == "BiCGSTAB") {
             bicgstab.setTolerance(cg_rel_err);
@@ -58,12 +58,6 @@ namespace SymDir {
         else if (solver_name_ == "CG_GS") return cg_gs.solve(b);
         else if (solver_name_ == "CG_LLT") return cg_llt.solve(b);
         throw std::invalid_argument("Unknown solver: " + solver_name_);
-    }
-    Eigen::VectorXd Solver::solve_with_guess(const Eigen::VectorXd& b, const Eigen::VectorXd& x0) {
-        if (solver_name_ == "CG") {
-            return cg_.solveWithGuess(b, x0);
-        }
-        throw std::invalid_argument("Solver does not support initial guess: " + solver_name_);
     }
 
     Eigen::ComputationInfo Solver::info() const {
@@ -194,7 +188,85 @@ namespace SymDir {
         std::cout << "Gauss-Seidel reached max iterations without full convergence." << std::endl;
         return false;
     }
-    
+
+
+    using RowMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+    using Vec = Eigen::VectorXd;
+
+    void spmv(const RowMat& a, const Vec& x, Vec& y) {
+        y.resize(a.rows());
+        #pragma omp parallel for schedule(static)
+        for (Eigen::Index i = 0; i < a.rows(); ++i) {
+            double sum = 0.0;
+            for (RowMat::InnerIterator it(a, i); it; ++it) {
+            sum += it.value() * x[it.col()];
+            }
+            y[i] = sum;
+        }
+    }
+
+    double dot(const Vec& a, const Vec& b) {
+        double sum = 0.0;
+        #pragma omp parallel for reduction(+ : sum) schedule(static)
+        for (Eigen::Index i = 0; i < a.size(); ++i) {
+            sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    void axpy(double alpha, const Vec& x, Vec& y) {
+        #pragma omp parallel for schedule(static)
+        for (Eigen::Index i = 0; i < y.size(); ++i) {
+            y[i] += alpha * x[i];
+        }
+    }
+
+    CgResult conjugate_gradient(const RowMat& a, const Vec& b, Vec& x, int max_iter, double tol) {
+        spdlog::info("CG solver starting with {} OpenMP threads", omp_get_max_threads());
+        const Eigen::Index n = b.size();
+
+        x.setZero(n);
+        Vec r = b;
+        Vec p = r;
+        Vec ap(n);
+
+        const double b_norm = std::max(1e-30, std::sqrt(dot(b, b)));
+        double rsold = dot(r, r);
+        double rel_residual = std::sqrt(rsold) / b_norm;
+
+        int iter = 0;
+        bool converged = false;
+        for (; iter < max_iter && rel_residual > tol; ++iter) {
+            spmv(a, p, ap);
+            const double p_ap = dot(p, ap);
+            if (p_ap == 0.0) {
+                break;
+            }
+
+            const double alpha = rsold / p_ap;
+            axpy(alpha, p, x);
+            axpy(-alpha, ap, r);
+
+            const double rsnew = dot(r, r);
+            rel_residual = std::sqrt(rsnew) / b_norm;
+            if (rel_residual <= tol) {
+                converged = true;  // Mark as converged
+                rsold = rsnew;
+                break;
+            }
+
+            const double beta = rsnew / rsold;
+            #pragma omp parallel for schedule(static)
+            for (Eigen::Index i = 0; i < n; ++i) {
+                p[i] = r[i] + beta * p[i];
+            }
+            rsold = rsnew;
+        }
+
+        return {iter, rel_residual, converged};
+
+    }
+
     template void SymDir::projected_local_hessian<double>(Eigen::Matrix<double, 4, 4>& local_hessian);
 }
 

@@ -298,10 +298,13 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
 
     igl::Timer timer;
     double time_solver = 0;
+    std::vector<double> solver_times;
+
     int iter_solver = 0;
     double correction = 0;
     double newton_decr = 0;
-    timer.start();
+
+    
     if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
 
@@ -534,10 +537,20 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     }
                     mat.makeCompressed();
                     // Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
-                    
+
                     Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
-                    solver.compute(mat);
-                    newton = -solver.solve(rhs);
+                    CgResult result;
+                    if (m_params.solver_type == "Parallel_CG") {
+                        timer.start();
+                        result = conjugate_gradient(mat, rhs, newton, 10000, 1e-3);
+                        newton = -newton;
+                        solver_times.push_back(timer.getElapsedTimeInSec());
+                    } else {
+                        timer.start();
+                        solver.compute(mat);
+                        newton = -solver.solve(rhs);
+                        solver_times.push_back(timer.getElapsedTimeInSec());
+                    }
 
                     residual = (mat * newton + rhs).norm();                    
 
@@ -554,6 +567,14 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     // {
                     //     break;
                     // }
+                    if (m_params.solver_type == "Parallel_CG") {
+                        if (result.converged && newton_decr < 0)
+                        {
+                            iter_solver = result.iterations;
+                            std::cout << "CG converged in " << result.iterations << " iterations with rel res " << result.rel_residual << std::endl;
+                            break;
+                        }
+                    }
                     if (solver.info() == Eigen::Success && newton_decr < 0)
                     {
                         // cond_num = get_cond_num_from_hessian(hessian);
@@ -578,7 +599,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         }
     }
     time_solver = timer.getElapsedTimeInSec();
-
     double time_ls = 0;
     timer.start();
     // do lineserach
@@ -639,6 +659,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         residual,
         correction,
         time_solver,
+        solver_times,
         iter_solver,
         time_ls,
         ls_step_size,

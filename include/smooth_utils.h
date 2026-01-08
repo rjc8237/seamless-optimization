@@ -80,7 +80,6 @@ public:
 
     void compute(const Eigen::SparseMatrix<double>& A);
     Eigen::VectorXd solve(const Eigen::VectorXd& b);
-    Eigen::VectorXd solve_with_guess(const Eigen::VectorXd& b, const Eigen::VectorXd& x0);
     Eigen::ComputationInfo info() const;
     int iterations() const;
 
@@ -104,4 +103,17 @@ bool solveGaussSeidel(const Eigen::SparseMatrix<double>& A,
                       Eigen::VectorXd& x, 
                       int max_iters = 2000, 
                       double tolerance = 1e-10);
+
+struct CgResult {
+    int iterations = 0;
+    double rel_residual = 0.0;
+    bool converged = false;
+};
+
+CgResult conjugate_gradient(const Eigen::SparseMatrix<double, Eigen::RowMajor>& a,
+    const Eigen::VectorXd& b,
+    Eigen::VectorXd& x,
+    int max_iter,
+    double tol);
+
 } // namespace SymDir
