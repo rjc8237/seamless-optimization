@@ -1,11 +1,25 @@
 cmake_minimum_required(VERSION 3.25)
 project(SymmetricDirichlet)
+# --- FORCE OPENBLAS ---
+set(BLA_VENDOR "OpenBLAS")
 
+# Point CMake to the Homebrew installation of OpenBLAS
+if(APPLE)
+    set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/openblas;${CMAKE_PREFIX_PATH}")
+    include_directories("/opt/homebrew/opt/openblas/include")
+    link_directories("/opt/homebrew/opt/openblas/lib")
+endif()
+
+
+# Check what we found (This is for your sanity)
+message(STATUS ">> BLAS Libraries Found: ${BLAS_LIBRARIES}")
+# ----------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-fPIC)
 add_compile_options(-Wno-register)
+add_compile_options(-O3)  # Enable optimizations
 
 option(USE_SUITESPARSE "Use suitesparse for QR factorization" ON)
 option(USE_COMISO "Use Comiso for field generation" ON)
@@ -45,6 +59,11 @@ include(pybind11)
 include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
+find_package(Boost REQUIRED)
+find_package(OpenMP REQUIRED)
+find_package(BLAS REQUIRED)
+
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(SymmetricDirichletLib
     src/energy.cpp
@@ -66,8 +85,10 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     Eigen3::Eigen
     spdlog::spdlog
     polyscope
+    OpenMP::OpenMP_CXX
+    ${Boost_LIBRARIES}
+    ${BLAS_LIBRARIES}
 )
-
 
 add_executable(symmetric_dirichlet
     app/main.cpp
@@ -122,3 +143,5 @@ target_link_libraries(view_output
     CLI11::CLI11
 )
 endif()
+
+set(ENV{OPENBLAS_NUM_THREADS} 8)

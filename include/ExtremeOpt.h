@@ -10,6 +10,7 @@
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
 #include "polyscope/curve_network.h"
+#include "energy.h"
 
 using json = nlohmann::json;
 
@@ -387,7 +388,10 @@ public:
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
-    double compute_energy(const Eigen::MatrixXd& aaa);
+    double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
+    double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
+    double compute_threshold_energy(const Eigen::MatrixXd& aaa);
+    Eigen::ArrayXd get_sym_dirich_per_triangle(const Eigen::MatrixXd& aaa);
 
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
@@ -396,8 +400,10 @@ public:
 
     double get_quality();
     double get_quality_max();
-    double get_quality_avg_for_smooth_only();
-    double get_quality_avg_worst_for_smooth_only(double percent, int p);
+    double get_quality_avg_for_smooth_only(double Lp = 0);
+    double get_quality_avg_worst_for_smooth_only(double Lp = 0);
+    double get_threshold_energy();
+
     
     //statistics for solver
     struct HessianStats {
@@ -406,14 +412,15 @@ public:
         double residual;
         double correction;
         double time_solver;
+        std::vector<double> solver_times;
         int iter_solver;
         double time_ls;
         double ls_step_size;
         double newton_decr;
-
+        std::array<int, 4> num_triangles;
         // Add JSON serialization
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
-            iteration, condition_number, residual, correction, time_solver, iter_solver, time_ls, ls_step_size, newton_decr)
+            iteration, condition_number, residual, correction, time_solver, solver_times, iter_solver, time_ls, ls_step_size, newton_decr, num_triangles)
 
     };
 

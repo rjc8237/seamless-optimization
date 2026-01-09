@@ -1,0 +1,410 @@
+import json
+import os
+from pathlib import Path
+import sys
+import pandas as pd
+import igl
+script_dir = os.path.dirname(__file__)
+module_dir = os.path.join(script_dir, '..', 'py')
+sys.path.append(module_dir)
+import symdir
+import numpy as np
+OUTPUT_DIR = Path("./output")
+
+def num_triangles_with_energy(uv_path, E_min):
+    fname = os.path.basename(uv_path)
+    dot_index = fname.rfind(".")
+    m = fname[:dot_index]
+
+    # Load uv information
+    try:
+        v3d, uv, _, f, fuv, _ = igl.readOBJ(uv_path)
+    except:
+        print(f"Error loading mesh: {uv_path}")
+        return
+
+    # Compute chosen vertex energy
+    mesh_cutter = symdir.MeshCutter(v3d,uv, f, fuv)
+    v_cut, _ = mesh_cutter.cut_mesh()
+    X = symdir.symmetric_dirichlet_energy(v_cut, fuv, uv, 1) - 4.
+    count = sum(1 for e in X if e >= E_min)
+    e_max = max(X)
+    return count, e_max
+
+def create_mesh_table(lp_value=1, solver="CG"):
+    """Create a table with mesh name, E_worst, and total_time"""
+    
+    base_path = OUTPUT_DIR / ("Lp_" + str(lp_value))
+    
+    # Get all mesh folders
+    mesh_folders = sorted([f for f in base_path.iterdir() if f.is_dir()])
+    
+    if not mesh_folders:
+        print(f"No mesh folders found in {base_path}")
+        return
+    
+    print(f"Found {len(mesh_folders)} mesh folders")
+    
+    # Collect data
+    data = {
+        "Mesh Name": [],
+        "# Faces": [],
+        "E_worst": [],
+        "Total Time": [],
+        "Time when E_worst = 1.0": [],
+        "# Triangles E >= 1": [],
+        "E_max": []
+    }
+    
+    for mesh_folder in mesh_folders:
+        mesh_name = mesh_folder.name
+        
+        # Look for solver json file
+        solver_folder = mesh_folder / solver
+        if solver_folder.exists():
+            json_files = list(solver_folder.glob("*.json"))
+            if json_files:
+                try:
+                    with open(json_files[0], 'r') as f:
+                        json_data = json.load(f)
+                        e_worst = json_data.get("E_worst", "N/A")
+                        faces = json_data["opt_log"][0].get("F_size", "N/A")
+                        e_worst_1 = json_data.get("E_worst=1.0", "N/A")
+                        total_time = json_data.get("total_time", "N/A")
+                        data["Mesh Name"].append(mesh_name)
+                        data["# Faces"].append(faces)
+                        data["E_worst"].append(e_worst)
+                        data["Total Time"].append(total_time)
+                        data["Time when E_worst = 1.0"].append(e_worst_1)
+                except Exception as e:
+                    print(f"Error loading {solver} JSON for {mesh_name}: {e}")
+            obj_files = list(solver_folder.glob("*.obj"))
+            if obj_files:
+                try:
+                    with open(obj_files[0], 'r') as f:
+                        num_triangles, E_max = num_triangles_with_energy(obj_files[0], 1.0)
+                        data["# Triangles E >= 1"].append(num_triangles)
+                        data["E_max"].append(E_max)
+                except Exception as e:
+                    print(f"Error loading {solver} JSON for {mesh_name}: {e}")
+
+        else:
+            print(f"[warn] {solver} folder not found for {mesh_name}")
+    
+    # Create DataFrame
+    df = pd.DataFrame(data)
+    
+    # Display table
+    print("\n" + "="*80)
+    print(f"Table for {solver} - Lp={lp_value}")
+    print("="*80)
+    print(df.to_string(index=False))
+    print("="*80 + "\n")
+    
+    # Save to CSV
+    output_file = OUTPUT_DIR / "statistics" / "tables" / f"table_{solver}_Lp{lp_value}.csv"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_file, index=False)
+    print(f"Table saved to {output_file}")
+    
+    return df
+
+def get_mesh_folders(output_dir, Lp_value, solver, cgerr = 0.0, Lp_shift = 1.0):
+    mesh_folders = {}
+
+    if Lp_shift != 1.0:
+        output_dir = output_dir / "Lp_shifted_" + str(Lp_shift)
+    
+    output_dir = output_dir / ("Lp_" + str(Lp_value))
+    output_dir = output_dir / solver
+    for folder in output_dir.iterdir():
+        if not folder.is_dir():
+            continue
+    
+        if not folder.name.endswith("_output"):
+            continue
+
+        # Check if folder contains .obj files
+        obj_files = list(folder.glob("*.obj"))
+        if obj_files:
+            obj_path = obj_files[0]
+            obj_name = obj_path.stem.split("_refined_with_uv_out_")[0]
+
+            # Count faces in the OBJ file
+            face_count = 0
+            with open(obj_path, 'r') as f:
+                for line in f:
+                    if line.startswith('f '):
+                        face_count += 1
+        
+            # Only include meshes with ~100K faces (allowing ±10% tolerance)
+            if 90000 <= face_count <= 110000:
+                mesh_folders[obj_path] = obj_name
+                print(f"  Added {folder.name} with {face_count} faces")
+
+    return mesh_folders
+
+def create_solver_lp_comparison_table(output_dir, lp_values=[1, 2, 3], solvers=["CG", "Ch_LLT"]):
+    """Create a table comparing total_time for different solvers and Lp values
+    with hierarchical headers: L_1, L_2, L_3 each with CG and Ch_LLT subheaders
+    """
+    
+    # Get mesh folders for first Lp value to get mesh names
+    mesh_folders = get_mesh_folders(output_dir, lp_values[0], solvers[0])
+    
+    if not mesh_folders:
+        print(f"No mesh folders found")
+        return None
+    
+    # Initialize data dictionary
+    data = {}
+    
+    # Iterate through each mesh
+    for obj_path, mesh_name in sorted(mesh_folders.items()):
+        row_data = {}
+        
+        # For each Lp and solver combination, get total_time and E_worst
+        for lp in lp_values:
+            for solver in solvers:
+                total_time = None
+                e_worst = None
+                
+                try:
+                    # Build path to solver folder
+                    solver_base_path = output_dir / ("Lp_" + str(lp)) / solver
+                    
+                    # Find matching mesh folder
+                    for mesh_folder in solver_base_path.iterdir():
+                        if not mesh_folder.is_dir():
+                            continue
+                        
+                        if not mesh_folder.name.endswith("_output"):
+                            continue
+                        
+                        # Check if this is the right mesh
+                        obj_files = list(mesh_folder.glob("*.obj"))
+                        if obj_files:
+                            obj_name = obj_files[0].stem.split("_refined_with_uv_out_")[0]
+                            
+                            if obj_name == mesh_name:
+                                # Found the right mesh, get total_time and E_worst from JSON
+                                json_files = list(mesh_folder.glob("*.json"))
+                                if json_files:
+                                    with open(json_files[0], 'r') as f:
+                                        json_data = json.load(f)
+                                        total_time = json_data.get("total_time")
+                                        e_worst = json_data.get("E_worst")
+                                break
+                
+                except Exception as e:
+                    print(f"Error getting data for {mesh_name} - {solver} - Lp{lp}: {e}")
+                
+                # Create column name
+                col_key = f"L{lp}_{solver}"
+                
+                # Format the cell value: total_time / E_worst (ratio)
+                if total_time is not None and e_worst is not None:
+                    cell_value = f"{total_time:.2f} / {e_worst:.2e}"
+                else:
+                    cell_value = "N/A"
+                
+                row_data[col_key] = cell_value
+        
+        data[mesh_name] = row_data
+    
+    # Create DataFrame from the data
+    df_list = []
+    for mesh_name in sorted(data.keys()):
+        row = {"Mesh": mesh_name}
+        row.update(data[mesh_name])
+        df_list.append(row)
+    
+    df = pd.DataFrame(df_list)
+    
+    # Display table
+    print("\n" + "="*200)
+    print(f"Total Time / E_worst Comparison Table")
+    print(f"Format: total_time / E_worst")
+    print("="*200)
+    print(df.to_string(index=False))
+    print("="*200 + "\n")
+        
+    # Save with custom hierarchical headers to CSV
+    output_file = output_dir / "statistics" / "tables" / f"comparison_table_time_per_energy.csv"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, 'w') as f:
+        # Write first header row (Lp values)
+        f.write("Mesh")
+        for lp in lp_values:
+            f.write(f",L_{lp},L_{lp}")
+        f.write("\n")
+        
+        # Write second header row (solver names)
+        f.write("Mesh")
+        for lp in lp_values:
+            for solver in solvers:
+                f.write(f",{solver}")
+        f.write("\n")
+        
+        # Write data rows
+        for _, row in df.iterrows():
+            f.write(f"{row['Mesh']}")
+            for lp in lp_values:
+                for solver in solvers:
+                    col_key = f"L{lp}_{solver}"
+                    f.write(f",{row[col_key]}")
+            f.write("\n")
+    
+    print(f"Table saved to {output_file}")
+    
+    # Also create Excel version with merged headers
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Side, Font
+        from openpyxl.utils import get_column_letter
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Comparison"
+        
+        # Write header row 1: Mesh, L_1, L_1, L_2, L_2, L_3, L_3
+        ws['A1'] = "Mesh"
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['A1'].font = Font(bold=True)
+        
+        col = 2
+        for lp in lp_values:
+            ws.merge_cells(start_row=1, start_column=col, end_row=1, end_column=col+1)
+            cell = ws.cell(row=1, column=col)
+            cell.value = f"L_{lp}"
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.font = Font(bold=True)
+            col += 2
+        
+        # Write header row 2: CG, Ch_LLT for each Lp
+        ws['A2'] = "Mesh"
+        ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['A2'].font = Font(bold=True)
+        
+        col = 2
+        for lp in lp_values:
+            for solver in solvers:
+                cell = ws.cell(row=2, column=col)
+                cell.value = solver
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.font = Font(bold=True)
+                col += 1
+        
+        # Write data rows
+        for idx, row in df.iterrows():
+            ws.cell(row=idx+3, column=1).value = row["Mesh"]
+            col = 2
+            for lp in lp_values:
+                for solver in solvers:
+                    col_key = f"L{lp}_{solver}"
+                    ws.cell(row=idx+3, column=col).value = row[col_key]
+                    col += 1
+        
+        # Adjust column widths
+        ws.column_dimensions['A'].width = 20
+        for col in range(2, len(lp_values) * len(solvers) + 2):
+            ws.column_dimensions[get_column_letter(col)].width = 35
+        
+        # Set row heights for headers
+        ws.row_dimensions[1].height = 25
+        ws.row_dimensions[2].height = 25
+        
+        excel_file = output_dir / "statistics" / "tables" / f"comparison_table_time_per_energy.xlsx"
+        wb.save(excel_file)
+        print(f"Excel table with merged headers saved to {excel_file}")
+    
+    except ImportError:
+        print("openpyxl not installed. Install with: pip install openpyxl")
+    
+    # Create ratio table for easier analysis
+    ratio_data = {}
+    for mesh_name in sorted(data.keys()):
+        row_data = {}
+        for lp in lp_values:
+            for solver in solvers:
+                col_key = f"L{lp}_{solver}"
+                cell_value = data[mesh_name][col_key]
+                
+                # Extract ratio from cell_value
+                if cell_value != "N/A":
+                    try:
+                        ratio_str = cell_value.split("(")[1].rstrip(")")
+                        row_data[col_key] = float(ratio_str)
+                    except:
+                        row_data[col_key] = None
+                else:
+                    row_data[col_key] = None
+        
+        ratio_data[mesh_name] = row_data
+    
+    # Create ratio DataFrame
+    ratio_list = []
+    for mesh_name in sorted(ratio_data.keys()):
+        row = {"Mesh": mesh_name}
+        row.update(ratio_data[mesh_name])
+        ratio_list.append(row)
+    
+    df_ratios = pd.DataFrame(ratio_list)
+    
+    print("\n" + "="*180)
+    print(f"Ratio Table: total_time / E_worst")
+    print("="*180)
+    print(df_ratios.to_string(index=False))
+    print("="*180 + "\n")
+    
+    # Save ratio table with custom headers
+    ratio_file = output_dir / "statistics" / "tables" / f"ratio_table_time_per_energy.csv"
+    with open(ratio_file, 'w') as f:
+        # Write first header row (Lp values)
+        f.write("Mesh")
+        for lp in lp_values:
+            f.write(f",L_{lp},L_{lp}")
+        f.write("\n")
+        
+        # Write second header row (solver names)
+        f.write("Mesh")
+        for lp in lp_values:
+            for solver in solvers:
+                f.write(f",{solver}")
+        f.write("\n")
+        
+        # Write data rows
+        for _, row in df_ratios.iterrows():
+            f.write(f"{row['Mesh']}")
+            for lp in lp_values:
+                for solver in solvers:
+                    col_key = f"L{lp}_{solver}"
+                    val = row[col_key]
+                    if val is not None:
+                        f.write(f",{val:.2f}")
+                    else:
+                        f.write(",N/A")
+            f.write("\n")
+    
+    print(f"Ratio table saved to {ratio_file}")
+    
+    return df, df_ratios
+
+def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Create comparison tables")
+    parser.add_argument("--Lp", nargs="+", type=int, default=[1, 2, 3], help="Lp values")
+    parser.add_argument("--solvers", nargs="+", default=["CG", "Ch_LLT"], help="Solvers to compare")
+    
+    args = parser.parse_args()
+
+    df_display, df_ratios = create_solver_lp_comparison_table(
+        OUTPUT_DIR, 
+        lp_values=args.Lp,
+        solvers=args.solvers
+    )
+
+if __name__ == "__main__":
+    main()

@@ -8,24 +8,30 @@
 //#include <Spectra/MatOp/SparseSymMatProd.h>
 //#include <Spectra/MatOp/SparseSymShiftSolve.h>
 
+
 namespace SymDir {
     Solver::Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err): solver_name_(solver_name){
         if (solver_name_ == "CG") {
             cg_.setTolerance(cg_rel_err);
-            cg_.setMaxIterations(1000);
+            cg_.setMaxIterations(10000);
         }
         if (solver_name_ == "CG_GS") {
             cg_gs.setTolerance(cg_rel_err);
-            cg_gs.setMaxIterations(1000);
+            cg_gs.setMaxIterations(10000);
         }
         if (solver_name_ == "BiCGSTAB") {
             bicgstab.setTolerance(cg_rel_err);
+        }
+        if (solver_name_ == "CG_LLT") {
+            cg_llt.setTolerance(cg_rel_err);
+            cg_llt.setMaxIterations(4000);
         }
     }
 
     void Solver::compute(const Eigen::SparseMatrix<double>& A) {
         if (solver_name_ == "CG") {
-            cg_.compute(A);
+            Eigen::SparseMatrix<double, Eigen::RowMajor> A_rowmajor = A;
+            cg_.compute(A_rowmajor);
         } else if (solver_name_ == "Ch_LLT") {
             cholmod_super_llt_.compute(A);
         } else if (solver_name_ == "LDLT") {
@@ -36,6 +42,8 @@ namespace SymDir {
             bicgstab.compute(A);
         } else if (solver_name_ == "CG_GS") {
             cg_gs.compute(A);
+        } else if (solver_name_ == "CG_LLT") {
+            cg_llt.compute(A);
         } else {
             throw std::invalid_argument("Unknown solver name: " + solver_name_);
         }
@@ -48,6 +56,7 @@ namespace SymDir {
         else if (solver_name_ == "LLT") return llt_.solve(b);
         else if (solver_name_ == "BiCGSTAB") return bicgstab.solve(b);
         else if (solver_name_ == "CG_GS") return cg_gs.solve(b);
+        else if (solver_name_ == "CG_LLT") return cg_llt.solve(b);
         throw std::invalid_argument("Unknown solver: " + solver_name_);
     }
 
@@ -58,6 +67,7 @@ namespace SymDir {
         else if (solver_name_ == "LLT") return llt_.info();
         else if (solver_name_ == "BiCGSTAB") return bicgstab.info();
         else if (solver_name_ == "CG_GS") return cg_gs.info();
+        else if (solver_name_ == "CG_LLT") return cg_llt.info();
         return Eigen::InvalidInput;
     }
 
@@ -65,6 +75,7 @@ namespace SymDir {
         if (solver_name_ == "CG") return cg_.iterations();
         else if (solver_name_ == "BiCGSTAB") return bicgstab.iterations();
         else if (solver_name_ == "CG_GS") return cg_gs.iterations();
+        else if (solver_name_ == "CG_LLT") return cg_llt.iterations();
         throw std::invalid_argument("iterations is only available for iterative solvers");
     }
 
@@ -112,15 +123,11 @@ namespace SymDir {
         const Scalar rel_eps = Scalar(1e-12);
         const Scalar eps = std::max(rel_eps, std::abs(local_hessian.trace()) * rel_eps);
 
-        Scalar min_eval = evals.minCoeff();
-        Scalar shift = Scalar(0);
-        if (min_eval < eps) {
-            shift = -2 * min_eval;  // shift so smallest eigenvalue becomes eps
-        }
-
         // Add shift to all eigenvalues and reconstruct
         for (int i = 0; i < 4; i++) {
-            evals[i] += shift;
+            if (evals[i] < eps) {
+                evals[i] = eps;
+            }
         }
 
         // Reconstruct the projected Hessian
@@ -185,6 +192,85 @@ namespace SymDir {
         std::cout << "Gauss-Seidel reached max iterations without full convergence." << std::endl;
         return false;
     }
+
+
+    using RowMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+    using Vec = Eigen::VectorXd;
+
+    void spmv(const RowMat& a, const Vec& x, Vec& y) {
+        y.resize(a.rows());
+        #pragma omp parallel for schedule(static)
+        for (Eigen::Index i = 0; i < a.rows(); ++i) {
+            double sum = 0.0;
+            for (RowMat::InnerIterator it(a, i); it; ++it) {
+            sum += it.value() * x[it.col()];
+            }
+            y[i] = sum;
+        }
+    }
+
+    double dot(const Vec& a, const Vec& b) {
+        double sum = 0.0;
+        #pragma omp parallel for reduction(+ : sum) schedule(static)
+        for (Eigen::Index i = 0; i < a.size(); ++i) {
+            sum += a[i] * b[i];
+        }
+        return sum;
+    }
+
+    void axpy(double alpha, const Vec& x, Vec& y) {
+        #pragma omp parallel for schedule(static)
+        for (Eigen::Index i = 0; i < y.size(); ++i) {
+            y[i] += alpha * x[i];
+        }
+    }
+
+    CgResult conjugate_gradient(const RowMat& a, const Vec& b, Vec& x, int max_iter, double tol) {
+        spdlog::info("CG solver starting with {} OpenMP threads", omp_get_max_threads());
+        const Eigen::Index n = b.size();
+
+        x.setZero(n);
+        Vec r = b;
+        Vec p = r;
+        Vec ap(n);
+
+        const double b_norm = std::max(1e-30, std::sqrt(dot(b, b)));
+        double rsold = dot(r, r);
+        double rel_residual = std::sqrt(rsold) / b_norm;
+
+        int iter = 0;
+        bool converged = false;
+        for (; iter < max_iter && rel_residual > tol; ++iter) {
+            spmv(a, p, ap);
+            const double p_ap = dot(p, ap);
+            if (p_ap == 0.0) {
+                break;
+            }
+
+            const double alpha = rsold / p_ap;
+            axpy(alpha, p, x);
+            axpy(-alpha, ap, r);
+
+            const double rsnew = dot(r, r);
+            rel_residual = std::sqrt(rsnew) / b_norm;
+            if (rel_residual <= tol) {
+                converged = true;  // Mark as converged
+                rsold = rsnew;
+                break;
+            }
+
+            const double beta = rsnew / rsold;
+            #pragma omp parallel for schedule(static)
+            for (Eigen::Index i = 0; i < n; ++i) {
+                p[i] = r[i] + beta * p[i];
+            }
+            rsold = rsnew;
+        }
+
+        return {iter, rel_residual, converged};
+
+    }
+
     template void SymDir::projected_local_hessian<double>(Eigen::Matrix<double, 4, 4>& local_hessian);
 }
 

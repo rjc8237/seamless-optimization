@@ -27,8 +27,6 @@ public:
 
     // 1. Compute: Converts input matrix to RowMajor and pre-calcs diagonals
     void compute(const MatrixType& A) {
-        // Create a Row-Major copy. 
-        // This is necessary because iterating rows on a Col-Major matrix is very slow.
         m_rowMajorA = A; 
 
         Index n = m_rowMajorA.rows();
@@ -88,6 +86,7 @@ public:
 private:
     std::string solver_name_;
     Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg_;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, Eigen::IncompleteCholesky<double>> cg_llt;
     Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, 
     SymmetricGaussSeidelPreconditioner<Eigen::SparseMatrix<double>>> cg_gs;
     Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Upper> ldlt_;
@@ -104,4 +103,17 @@ bool solveGaussSeidel(const Eigen::SparseMatrix<double>& A,
                       Eigen::VectorXd& x, 
                       int max_iters = 2000, 
                       double tolerance = 1e-10);
+
+struct CgResult {
+    int iterations = 0;
+    double rel_residual = 0.0;
+    bool converged = false;
+};
+
+CgResult conjugate_gradient(const Eigen::SparseMatrix<double, Eigen::RowMajor>& a,
+    const Eigen::VectorXd& b,
+    Eigen::VectorXd& x,
+    int max_iter,
+    double tol);
+
 } // namespace SymDir

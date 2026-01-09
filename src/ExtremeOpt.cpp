@@ -609,29 +609,28 @@ void ExtremeOpt::write_obj(const std::string& path)
     igl::writeOBJ(path, V, F, V, F, uv, F);
 }
 
-double ExtremeOpt::get_quality_avg_for_smooth_only()
+double ExtremeOpt::get_quality_avg_for_smooth_only(double Lp)
 {
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
-    return compute_energy(uv);
+    return compute_energy(uv, Lp);
 }
 
-double ExtremeOpt::get_quality_avg_worst_for_smooth_only(double percent, int p)
+double ExtremeOpt::get_quality_avg_worst_for_smooth_only(double Lp)
 {
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
-    Eigen::VectorXd area;
-    Eigen::SparseMatrix<double> G;
-    igl::doublearea(V, F, area);
-    get_grad_op(V, F, G);
-    auto compute_energy = [G, area, percent, p](Eigen::MatrixXd aaa, double Lp) {
-        Eigen::MatrixXd Ji;
-        jacobian_from_uv(G, aaa, Ji);
-        return compute_worst_n_energy(Ji, area, Lp, percent, p);
-    };
-    return compute_energy(uv, m_params.Lp);
+    return compute_worst_n_energy(uv, Lp);
+}
+
+double ExtremeOpt::get_threshold_energy()
+{
+    Eigen::MatrixXi F;
+    Eigen::MatrixXd V, uv;
+    export_mesh(V, F, uv);
+    return compute_threshold_energy(uv);
 }
 
 double ExtremeOpt::get_quality()

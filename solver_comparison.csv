@@ -1,0 +1,9 @@
+Solver,Threads,Solver Time (s),Total Time (s)
+CG,1,16.045,72.000
+CG,2,12.550,65.000
+CG,4,10.287,68.000
+CG,8,10.385,66.000
+Parallel_CG,1,143.555,180.000
+Parallel_CG,8,77.060,184.000
+Ch_LLT,Unknown,72.966,137.000
+Ch_LLT,Unknown,85.979,150.000
