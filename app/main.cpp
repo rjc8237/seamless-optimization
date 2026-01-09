@@ -74,6 +74,7 @@ int main(int argc, char** argv)
     json config = json::parse(js_in);
     
     param.max_iters = config["max_iters"]; // iterations
+    param.max_time = config["max_time"]; // time in seconds
     param.smooth_only_iters = config["smooth_only_iters"];
     param.E_target = config["E_target"]; // Energy target
     param.ls_iters = config["ls_iters"]; // param for linesearch in smoothing operation

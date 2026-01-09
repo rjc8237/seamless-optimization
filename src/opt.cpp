@@ -16,9 +16,12 @@
 #include <math.h>       
 
 #include <igl/facet_components.h>
+
+#ifdef ENABLE_VISUALIZATION
 #include "polyscope/curve_network.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
+#endif
 
 namespace SymDir{
 
@@ -65,6 +68,7 @@ void view(
         cut_degrees[vi] = feature_degrees[v_map[vi]];
     }
 
+#ifdef ENABLE_VISUALIZATION
     polyscope::init();
     polyscope::registerSurfaceMesh("seam mesh", V, F);
     polyscope::getSurfaceMesh("seam mesh")->addVertexParameterizationQuantity("uv", uv);
@@ -76,6 +80,7 @@ void view(
     polyscope::registerPointCloud("seam vertices", P);
     //polyscope::getPointCloud("seam vertices")->addScalarQuantity("is independent", independent);
     polyscope::show();
+#endif
 }
 
 typedef Eigen::SparseVector<double> CoordVector;
@@ -1155,8 +1160,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
     std::vector<double> residuals;
     for (int i = 1; i <= m_params.max_iters; i++) {
         // if times exceeds 3 minutes, stop optimization
-        if (total_timer.getElapsedTime() > 180.0) {
-            spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", 180);
+        if (total_timer.getElapsedTime() > m_params.max_time) {
+            spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", m_params.max_time);
             iters = i; // last completed iteration
             break;
         }

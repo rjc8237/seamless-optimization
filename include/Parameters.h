@@ -11,6 +11,7 @@ struct Parameters
     bool fix_misaligned = false;
 
     int max_iters = 500;
+    int max_time = 180;
     int smooth_only_iters = 100;
     bool do_newton = false;
     bool local_smooth = false;

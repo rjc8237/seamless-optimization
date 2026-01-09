@@ -77,13 +77,6 @@ target_link_libraries(symmetric_dirichlet
     CLI11::CLI11
 )
 
-add_executable(view_mesh
-    app/view_mesh.cpp
-)
-target_link_libraries(view_mesh
-    SymmetricDirichletLib
-    CLI11::CLI11
-)
 
 add_executable(cut_mesh
     app/cut_mesh.cpp
@@ -112,6 +105,15 @@ set_target_properties(symdir PROPERTIES PREFIX
   "${PYTHON_MODULE_PREFIX}"
 )
 
+if (ENABLE_VISUALIZATION)
+add_executable(view_mesh
+    app/view_mesh.cpp
+)
+target_link_libraries(view_mesh
+    SymmetricDirichletLib
+    CLI11::CLI11
+)
+
 add_executable(view_output
     app/view_output.cpp
 )
@@ -119,3 +121,4 @@ target_link_libraries(view_output
     SymmetricDirichletLib
     CLI11::CLI11
 )
+endif()
