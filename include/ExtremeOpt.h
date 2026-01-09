@@ -36,6 +36,12 @@ void get_grad_op(
     const Eigen::MatrixXi& F,
     Eigen::SparseMatrix<double>& grad_op);
 
+Eigen::VectorXd symmetric_dirichlet_energy(
+    const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    double norm_p);
+
 class VertexAttributes
 {
 public:
@@ -374,6 +380,7 @@ public:
     std::vector<double> min_v_diffs;
     std::vector<int> min_v_diff_ids;
     std::vector<int> min_v_diff_next_ids;
+    std::vector<int> v_map;
     Eigen::VectorXi C;
     int num_components;
 
@@ -420,6 +427,7 @@ public:
     double smooth_global(bool& failed, std::vector<HessianStats>& hessian_log);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);
+    void set_v_map(const Eigen::MatrixXi& F, const Eigen::MatrixXi& FT);
 
     void init_constraints(const std::vector<std::vector<int>>& EE_e);
     void consolidate_mesh_cons();
@@ -472,7 +480,7 @@ public:
     Eigen::SparseMatrix<double>& hessian,
     bool get_hessian);
     Eigen::SparseMatrix<double> compute_area_weight_matrix();
-
+    
     /*
     // Energy Assigned to undefined energy
     // TODO: why not the max double?

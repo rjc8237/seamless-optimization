@@ -30,5 +30,6 @@
     "grad_rel_err": 1e-12,
     "cg_rel_err": 1e-3,
     "soft_max": false,
-    "t": 20
+    "t": 20,
+    "precompute_seamless": true
 }

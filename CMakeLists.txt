@@ -55,6 +55,7 @@ include(eigen)
 include(spdlog)
 include(polyscope)
 include(suitesparse)
+include(pybind11)
 include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
@@ -114,6 +115,23 @@ target_link_libraries(cut_mesh
     CLI11::CLI11
 )
 
+add_library(symdir MODULE
+  src/pybind.cpp
+)
+
+# Link libraries
+target_link_libraries(symdir PUBLIC
+  SymmetricDirichletLib
+  pybind11::module
+)
+
+# Set pybinding settings
+set_target_properties(symdir PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+  ${PROJECT_SOURCE_DIR}/py
+)
+set_target_properties(symdir PROPERTIES PREFIX
+  "${PYTHON_MODULE_PREFIX}"
+)
 
 add_executable(view_output
     app/view_output.cpp

@@ -176,7 +176,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
     std::vector<Eigen::VectorXd> symdir_face_energies;
     std::vector<Eigen::VectorXd> symdir_face_worst;
 
-
     std::vector<Eigen::MatrixXd> G_us;
     std::vector<Eigen::MatrixXd> G_vs;
 
@@ -194,7 +193,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         Eigen::MatrixXd G_v = Eigen::Map<const Eigen::MatrixXd>(Guv.col(1).data(), F.rows(), 3);
         G_us.push_back(G_u);
         G_vs.push_back(G_v);
-    
         Eigen::MatrixXd uT_vT(3*F.rows(), 2);
         uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
         uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
@@ -225,7 +223,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
                             + Ry.array().square() 
                             + Rz.array().square()).rowwise().sum();
         alignment_face_energies.push_back(residuals);
-
     }
 
     
@@ -281,7 +278,6 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
     {
         V_feature.row(i) = V.row(feature_vertex_indices[i]);
     }
-
     std::vector<std::array<size_t, 2>> edges_feature;
     for (int i = 0; i < FE.rows(); ++i)
     {

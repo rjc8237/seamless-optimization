@@ -18,6 +18,22 @@
 
 namespace SymDir {
 
+Eigen::VectorXd symmetric_dirichlet_energy(
+    const Eigen::MatrixXd& V,
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    double norm_p)
+{
+    Eigen::SparseMatrix<double> G;
+    get_grad_op(V, F, G);
+
+    Eigen::MatrixXd J;
+    jacobian_from_uv(G, uv, J);
+
+    return symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p);
+}
+
+
 std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)
 {
     std::vector<int> component_vertices(N, -1);
@@ -369,6 +385,23 @@ void ExtremeOpt::create_mesh(
 
     num_components = igl::facet_components(F, C);
     std::tie(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids) = find_u_aligned_edges(uv, F);
+}
+
+void ExtremeOpt::set_v_map(
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXi& FT
+) {
+    int num_faces = F.rows();
+    int num_vertices = FT.maxCoeff() + 1;
+    v_map.resize(num_vertices);
+    for (int fijk = 0; fijk < num_faces; ++fijk)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            v_map[FT(fijk, i)] = F(fijk, i);
+        }
+    }
+    spdlog::info("built map of {} vertices", num_vertices);
 }
 
 std::vector<int> ExtremeOpt::propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N)

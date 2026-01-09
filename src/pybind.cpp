@@ -69,7 +69,8 @@ PYBIND11_MODULE(symdir_py, m)
         .def_readwrite("use_max_energy", &Parameters::use_max_energy)
         .def_readwrite("Lp", &Parameters::Lp);
     
-    m.def("check_constraints", &check_constraints);
+    //m.def("check_constraints", &check_constraints);
+    m.def("symmetric_dirichlet_energy", &SymDir::symmetric_dirichlet_energy);
     m.def("transform_EE", &transform_EE);
     m.def("transform_FE", &transform_FE);
 
@@ -81,6 +82,5 @@ PYBIND11_MODULE(symdir_py, m)
         return std::make_tuple(V, F, uv);
     });
 }
-
 #endif
 #endif

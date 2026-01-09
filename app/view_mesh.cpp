@@ -137,7 +137,6 @@ void view(ExtremeOpt& extremeopt, const Eigen::MatrixXi &EE, const Eigen::Matrix
 
 
     Eigen::MatrixXd uT_vT(3*F.rows(), 2);
-    
     uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD1.data(), 3 * F.rows());
     uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(extremeopt.PD2.data(), 3 * F.rows());
 

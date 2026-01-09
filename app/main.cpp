@@ -118,6 +118,7 @@ int main(int argc, char** argv)
     param.projected_newton = config["projected_newton"];
     param.soft_max = config["soft_max"];
     param.t = config["t"];
+    param.precompute_seamless = config["precompute_seamless"];
     
     if (ffield == "")
     {
@@ -179,6 +180,7 @@ int main(int argc, char** argv)
     extremeopt.m_params = param;
     
     extremeopt.create_mesh(V, F, uv);
+    extremeopt.set_v_map(F_init, F);
 
     if (extremeopt.m_params.with_cons)
     {
@@ -202,7 +204,7 @@ int main(int argc, char** argv)
         //extremeopt.FE = FE;
     }
     //extremeopt.view();
-    if (ffield == "") extremeopt.comb_matchings(ffield_path);
+    if (ffield != "") extremeopt.comb_matchings(ffield_path);
     extremeopt.do_optimization(opt_log);
 
     if (extremeopt.m_params.with_cons)

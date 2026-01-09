@@ -43,6 +43,8 @@ struct Parameters
     double t = 1.0; // temperature for soft max
     
     double E_min = 1.0;
+    bool precompute_seamless = false; // use explicit seamless subspace construction
+ 
     /* data */
 };
 

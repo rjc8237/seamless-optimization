@@ -54,7 +54,7 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXi> MeshCutter::cut_mesh() {
 		for (int i = 0; i < 3; ++i) {
 			int j = (i + 1) % 3;
 			int f_opp = TT(f, i);
-			// if (f > f_opp) continue;
+			if (f > f_opp) continue;
 			assert(F(f, j) == F(f_opp, TTi(f, i)));
 			assert(F(f, i) == F(f_opp, (TTi(f, i) + 1) % 3));
 			if (F(f, j) != F(f_opp, TTi(f, i)))

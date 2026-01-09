@@ -3,10 +3,10 @@
 #include "ExtremeOpt.h"
 #include <Eigen/CholmodSupport>
 #include <Eigen/Core>
-#include <Spectra/SymEigsSolver.h>
-#include <Spectra/SymEigsShiftSolver.h>
-#include <Spectra/MatOp/SparseSymMatProd.h>
-#include <Spectra/MatOp/SparseSymShiftSolve.h>
+//#include <Spectra/SymEigsSolver.h>
+//#include <Spectra/SymEigsShiftSolver.h>
+//#include <Spectra/MatOp/SparseSymMatProd.h>
+//#include <Spectra/MatOp/SparseSymShiftSolve.h>
 
 
 namespace SymDir {
@@ -80,32 +80,36 @@ namespace SymDir {
     }
 
     double get_cond_num_from_hessian(const Eigen::SparseMatrix<double>& hessian){
-        Spectra::SparseSymMatProd<double> op(hessian);
-        Spectra::SymEigsSolver<Spectra::SparseSymMatProd<double>> eigs_larg(op, 2, 5);
-        eigs_larg.init();
-        eigs_larg.compute();
-        if (eigs_larg.info() != Spectra::CompInfo::Successful) {
-            spdlog::error("Failed to compute eigenvalues");
-            return -1;
-        }
-        double largest_eigen = eigs_larg.eigenvalues().maxCoeff();
+        spdlog::error("not implemented");
+        return 0.;
 
-        Spectra::SparseSymShiftSolve<double> op_small(hessian);
-        Spectra::SymEigsShiftSolver<Spectra::SparseSymShiftSolve<double>> eigs_small(op_small, 2, 5, 0.0);
-        eigs_small.init();
-        eigs_small.compute();
-        if (eigs_small.info() != Spectra::CompInfo::Successful) {
-            spdlog::error("Failed to compute eigenvalues");
-            return -1;
-        }
-        double smallest_eigen = eigs_small.eigenvalues().minCoeff();
-        spdlog::info("Conditions number computation done: {}, {}", largest_eigen, smallest_eigen);
-        if (smallest_eigen == 0) {
-            spdlog::warn("Smallest eigenvalue is zero, condition number is infinite");
-            return std::numeric_limits<double>::infinity();
-        }
-        double cond_num = largest_eigen / smallest_eigen;
-        return cond_num;
+//        Spectra::SparseSymMatProd<double> op(hessian);
+//        Spectra::SymEigsSolver<Spectra::SparseSymMatProd<double>> eigs_larg(op, 2, 5);
+//        eigs_larg.init();
+//        eigs_larg.compute();
+//        if (eigs_larg.info() != Spectra::CompInfo::Successful) {
+//            spdlog::error("Failed to compute eigenvalues");
+//            return -1;
+//        }
+//        double largest_eigen = eigs_larg.eigenvalues().maxCoeff();
+//
+//
+//        Spectra::SparseSymShiftSolve<double> op_small(hessian);
+//        Spectra::SymEigsShiftSolver<Spectra::SparseSymShiftSolve<double>> eigs_small(op_small, 2, 5, 0.0);
+//        eigs_small.init();
+//        eigs_small.compute();
+//        if (eigs_small.info() != Spectra::CompInfo::Successful) {
+//            spdlog::error("Failed to compute eigenvalues");
+//            return -1;
+//        }
+//        double smallest_eigen = eigs_small.eigenvalues().minCoeff();
+//        spdlog::info("Conditions number computation done: {}, {}", largest_eigen, smallest_eigen);
+//        if (smallest_eigen == 0) {
+//            spdlog::warn("Smallest eigenvalue is zero, condition number is infinite");
+//            return std::numeric_limits<double>::infinity();
+//        }
+//        double cond_num = largest_eigen / smallest_eigen;
+//        return cond_num;
     }
 
     template <typename Scalar>
