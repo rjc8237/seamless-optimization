@@ -1179,14 +1179,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
             reached_one = true;
         }
 
-        // if times exceeds 3 minutes, stop optimization
-        if (total_timer.getElapsedTime() > 180.0) {
-            spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", 180);
-            iters = i; // last completed iteration
-            break;
-        }
-
-
         double E_max;
         failed = false;
         if (this->m_params.global_smooth) {
