@@ -1223,30 +1223,49 @@ void ExtremeOpt::do_optimization(json& opt_log)
         iters = i;
 
         // TODO: terminate criteria
-        if (max_grad < m_params.grad_abs_err || max_grad < max_grad_0 * m_params.grad_rel_err) {
-            spdlog::info(
-                "Reach target gradient({}), optimization succeed!",
-                m_params.grad_abs_err);
+        // 1. gradient stopping condition
+        if (max_grad < m_params.grad_abs_err) {
+            std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
             break;
         }
-
+        if (max_grad < max_grad_0 * m_params.grad_rel_err) {
+            std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
+        // 2. energy stopping condition
         if (E_worst < 1.0) {
-            spdlog::info("Energy reached 1.0, optimization converge!");
+            std::string reason = "Energy reached 1.0, optimization converge!";
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
             break;        
 
         }
         if (fabs(E_worst - E_old) < m_params.diff_err * E_old) {
             count += 1;
             if (count > 3) {
-                spdlog::info("Energy change too small ({}), optimization converge!", fabs(E_worst - E_old) / E_old);
+                std::string reason = fmt::format("Energy change too small ({}) in {} steps, optimization succeed!", fabs(E_worst - E_old) / E_old, count);
+                spdlog::info(reason);
+                opt_log["converge_reason"] = reason;
                 break;        
             }
         } else {
             count = 0;
         }
 
-        if (fabs(E_worst) < m_params.E_rel_err * E_0 || fabs(E_worst) < m_params.E_abs_err) {
-            spdlog::info("Energy converged!", fabs(E_worst), m_params.E_rel_err * E_0, m_params.E_abs_err);
+        if (fabs(E_worst) < m_params.E_abs_err) {
+            std::string reason = fmt::format("Energy converged to {} with abs err {}, optimization succeed!", E_worst, m_params.E_abs_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
+        if (fabs(E_worst) < m_params.E_rel_err * E_0) {
+            std::string reason = fmt::format("Energy converged to {} with rel err {}, optimization succeed!", E_worst, m_params.E_rel_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
             break;
         }
         

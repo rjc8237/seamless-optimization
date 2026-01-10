@@ -51,8 +51,8 @@ def run_solver(args):
     if not input_dir.is_dir():
         print(f"[warn] Skipping {obj_name}: missing folder {folder_name}")
         return
-    
-    output_dir = OUTPUT_DIR / ("Lp_" + str(cfg.get("Lp", 0))) / s / folder_name
+
+    output_dir = OUTPUT_DIR / ("Lp_" + str(cfg.get("Lp", 0))) / (s + "_4") / folder_name
     (output_dir / "logs").mkdir(parents=True, exist_ok=True)
     
     cfg_copy = cfg.copy()
@@ -74,17 +74,14 @@ def run_solver(args):
         "--model", obj_name,
         "--json", str(tmp_json_path),
         "-o", str(output_dir),
-        "-s", s
+        "-s", s,
+        "-t", "4"
     ]
-
-    # Set environment variables for OpenMP
-    env = os.environ.copy()
-    env["OMP_NUM_THREADS"] = "16"
     
     print(f"Running model: {obj_name} with solver: {s}" + (f" and cg_rel_err: {cgerr}" if cgerr else ""))
     
     with open(log_path, "w") as lf:
-        result = subprocess.run(cmd, stdout=lf, stderr=lf, cwd=build_dir, env=env)
+        result = subprocess.run(cmd, stdout=lf, stderr=lf, cwd=build_dir)
         if result.returncode != 0:
             print(f"[error] {tag} exited code {result.returncode}")
         else:
@@ -115,8 +112,8 @@ if __name__ == '__main__':
     #     print(f"  - {m}")
         
     # Solvers
-    solvers = ["Ch_LLT", "CG"]
-    cg_rel_errs = [1e-3]
+    solvers = ["CG"]
+    cg_rel_errs = [1e-4]
 
 
     tasks = []
@@ -134,7 +131,7 @@ if __name__ == '__main__':
     print(f"\nTotal tasks: {len(tasks)}")
 
     # Run in parallel
-    num_workers = 8
+    num_workers = 4
     with Pool(num_workers) as pool:
         pool.map(run_solver, tasks)
 
