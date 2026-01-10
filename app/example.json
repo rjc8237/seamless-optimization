@@ -1,7 +1,6 @@
 {
     "max_iters": 500,
     "projected_newton": true,
-    "max_iters": 200,
     "max_time": 180,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
