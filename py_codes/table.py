@@ -31,82 +31,82 @@ def num_triangles_with_energy(uv_path, E_min):
     e_max = max(X)
     return count, e_max
 
-def create_mesh_table(lp_value=1, solver="CG"):
-    """Create a table with mesh name, E_worst, and total_time"""
+def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1):
+    """Create a table comparing metrics (total_time, E_worst, etc.) for different solvers
+    with side-by-side columns for CG and Ch_LLT
+    """
     
-    base_path = OUTPUT_DIR / ("Lp_" + str(lp_value))
-    
-    # Get all mesh folders
-    mesh_folders = sorted([f for f in base_path.iterdir() if f.is_dir()])
+    solvers_config = {"CG": cg_lp, "Ch_LLT": llt_lp}
+    mesh_folders = get_mesh_folders(output_dir, cg_lp, "CG")
     
     if not mesh_folders:
-        print(f"No mesh folders found in {base_path}")
-        return
+        print(f"No mesh folders found")
+        return None
     
-    print(f"Found {len(mesh_folders)} mesh folders")
+    # Initialize data dictionary
+    data = []
     
-    # Collect data
-    data = {
-        "Mesh Name": [],
-        "# Faces": [],
-        "E_worst": [],
-        "Total Time": [],
-        "Time when E_worst = 1.0": [],
-        "# Triangles E >= 1": [],
-        "E_max": []
-    }
-    
-    for mesh_folder in mesh_folders:
-        mesh_name = mesh_folder.name
+    # Iterate through each mesh
+    for obj_path, mesh_name in sorted(mesh_folders.items()):
+        row_data = {"Mesh": mesh_name}
         
-        # Look for solver json file
-        solver_folder = mesh_folder / solver
-        if solver_folder.exists():
-            json_files = list(solver_folder.glob("*.json"))
-            if json_files:
-                try:
-                    with open(json_files[0], 'r') as f:
-                        json_data = json.load(f)
-                        e_worst = json_data.get("E_worst", "N/A")
-                        faces = json_data["opt_log"][0].get("F_size", "N/A")
-                        e_worst_1 = json_data.get("E_worst=1.0", "N/A")
-                        total_time = json_data.get("total_time", "N/A")
-                        data["Mesh Name"].append(mesh_name)
-                        data["# Faces"].append(faces)
-                        data["E_worst"].append(e_worst)
-                        data["Total Time"].append(total_time)
-                        data["Time when E_worst = 1.0"].append(e_worst_1)
-                except Exception as e:
-                    print(f"Error loading {solver} JSON for {mesh_name}: {e}")
-            obj_files = list(solver_folder.glob("*.obj"))
-            if obj_files:
-                try:
-                    with open(obj_files[0], 'r') as f:
-                        num_triangles, E_max = num_triangles_with_energy(obj_files[0], 1.0)
-                        data["# Triangles E >= 1"].append(num_triangles)
-                        data["E_max"].append(E_max)
-                except Exception as e:
-                    print(f"Error loading {solver} JSON for {mesh_name}: {e}")
-
-        else:
-            print(f"[warn] {solver} folder not found for {mesh_name}")
+        # Collect metrics for each solver
+        for solver, lp in solvers_config.items():
+            metrics = {}
+            try:
+                solver_base_path = output_dir / ("Lp_" + str(lp)) / solver
+                
+                # Find matching mesh folder
+                for mesh_folder in solver_base_path.iterdir():
+                    if not mesh_folder.is_dir() or not mesh_folder.name.endswith("_output"):
+                        continue
+                    
+                    obj_files = list(mesh_folder.glob("*.obj"))
+                    if obj_files:
+                        obj_name = obj_files[0].stem.split("_refined_with_uv_out_")[0]
+                        
+                        if obj_name == mesh_name:
+                            # Found the right mesh, get metrics from JSON
+                            json_files = list(mesh_folder.glob("*.json"))
+                            if json_files:
+                                with open(json_files[0], 'r') as f:
+                                    json_data = json.load(f)
+                                    metrics["total_time"] = json_data.get("total_time")
+                                    metrics["E_worst"] = json_data.get("E_worst")
+                                    metrics["iters"] = json_data.get("iters")
+                                    metrics["faces"] = json_data["opt_log"][0].get("F_size", "N/A")
+                            break
+            
+            except Exception as e:
+                print(f"Error getting data for {mesh_name} - {solver} - Lp{lp}: {e}")
+            
+            # Add metrics to row for this solver
+            for metric_name in ["total_time", "E_worst", "iters", "faces"]:
+                col_key = f"{metric_name}_{solver}"
+                value = metrics.get(metric_name, "N/A")
+                if isinstance(value, float):
+                    row_data[col_key] = f"{value:.4f}"
+                else:
+                    row_data[col_key] = value
+        
+        data.append(row_data)
     
-    # Create DataFrame
     df = pd.DataFrame(data)
     
     # Display table
-    print("\n" + "="*80)
-    print(f"Table for {solver} - Lp={lp_value}")
-    print("="*80)
+    print("\n" + "="*200)
+    print(f"Solver Comparison Table (CG vs Ch_LLT)")
+    print("="*200)
     print(df.to_string(index=False))
-    print("="*80 + "\n")
+    print("="*200 + "\n")
     
-    # Save to CSV
-    output_file = OUTPUT_DIR / "statistics" / "tables" / f"table_{solver}_Lp{lp_value}.csv"
+    # Save to CSV with proper headers
+    output_file = output_dir / "statistics" / "tables" / f"comparison_table_solvers.csv"
     output_file.parent.mkdir(parents=True, exist_ok=True)
+    
     df.to_csv(output_file, index=False)
     print(f"Table saved to {output_file}")
-    
+
     return df
 
 def get_mesh_folders(output_dir, Lp_value, solver, cgerr = 0.0, Lp_shift = 1.0):
@@ -400,11 +400,8 @@ def main():
     
     args = parser.parse_args()
 
-    df_display, df_ratios = create_solver_lp_comparison_table(
-        OUTPUT_DIR, 
-        lp_values=args.Lp,
-        solvers=args.solvers
-    )
+    output_dir = OUTPUT_DIR
+    df = create_solver_comparison_table(output_dir, 2, 1)
 
 if __name__ == "__main__":
     main()

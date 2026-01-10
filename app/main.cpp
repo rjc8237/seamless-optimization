@@ -141,7 +141,7 @@ int main(int argc, char** argv)
     timer.start();
 	MeshCutter meshcutter(V_init, uv, F_init, F);
 	auto [V, EE] = meshcutter.cut_mesh();
-    opt_log["time_log"].push_back({"cutting_time", timer.getElapsedTime()});
+    opt_log["time_log"]["cutting_time"] = timer.getElapsedTime();
     Eigen::MatrixXi FE_init;
     Eigen::MatrixXi FE(0, 0);
     Eigen::MatrixXi ME(0, 0);
@@ -158,7 +158,7 @@ int main(int argc, char** argv)
         }
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
-    opt_log["time_log"].push_back({"loading_feature_edges_time", timer.getElapsedTime() - time});
+    opt_log["time_log"]["loading_feature_edges_time"] = timer.getElapsedTime() - time;
     double cons_residual = check_constraints(EE, FE, uv, F);
     spdlog::info("Initial constraints error {}", cons_residual);
 

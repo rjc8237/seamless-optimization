@@ -1144,7 +1144,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
     }
     time = timer.getElapsedTime();
-    opt_log["time_log"].push_back({"constraint_elimination_time", time});
+    opt_log["time_log"]["constraint_elimination_time"] = time;
     spdlog::info("constraint elimination time serial: {}s", time);
 
     if (m_params.use_rref)
@@ -1246,7 +1246,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
         if (fabs(E_worst - E_old) < m_params.diff_err * E_old) {
             count += 1;
-            if (count > 3) {
+            if (count > 2) {
                 std::string reason = fmt::format("Energy change too small ({}) in {} steps, optimization succeed!", fabs(E_worst - E_old) / E_old, count);
                 spdlog::info(reason);
                 opt_log["converge_reason"] = reason;
@@ -1270,9 +1270,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
         
         if (failed) {
-            spdlog::info(
-                "Line search step failed. stopping optimization early."
-            );
+            std::string reason = "Line search step failed.";
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
             break;
         }
     }
@@ -1290,9 +1290,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
         time_solver += hessian_log[i].time_solver;
         time_grad_hessian += hessian_log[i].time_grad_hessian;
     }
-    opt_log["time_log"].push_back({"line_search_time", time_ls});
-    opt_log["time_log"].push_back({"solver_time", time_solver});
-    opt_log["time_log"].push_back({"grad_hessian_time", time_grad_hessian});
+    opt_log["time_log"]["line_search_time"] = time_ls;
+    opt_log["time_log"]["solver_time"] = time_solver;
+    opt_log["time_log"]["grad_hessian_time"] = time_grad_hessian;
     E_worst = get_quality_avg_worst_for_smooth_only(1.0);
     opt_log["E_worst"] = E_worst;
 }

@@ -112,7 +112,7 @@ if __name__ == '__main__':
     #     print(f"  - {m}")
         
     # Solvers
-    solvers = ["CG"]
+    solvers = ["Ch_LLT"]
     cg_rel_errs = [1e-4]
 
 
