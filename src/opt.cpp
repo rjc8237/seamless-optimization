@@ -1139,14 +1139,13 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
     }
     time = timer.getElapsedTime();
+    opt_log["time_log"].push_back({"constraint_elimination_time", time});
     spdlog::info("constraint elimination time serial: {}s", time);
 
     if (m_params.use_rref)
     {
     }
 
-    total_timer.start();
-    
     std::vector<HessianStats> hessian_log;
     bool failed = false;
 
@@ -1171,25 +1170,20 @@ void ExtremeOpt::do_optimization(json& opt_log)
     std::vector<double> residuals;
     double E_0 = E_worst;
     bool reached_one = false;
+    total_timer.start();
     for (int i = 1; i <= m_params.max_iters; i++) {
         double E_old = E_worst;
-    
-        if (E_worst_2 < 1.0 && reached_one == false) {
-            total_time = total_timer.getElapsedTime();
-            reached_one = true;
-        }
-
         double E_max;
         failed = false;
+        
         if (this->m_params.global_smooth) {
             timer.start();
             m_params.E_min = val_e_min;
             max_grad = smooth_global(failed, hessian_log);
             m_params.E_min = 1.0;
-            time = timer.getElapsedTime();
-            spdlog::info("GLOBAL smoothing operation time serial: {}s", time);
-
+            spdlog::info("GLOBAL smoothing operation time serial: {}s", timer.getElapsedTime());
             // E = get_quality();
+
             E = get_quality_avg_for_smooth_only();
             E_worst = get_quality_avg_worst_for_smooth_only();
 
@@ -1200,6 +1194,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
             // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
             // spdlog::info("E_max = {}", E_max);
             spdlog::info("max gradient = {}", max_grad);
+
         }
         max_grad = max_grad * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
         E = std::pow(E, 1.0 / (2 * m_params.Lp));
@@ -1234,20 +1229,25 @@ void ExtremeOpt::do_optimization(json& opt_log)
             );
             break;
         }
-
-        std::cout << std::endl;
-    }
-    if (reached_one == true) {
-        opt_log["E_worst=1.0"] = total_time;
     }
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
-    double total_time_rounded = std::round(total_time);
-    opt_log["total_time"] = total_time_rounded;
     opt_log["iters"] = iters;
     opt_log["hessian_log"] = hessian_log;
+
+    double time_ls = 0.0;
+    double time_solver = 0.0;
+    double time_grad_hessian = 0.0;
+    for (size_t i = 0; i < hessian_log.size(); ++i)
+    {
+        time_ls += hessian_log[i].time_ls;
+        time_solver += hessian_log[i].time_solver;
+        time_grad_hessian += hessian_log[i].time_grad_hessian;
+    }
+    opt_log["time_log"].push_back({"line_search_time", time_ls});
+    opt_log["time_log"].push_back({"solver_time", time_solver});
+    opt_log["time_log"].push_back({"grad_hessian_time", time_grad_hessian});
     E_worst = get_quality_avg_worst_for_smooth_only(1.0);
     opt_log["E_worst"] = E_worst;
-
 }
 } // namespace SymDir

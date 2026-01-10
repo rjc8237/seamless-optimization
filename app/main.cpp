@@ -63,6 +63,7 @@ int main(int argc, char** argv)
     num_threads = std::max(1, num_threads);
     omp_set_dynamic(0);
     omp_set_num_threads(num_threads);
+    Eigen::setNbThreads(num_threads);
     std::cout << "========================================" << std::endl;
     std::cout << "Is OpenMP recognized? ";
     #ifdef _OPENMP
@@ -120,19 +121,28 @@ int main(int argc, char** argv)
     param.t = config["t"];
     param.precompute_seamless = config["precompute_seamless"];
     
+    json opt_log;
+    opt_log["model_name"] = model;
+    opt_log["solver_type"] = param.solver_type;
+    opt_log["num_threads"] = num_threads;
+    opt_log["args"] = config;
+
     if (ffield == "")
     {
         spdlog::info("no field provided: disabling alignment");
         param.alignment_weight = 0.;
     }
 
+    igl::Timer timer;
+    double time = 0;
+    timer.start();
 	MeshCutter meshcutter(V_init, uv, F_init, F);
-
 	auto [V, EE] = meshcutter.cut_mesh();
-
+    opt_log["time_log"].push_back({"cutting_time", timer.getElapsedTime()});
     Eigen::MatrixXi FE_init;
     Eigen::MatrixXi FE(0, 0);
     Eigen::MatrixXi ME(0, 0);
+    time = timer.getElapsedTime();
     if (param.do_feature_alignment)
     {
         // Loading the feature edge constraints
@@ -145,20 +155,15 @@ int main(int argc, char** argv)
         }
         //FE = meshcutter.remove_cycles_and_duplicates(FE_init, FE_full);
     }
-    
+    opt_log["time_log"].push_back({"loading_feature_edges_time", timer.getElapsedTime() - time});
     double cons_residual = check_constraints(EE, FE, uv, F);
     spdlog::info("Initial constraints error {}", cons_residual);
 
-    json opt_log;
-    opt_log["model_name"] = model;
-    opt_log["solver_type"] = param.solver_type;
-    opt_log["num_threads"] = num_threads;
-    opt_log["args"] = config;
 
     // Choose output JSON filename
     std::string json_name = output_dir + "/" + model + "_" + param.solver_type;
 
-    if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS") {
+    if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
         // append cg_rel_err for CG runs
         json_name += "_" + sci_short(param.cg_rel_err);
     }
@@ -221,14 +226,14 @@ int main(int argc, char** argv)
 
     cons_residual = check_constraints(EE, FE, uv, F);
     spdlog::info("Final constraints error {}", cons_residual);
-
+    opt_log["total_time"] = timer.getElapsedTime();
     if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
 
     std::string obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
-    // if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS") {
-    //     // append cg_rel_err for CG runs
-    //     obj_name += "_" + sci_short(param.cg_rel_err);
-    // }
+    if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
+        // append cg_rel_err for CG runs
+        obj_name += "_" + sci_short(param.cg_rel_err);
+    }
     obj_name += "_" + std::to_string(num_threads);
     obj_name += ".obj";
     igl::writeOBJ(obj_name, V_init, F_init, N, FN, uv, F);

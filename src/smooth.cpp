@@ -287,7 +287,12 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     // get grad and hessian
     Eigen::SparseMatrix<double> hessian;
     Eigen::VectorXd grad;
+
+    igl::Timer timer;
+    double time_grad_hessian = 0.0;
+    timer.start();
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
+    time_grad_hessian = timer.getElapsedTime();
 
     double misalignment_weight = 1.;
 
@@ -296,15 +301,11 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     double cond_num = 0;
     double residual = 0;
 
-    igl::Timer timer;
-    double time_solver = 0;
-    std::vector<double> solver_times;
-
+    double time_solver = timer.getElapsedTime();
     int iter_solver = 0;
     double correction = 0;
     double newton_decr = 0;
 
-    
     if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
 
@@ -455,18 +456,17 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         } else {
             spdlog::debug("{}x{} constraint matrix", Aeq.rows(), Aeq.cols());
             spdlog::debug("{}x{} reduced matrix", Q2.rows(), Q2.cols());
-            std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
-                    << std::endl;
+            // std::cout << "test q2:" << (Aeq * Q2 * Eigen::VectorXd::Random(Q2.cols())).norm()
+            //         << std::endl;
             // hessian = Q2T * hessian * Q2;
             Eigen::VectorXd rhs = Q2T * grad;
             initial_guess.setZero(rhs.size());  // initialize as zero vector with correct size
 
             // Compute corrected descent direction
             double a = 0;
-            if (hessian_log.size() > 0) {
-                a = hessian_log.back().correction;
-            }
-
+            // if (hessian_log.size() > 0) {
+            //     a = hessian_log.back().correction;
+            // }
             if (m_params.solver_type == "GS") {
                 newton.setZero(uv.rows() * 2);  // initialize as zero vector with correct size
                 while (true){
@@ -541,15 +541,11 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
                     CgResult result;
                     if (m_params.solver_type == "Parallel_CG") {
-                        timer.start();
-                        result = conjugate_gradient(mat, rhs, newton, 10000, 1e-3);
+                        result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
                         newton = -newton;
-                        solver_times.push_back(timer.getElapsedTimeInSec());
                     } else {
-                        timer.start();
                         solver.compute(mat);
                         newton = -solver.solve(rhs);
-                        solver_times.push_back(timer.getElapsedTimeInSec());
                     }
 
                     residual = (mat * newton + rhs).norm();                    
@@ -579,7 +575,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     {
                         // cond_num = get_cond_num_from_hessian(hessian);
                         if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
-                            iter_solver = solver.iterations();
+                            // iter_solver = solver.iterations();
                         }
                         break;
                     }
@@ -598,7 +594,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             grad = rhs;
         }
     }
-    time_solver = timer.getElapsedTimeInSec();
+    time_solver = timer.getElapsedTimeInSec() - time_solver;
     double time_ls = 0;
     timer.start();
     // do lineserach
@@ -659,9 +655,9 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         residual,
         correction,
         time_solver,
-        solver_times,
-        iter_solver,
         time_ls,
+        time_grad_hessian,
+        iter_solver,
         ls_step_size,
         fabs(newton_decr),
         triangle_counts

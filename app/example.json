@@ -1,6 +1,6 @@
 {
     "projected_newton": true,
-    "max_iters": 200,
+    "max_iters": 50,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
     "fix_misaligned": false,
@@ -28,7 +28,7 @@
     "E_abs_err": 1e-8,
     "grad_abs_err": 1e-12,
     "grad_rel_err": 1e-12,
-    "cg_rel_err": 1e-3,
+    "cg_rel_err": 1e-5,
     "soft_max": false,
     "t": 20,
     "precompute_seamless": true

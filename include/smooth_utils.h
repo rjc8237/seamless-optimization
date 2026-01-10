@@ -11,6 +11,7 @@
 namespace SymDir {
 // A custom Preconditioner for Eigen that implements 
 // Symmetric Gauss-Seidel (Forward sweep + Backward sweep).
+
 template <typename MatrixType>
 class SymmetricGaussSeidelPreconditioner {
 typedef typename MatrixType::Scalar Scalar;

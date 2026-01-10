@@ -3,13 +3,7 @@ project(SymmetricDirichlet)
 # --- FORCE OPENBLAS ---
 set(BLA_VENDOR "OpenBLAS")
 
-# Point CMake to the Homebrew installation of OpenBLAS
-if(APPLE)
-    set(CMAKE_PREFIX_PATH "/opt/homebrew/opt/openblas;${CMAKE_PREFIX_PATH}")
-    include_directories("/opt/homebrew/opt/openblas/include")
-    link_directories("/opt/homebrew/opt/openblas/lib")
-endif()
-
+find_package(BLAS REQUIRED)
 
 # Check what we found (This is for your sanity)
 message(STATUS ">> BLAS Libraries Found: ${BLAS_LIBRARIES}")
