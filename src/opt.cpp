@@ -1171,6 +1171,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
     double E_0 = E_worst;
     bool reached_one = false;
     total_timer.start();
+    int count = 0;
     for (int i = 1; i <= m_params.max_iters; i++) {
         double E_old = E_worst;
         double E_max;
@@ -1214,10 +1215,22 @@ void ExtremeOpt::do_optimization(json& opt_log)
                 m_params.grad_abs_err);
             break;
         }
-        if (fabs(E_worst - E_old) < 1e-4) {
-            spdlog::info("Energy change too small ({}), optimization converge!", fabs(E_worst - E_old));
-            break;
+
+        if (E_worst < 1.0) {
+            spdlog::info("Energy reached 1.0, optimization converge!", fabs(E_worst - E_old) / E_old);
+            break;        
+
         }
+        if (fabs(E_worst - E_old) < m_params.diff_err * E_old) {
+            count += 1;
+            if (count > 3) {
+                spdlog::info("Energy change too small ({}), optimization converge!", fabs(E_worst - E_old) / E_old);
+                break;        
+            }
+        } else {
+            count = 0;
+        }
+
         if (fabs(E_worst) < m_params.E_rel_err * E_0 || fabs(E_worst) < m_params.E_abs_err) {
             spdlog::info("Energy converged!", fabs(E_worst), m_params.E_rel_err * E_0, m_params.E_abs_err);
             break;

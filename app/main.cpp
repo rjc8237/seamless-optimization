@@ -113,6 +113,7 @@ int main(int argc, char** argv)
     param.percent = config["percent"];
     param.E_abs_err = config["E_abs_err"];
     param.E_rel_err = config["E_rel_err"];
+    param.diff_err = config["diff_err"];
     param.grad_abs_err = config["grad_abs_err"];
     param.grad_rel_err = config["grad_rel_err"];
     param.cg_rel_err = config["cg_rel_err"];

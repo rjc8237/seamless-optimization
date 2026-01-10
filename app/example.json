@@ -1,6 +1,6 @@
 {
     "projected_newton": true,
-    "max_iters": 50,
+    "max_iters": 200,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
     "fix_misaligned": false,
@@ -19,7 +19,7 @@
     "do_projection": false,
     "with_cons": true,
     "save_meshes": false,
-    "Lp": 2,
+    "Lp": 1,
     "symdir_weight": 1.0,
     "alignment_weight": 0.0,
     "use_rref": true,
@@ -29,6 +29,7 @@
     "grad_abs_err": 1e-12,
     "grad_rel_err": 1e-12,
     "cg_rel_err": 1e-5,
+    "diff_err": 0.01,
     "soft_max": false,
     "t": 20,
     "precompute_seamless": true

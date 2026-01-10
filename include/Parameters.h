@@ -35,7 +35,7 @@ struct Parameters
     double grad_rel_err = 1e-6; //tolerance for gradient convergence
     double grad_abs_err = 1e-6; // absolute tolerance for gradient convergence
     double cg_rel_err = 5e-4; // relative error for cg solver
-
+    double diff_err = 1e-2; // relative change for energy convergence
     bool projected_newton = false; // use projected newton method
 
     // use soft max for energy computation
