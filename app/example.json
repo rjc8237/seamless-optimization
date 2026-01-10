@@ -1,6 +1,8 @@
 {
+    "max_iters": 500,
     "projected_newton": true,
     "max_iters": 200,
+    "max_time": 180,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
     "fix_misaligned": false,
@@ -24,6 +26,8 @@
     "alignment_weight": 0.0,
     "use_rref": true,
     "percent": 5,
+    "p_energy": 1,
+    "precompute_seamless": true,
     "E_rel_err": 1e-8,
     "E_abs_err": 1e-8,
     "grad_abs_err": 1e-12,
@@ -31,6 +35,5 @@
     "cg_rel_err": 1e-5,
     "diff_err": 0.01,
     "soft_max": false,
-    "t": 20,
-    "precompute_seamless": true
+    "t": 20
 }

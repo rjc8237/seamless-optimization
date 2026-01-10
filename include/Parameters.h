@@ -11,6 +11,7 @@ struct Parameters
     bool fix_misaligned = false;
 
     int max_iters = 500;
+    int max_time = 180;
     int smooth_only_iters = 100;
     bool do_newton = false;
     bool local_smooth = false;
@@ -36,6 +37,9 @@ struct Parameters
     double grad_abs_err = 1e-6; // absolute tolerance for gradient convergence
     double cg_rel_err = 5e-4; // relative error for cg solver
     double diff_err = 1e-2; // relative change for energy convergence
+
+    bool precompute_seamless = false; // use explicit seamless subspace construction
+ 
     bool projected_newton = false; // use projected newton method
 
     // use soft max for energy computation
@@ -43,8 +47,6 @@ struct Parameters
     double t = 1.0; // temperature for soft max
     
     double E_min = 1.0;
-    bool precompute_seamless = false; // use explicit seamless subspace construction
- 
     /* data */
 };
 
