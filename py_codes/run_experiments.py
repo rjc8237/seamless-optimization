@@ -52,18 +52,16 @@ def run_solver(args):
         print(f"[warn] Skipping {obj_name}: missing folder {folder_name}")
         return
 
-    output_dir = OUTPUT_DIR / ("Lp_" + str(cfg.get("Lp", 0))) / (s + "_4") / folder_name
+    output_dir = OUTPUT_DIR / ("Lp_" + str(cfg.get("Lp", 0)) + "_" + str(cfg.get("percent", 0)) + "_" + str(cfg.get("diff_err", 0))) / s / folder_name
     (output_dir / "logs").mkdir(parents=True, exist_ok=True)
     
-    cfg_copy = cfg.copy()
-    if s == "CG" or s == "CG_GS" or s == "CG_LLT":
+    if s in ["CG", "CG_GS", "CG_LLT"] and cgerr is not None:
         tmp_json_path = os.path.join(tempfile.gettempdir(), f"cfg_{obj_name}_{s}_cg{cgerr:.0e}.json")
-        cfg_copy["cg_rel_err"] = cgerr
     else:
         tmp_json_path = os.path.join(tempfile.gettempdir(), f"cfg_{obj_name}_{s}.json")
 
     with open(tmp_json_path, "w") as jf:
-        json.dump(cfg_copy, jf)
+        json.dump(cfg, jf)
 
     tag = f"{obj_name}_{s}" if (s != "CG" and s != "CG_GS" and s != "CG_LLT") else f"{obj_name}_{s}_cg-{cgerr:.0e}"
     log_path = output_dir / "logs" / f"{tag}.log"
@@ -75,7 +73,7 @@ def run_solver(args):
         "--json", str(tmp_json_path),
         "-o", str(output_dir),
         "-s", s,
-        "-t", "4"
+        "-t", "1"
     ]
     
     print(f"Running model: {obj_name} with solver: {s}" + (f" and cg_rel_err: {cgerr}" if cgerr else ""))
@@ -112,26 +110,38 @@ if __name__ == '__main__':
     #     print(f"  - {m}")
         
     # Solvers
-    solvers = ["Ch_LLT"]
-    cg_rel_errs = [1e-4]
-
-
+    solvers = ["Ch_LLT", "CG"]
+    cg_rel_errs = [1e-3]
+    # ns = [1, 3, 5]
+    # ms = [0.001, 0.01, 0.05]
+    ns = [1, 3]
+    ms = [0.05]
     tasks = []
     for s in solvers:
-        if s == "CG" or s == "CG_GS" or s == "CG_LLT":
-            for cgerr in cg_rel_errs:
-                for folder_name, obj_name in mesh_folders.items():
-                    tasks.append((obj_name, folder_name, s, base_cfg, cgerr))
-                    # run_solver(m, s, base_cfg, cgerr)
-        else:
-            for folder_name, obj_name in mesh_folders.items():
-                tasks.append((obj_name, folder_name, s, base_cfg, None))
-                # run_solver(m, s, base_cfg)
+        for n in ns:
+            for m in ms:
+                if s == "CG" or s == "CG_GS" or s == "CG_LLT":
+                    for cgerr in cg_rel_errs:
+                        cfg_copy = base_cfg.copy()
+                        cfg_copy["percent"] = n
+                        cfg_copy["diff_err"] = m
+                        cfg_copy["Lp"] = 2
+                        cfg_copy["cg_rel_err"] = cgerr
+                        for folder_name, obj_name in mesh_folders.items():
+                            tasks.append((obj_name, folder_name, s, cfg_copy, cgerr))
+                else:
+                    cfg_copy = base_cfg.copy()
+                    cfg_copy["percent"] = n
+                    cfg_copy["diff_err"] = m
+                    cfg_copy["Lp"] = 1
+                    for folder_name, obj_name in mesh_folders.items():
+                        tasks.append((obj_name, folder_name, s, cfg_copy, None))
+                        # run_solver(m, s, base_cfg)
 
     print(f"\nTotal tasks: {len(tasks)}")
 
     # Run in parallel
-    num_workers = 4
+    num_workers = 8
     with Pool(num_workers) as pool:
         pool.map(run_solver, tasks)
 
