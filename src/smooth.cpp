@@ -606,7 +606,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
         double new_E = compute_energy(new_x);
-        double new_E_worst = compute_worst_n_energy(new_x);
         if (ME.rows() > 0) 
         {
             Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
@@ -614,9 +613,12 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             new_E += misalignment_weight * misalignment_energy;
         }
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
-            std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
-            ls_good = true;
-            break;
+            double new_E_worst = compute_worst_n_energy(new_x);
+            if (new_E_worst < E_worst_0 + 1e-6) {
+                std::cout << "energy from " << E_worst_0 << " to " << new_E_worst << std::endl;
+                ls_good = true;
+                break;
+            }
         }
         ls_step_size *= 0.8;
     }

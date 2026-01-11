@@ -1293,6 +1293,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
     opt_log["time_log"]["line_search_time"] = time_ls;
     opt_log["time_log"]["solver_time"] = time_solver;
     opt_log["time_log"]["grad_hessian_time"] = time_grad_hessian;
+    m_params.percent = 5.0;
     E_worst = get_quality_avg_worst_for_smooth_only(1.0);
     opt_log["E_worst"] = E_worst;
 }
