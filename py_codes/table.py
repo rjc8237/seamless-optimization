@@ -4,10 +4,6 @@ from pathlib import Path
 import sys
 import pandas as pd
 import igl
-script_dir = os.path.dirname(__file__)
-module_dir = os.path.join(script_dir, '..', 'py')
-sys.path.append(module_dir)
-import symdir
 import numpy as np
 OUTPUT_DIR = Path("./output")
 
@@ -31,13 +27,13 @@ def num_triangles_with_energy(uv_path, E_min):
     e_max = max(X)
     return count, e_max
 
-def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1):
+def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, n=None, m=None):
     """Create a table comparing metrics (total_time, E_worst, etc.) for different solvers
-    with side-by-side columns for CG and Ch_LLT
+    with side-by-side columns for CG and Ch_LLT, and a single faces column.
     """
     
     solvers_config = {"CG": cg_lp, "Ch_LLT": llt_lp}
-    mesh_folders = get_mesh_folders(output_dir, cg_lp, "CG")
+    mesh_folders = get_mesh_folders(output_dir, llt_lp, n, m, "Ch_LLT")
     
     if not mesh_folders:
         print(f"No mesh folders found")
@@ -46,15 +42,22 @@ def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1):
     # Initialize data dictionary
     data = []
     
+    # Variables to extract from JSON
+    diff_err = None
+    percent = None
+    
     # Iterate through each mesh
     for obj_path, mesh_name in sorted(mesh_folders.items()):
         row_data = {"Mesh": mesh_name}
         
         # Collect metrics for each solver
+        metrics_by_solver = {}
+        faces_value = None  # Single faces value
+        
         for solver, lp in solvers_config.items():
             metrics = {}
             try:
-                solver_base_path = output_dir / ("Lp_" + str(lp)) / solver
+                solver_base_path = output_dir / ("Lp_" + str(lp) + "_" + str(n) + "_" + str(m)) / solver
                 
                 # Find matching mesh folder
                 for mesh_folder in solver_base_path.iterdir():
@@ -73,49 +76,67 @@ def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1):
                                     json_data = json.load(f)
                                     metrics["total_time"] = json_data.get("total_time")
                                     metrics["E_worst"] = json_data.get("E_worst")
-                                    metrics["iters"] = json_data.get("iters")
-                                    metrics["faces"] = json_data["opt_log"][0].get("F_size", "N/A")
+                                    metrics["E_avg"] = json_data["opt_log"][-1].get("E_avg", "N/A")
+                                    metrics["converge_reason"] = json_data.get("converge_reason", "N/A")
+                                    # Get faces only once (from the first solver)
+                                    if faces_value is None:
+                                        faces_value = json_data["opt_log"][0].get("F_size", "N/A")
+                                    # Extract diff_err and percent if not already done
                             break
             
             except Exception as e:
                 print(f"Error getting data for {mesh_name} - {solver} - Lp{lp}: {e}")
             
-            # Add metrics to row for this solver
-            for metric_name in ["total_time", "E_worst", "iters", "faces"]:
-                col_key = f"{metric_name}_{solver}"
-                value = metrics.get(metric_name, "N/A")
+            metrics_by_solver[solver] = metrics
+        
+        # Add metrics to row, grouped by metric
+        for metric_name in ["total_time", "E_worst", "E_avg", "converge_reason"]:
+            for solver in ["CG", "Ch_LLT"]:
+                col_key = f"{metric_name}_{solver}"  # e.g., total_time_CG
+                value = metrics_by_solver[solver].get(metric_name, "N/A")
                 if isinstance(value, float):
                     row_data[col_key] = f"{value:.4f}"
                 else:
                     row_data[col_key] = value
         
+        # Single faces column
+        row_data["faces"] = faces_value if faces_value is not None else "N/A"
+        
         data.append(row_data)
     
     df = pd.DataFrame(data)
     
-    # Display table
+    # Reorder columns for side-by-side grouping
+    column_order = ["Mesh", "faces"]  # Moved "faces" to the front
+    for metric in ["total_time", "E_worst", "E_avg", "converge_reason"]:
+        for solver in ["CG", "Ch_LLT"]:
+            column_order.append(f"{metric}_{solver}")
+    df = df[column_order]
+    
+    # Display table with dynamic title
     print("\n" + "="*200)
-    print(f"Solver Comparison Table (CG vs Ch_LLT)")
+    print(f"Solver Comparison Table (CG(L{cg_lp}) vs Ch_LLT(L{llt_lp})) with change n = {n}%, average m = {m * 100}%")
     print("="*200)
     print(df.to_string(index=False))
     print("="*200 + "\n")
     
     # Save to CSV with proper headers
-    output_file = output_dir / "statistics" / "tables" / f"comparison_table_solvers.csv"
+    output_file = output_dir / "statistics" / "tables" / f"comparison_n={n}_m={m * 100}.csv"
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    
-    df.to_csv(output_file, index=False)
-    print(f"Table saved to {output_file}")
 
+    title = f"Solver Comparison Table (CG(L{cg_lp}) vs Ch_LLT(L{llt_lp})) with change n = {n}%, average m = {m * 100}%"
+    with open(output_file, "w", newline="") as f:
+        f.write(title + "\n\n")
+        df.to_csv(f, index=False)
+
+
+    print(f"Table saved to {output_file}")
     return df
 
-def get_mesh_folders(output_dir, Lp_value, solver, cgerr = 0.0, Lp_shift = 1.0):
+def get_mesh_folders(output_dir, Lp_value, n, m, solver):
     mesh_folders = {}
 
-    if Lp_shift != 1.0:
-        output_dir = output_dir / "Lp_shifted_" + str(Lp_shift)
-    
-    output_dir = output_dir / ("Lp_" + str(Lp_value))
+    output_dir = output_dir / ("Lp_" + str(Lp_value) + "_" + str(n) + "_" + str(m))
     output_dir = output_dir / solver
     for folder in output_dir.iterdir():
         if not folder.is_dir():
@@ -401,7 +422,11 @@ def main():
     args = parser.parse_args()
 
     output_dir = OUTPUT_DIR
-    df = create_solver_comparison_table(output_dir, 2, 1)
+    ns = [1, 3, 5]
+    ms = [0.001, 0.01]
+    for n in ns:
+        for m in ms:
+            create_solver_comparison_table(output_dir, 2, 1, n, m)
 
 if __name__ == "__main__":
     main()

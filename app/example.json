@@ -20,7 +20,7 @@
     "do_projection": false,
     "with_cons": true,
     "save_meshes": false,
-    "Lp": 1,
+    "Lp": 2,
     "symdir_weight": 1.0,
     "alignment_weight": 0.0,
     "use_rref": true,
@@ -31,8 +31,8 @@
     "E_abs_err": 1e-6,
     "grad_abs_err": 1e-10,
     "grad_rel_err": 1e-10,
-    "cg_rel_err": 1e-4,
-    "diff_err": 0.01,
+    "cg_rel_err": 1e-3,
+    "diff_err": 0.005,
     "soft_max": false,
     "t": 20
 }
