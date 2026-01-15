@@ -5,131 +5,109 @@ import sys
 import pandas as pd
 import igl
 import numpy as np
+base_dir = os.path.dirname(__file__)
+module_dir = os.path.join(base_dir, '..', 'py')
+sys.path.append(module_dir)
+script_dir = os.path.join(base_dir, '..', 'ext', 'penner-optimization', 'scripts')
+sys.path.append(script_dir)
+import symdir
+
 OUTPUT_DIR = Path("./output")
 
-def num_triangles_with_energy(uv_path, E_min):
-    fname = os.path.basename(uv_path)
-    dot_index = fname.rfind(".")
-    m = fname[:dot_index]
-
-    # Load uv information
-    try:
-        v3d, uv, _, f, fuv, _ = igl.readOBJ(uv_path)
-    except:
-        print(f"Error loading mesh: {uv_path}")
-        return
-
-    # Compute chosen vertex energy
-    mesh_cutter = symdir.MeshCutter(v3d,uv, f, fuv)
-    v_cut, _ = mesh_cutter.cut_mesh()
-    X = symdir.symmetric_dirichlet_energy(v_cut, fuv, uv, 1) - 4.
+def num_triangles_with_energy(X, E_min):
     count = sum(1 for e in X if e >= E_min)
     e_max = max(X)
     return count, e_max
 
-def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, n=None, m=None):
+def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, p=None, err=None):
     """Create a table comparing metrics (total_time, E_worst, etc.) for different solvers
     with side-by-side columns for CG and Ch_LLT, and a single faces column.
     """
     
     solvers_config = {"CG": cg_lp, "Ch_LLT": llt_lp}
-    mesh_folders = get_mesh_folders(output_dir, llt_lp, n, m, "Ch_LLT")
-    
-    if not mesh_folders:
-        print(f"No mesh folders found")
-        return None
-    
-    # Initialize data dictionary
     data = []
     
-    # Variables to extract from JSON
-    diff_err = None
-    percent = None
+    output_dir = output_dir / "test13_s"
+
+    # Get mesh folders from CG solver
+    cg_base_path = output_dir / ("Lp_" + str(cg_lp) + "_" + str(p) + "_" + str(err)) / "CG"
     
-    # Iterate through each mesh
-    for obj_path, mesh_name in sorted(mesh_folders.items()):
+    for mesh_folder in cg_base_path.iterdir():
+        if not mesh_folder.is_dir():
+            continue
+        
+        json_files = list(mesh_folder.glob("*.json"))
+        if not json_files:
+            continue
+        
+        # Extract mesh name from folder
+        mesh_name = mesh_folder.name.replace("_output", "")
         row_data = {"Mesh": mesh_name}
-        
-        # Collect metrics for each solver
         metrics_by_solver = {}
-        faces_value = None  # Single faces value
-        
+        faces_value = None
+        thresholds = np.linspace(0.25, 2.5, 10)
+
         for solver, lp in solvers_config.items():
             metrics = {}
             try:
-                solver_base_path = output_dir / ("Lp_" + str(lp) + "_" + str(n) + "_" + str(m)) / solver
+                solver_base_path = output_dir / ("Lp_" + str(lp) + "_" + str(p) + "_" + str(err)) / solver
+                solver_mesh_folder = solver_base_path / mesh_folder.name
                 
-                # Find matching mesh folder
-                for mesh_folder in solver_base_path.iterdir():
-                    if not mesh_folder.is_dir() or not mesh_folder.name.endswith("_output"):
-                        continue
-                    
-                    obj_files = list(mesh_folder.glob("*.obj"))
-                    if obj_files:
-                        obj_name = obj_files[0].stem.split("_refined_with_uv_out_")[0]
-                        
-                        if obj_name == mesh_name:
-                            # Found the right mesh, get metrics from JSON
-                            json_files = list(mesh_folder.glob("*.json"))
-                            if json_files:
-                                with open(json_files[0], 'r') as f:
-                                    json_data = json.load(f)
-                                    metrics["total_time"] = json_data.get("total_time")
-                                    metrics["E_worst"] = json_data.get("E_worst")
-                                    metrics["E_avg"] = json_data["opt_log"][-1].get("E_avg", "N/A")
-                                    metrics["converge_reason"] = json_data.get("converge_reason", "N/A")
-                                    # Get faces only once (from the first solver)
-                                    if faces_value is None:
-                                        faces_value = json_data["opt_log"][0].get("F_size", "N/A")
-                                    # Extract diff_err and percent if not already done
-                            break
-            
+                if solver_mesh_folder.exists() and solver_mesh_folder.is_dir():
+                    json_files = list(solver_mesh_folder.glob("*.json"))
+                    if json_files:
+                        with open(json_files[0], 'r') as f:
+                            json_data = json.load(f)
+                            metrics["total_time"] = json_data.get("total_time")
+                            metrics["E_worst"] = json_data["opt_log"][-1].get("E_worst")
+                            metrics["E_avg"] = json_data["opt_log"][-1].get("E_avg", "N/A")
+                            metrics["converge_reason"] = json_data.get("converge_reason", "N/A")
+                            faces_value = json_data["opt_log"][0].get("F_size", "N/A")
+                            X = json_data.get("energy", [])
+                            for threshold in thresholds:
+                                key = f"E>={threshold}"
+                                count, _ = num_triangles_with_energy(X, threshold)
+                                metrics[key] = count / faces_value * 100.0
+
             except Exception as e:
                 print(f"Error getting data for {mesh_name} - {solver} - Lp{lp}: {e}")
             
             metrics_by_solver[solver] = metrics
-        
-        # Add metrics to row, grouped by metric
-        for metric_name in ["total_time", "E_worst", "E_avg", "converge_reason"]:
+
+        metrics_list = ["total_time", "E_worst", "E_avg", "converge_reason"] + [f"E>={thresh}" for thresh in thresholds]
+        for metric_name in metrics_list:
             for solver in ["CG", "Ch_LLT"]:
-                col_key = f"{metric_name}_{solver}"  # e.g., total_time_CG
-                value = metrics_by_solver[solver].get(metric_name, "N/A")
-                if isinstance(value, float):
-                    row_data[col_key] = f"{value:.4f}"
-                else:
-                    row_data[col_key] = value
+                col_key = f"{metric_name}_{solver}"
+                value = metrics_by_solver.get(solver, {}).get(metric_name, "N/A")
+                row_data[col_key] = f"{value:.4f}" if isinstance(value, float) else value
         
-        # Single faces column
         row_data["faces"] = faces_value if faces_value is not None else "N/A"
-        
         data.append(row_data)
     
     df = pd.DataFrame(data)
     
-    # Reorder columns for side-by-side grouping
-    column_order = ["Mesh", "faces"]  # Moved "faces" to the front
-    for metric in ["total_time", "E_worst", "E_avg", "converge_reason"]:
+    column_order = ["Mesh", "faces"]
+    for metric in metrics_list:
         for solver in ["CG", "Ch_LLT"]:
             column_order.append(f"{metric}_{solver}")
     df = df[column_order]
     
-    # Display table with dynamic title
+    # dynamic title using per-solver n values and m
+    title = (f"Comparison CG(L{cg_lp}), Ch_LLT(L{llt_lp}), p = {p}, err = {err}")
     print("\n" + "="*200)
-    print(f"Solver Comparison Table (CG(L{cg_lp}) vs Ch_LLT(L{llt_lp})) with change n = {n}%, average m = {m * 100}%")
+    print(title)
     print("="*200)
     print(df.to_string(index=False))
     print("="*200 + "\n")
     
-    # Save to CSV with proper headers
-    output_file = output_dir / "statistics" / "tables" / f"comparison_n={n}_m={m * 100}.csv"
+    # Save to CSV with title above header
+    out_fn = f"comparison_p={p}_err={err}.csv"
+    output_file = output_dir / "statistics" / "tables" / out_fn
     output_file.parent.mkdir(parents=True, exist_ok=True)
-
-    title = f"Solver Comparison Table (CG(L{cg_lp}) vs Ch_LLT(L{llt_lp})) with change n = {n}%, average m = {m * 100}%"
     with open(output_file, "w", newline="") as f:
         f.write(title + "\n\n")
         df.to_csv(f, index=False)
-
-
+    
     print(f"Table saved to {output_file}")
     return df
 
@@ -140,9 +118,6 @@ def get_mesh_folders(output_dir, Lp_value, n, m, solver):
     output_dir = output_dir / solver
     for folder in output_dir.iterdir():
         if not folder.is_dir():
-            continue
-    
-        if not folder.name.endswith("_output"):
             continue
 
         # Check if folder contains .obj files
@@ -422,11 +397,11 @@ def main():
     args = parser.parse_args()
 
     output_dir = OUTPUT_DIR
-    ns = [1, 3, 5]
-    ms = [0.001, 0.01]
-    for n in ns:
-        for m in ms:
-            create_solver_comparison_table(output_dir, 2, 1, n, m)
+    ps = [1, 3, 5, 8, 10]
+    errs = [0.05, 0.1]
+    for p in ps:
+        for err in errs:
+            create_solver_comparison_table(output_dir, 2, 1, p, err)
 
 if __name__ == "__main__":
     main()

@@ -5,287 +5,141 @@ import os
 import argparse
 from pathlib import Path
 import numpy as np
-INPUT_DIR = Path("./output")
-OUTPUT_DIR = Path("./output/graphs")
+INPUT_DIR = Path("./output/test13_s")
+OUTPUT_DIR = Path("./output/test13_s/graphs")
 import igl
 
-def plot_all_meshes_combined(output_base, lp_value, metrics=["E_worst", "E_avg"], solvers=["CG", "Ch_LLT"]):
-    """Plot all meshes with multiple metrics and solvers on same plot"""
+def plot_convergence_E_worst_all_meshes(output_base, solver, lp_value, p_value, err_value, ax=None, global_max_time=60.0):
+    # Get all mesh folders
+    base_path = output_base / (f"Lp_{lp_value}_{p_value}_{err_value}") / solver
+    mesh_folders = sorted([f for f in base_path.iterdir() if f.is_dir()])
+    if not mesh_folders:
+        print(f"No mesh folders found in {base_path}")
+        return ax, 0
     
-    # Get all mesh folders from CG directory
-    base_path_cg = output_base / ("Lp_" + str(lp_value)) / "CG"
-    mesh_folders_cg = sorted([f for f in base_path_cg.iterdir() if f.is_dir()])
+    # Color for each mesh
+    num_meshes = len(mesh_folders)
+    colors_mesh = plt.cm.hsv(np.linspace(0, 0.95, num_meshes))
+    mesh_colors = {folder.name: colors_mesh[i] for i, folder in enumerate(mesh_folders)}
     
-    if not mesh_folders_cg:
-        print(f"No mesh folders found in {base_path_cg}")
-        return
+    # Create figure if ax not provided
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
     
-    section_map = {
-        "E_avg": "opt_log",
-        "E_worst": "opt_log",
-        "max_grad": "opt_log",
-        "condition_numbers": "hessian_log",
-        "time_solver": "hessian_log",
-        "time_ls": "hessian_log",
-        "iter_solver": "hessian_log",
-        "ls_step_size": "hessian_log",
-        "correction": "hessian_log",
-        "newton_decr": "hessian_log",
-        "residual": "hessian_log"
-    }
-    
-    log_vals = ["max_grad", "E_avg", "E_worst", "newton_decr", "correction", "residual"]
-    
-    # Create grid: 1 column per mesh, rows = 1 (all on same plots)
-    cols = 4
-    rows = (len(mesh_folders_cg) + cols - 1) // cols
-    
-    fig, axes = plt.subplots(rows, cols, figsize=(20, 5 * rows))
-    axes = axes.flatten()
-    
-    metric_colors = {"E_worst": "blue", "E_avg": "red"}
-    solver_linestyles = {"CG": "-", "Ch_LLT": "--", "max_grad": ":", "residual": "-."}
-    
-    # Iterate through each mesh
-    for mesh_idx, mesh_folder_cg in enumerate(mesh_folders_cg):
-        mesh_name = mesh_folder_cg.name
-        ax = axes[mesh_idx]
-        
-        info_lines = []
-        
-        # For each solver
-        for solver in solvers:
-            if solver == "CG":
-                mesh_folder = mesh_folder_cg
-            else:  # Ch_LLT
-                base_path_chllt = output_base / ("Lp_" + str(lp_value)) / "Ch_LLT"
-                mesh_folder = base_path_chllt / mesh_name
-            
-            if not mesh_folder.exists():
-                print(f"[warn] No data for {solver} in {mesh_name}")
-                continue
-            
-            json_files = list(mesh_folder.glob("*.json"))
-            
-            if not json_files:
-                print(f"[warn] No JSON found in {mesh_folder}")
-                continue
+    mesh_count = 0
+    mesh_converged = 0
+    max_time = 0.0
+    for mesh_folder in mesh_folders:
+        if not mesh_folder.name.endswith("_param"):
+            continue
 
-            for json_file in json_files:
-                try:
-                    with open(json_file) as f:
-                        data = json.load(f)
-                    
-                    solver_name = data.get("solver_type", json_file.stem)
-                    
-                    # Extract time once
-                    time = np.array([entry.get("elapsed_time", 0) for entry in data.get("opt_log", [])])
-                    
-                    # Plot each metric
-                    for metric in metrics:
-                        section = section_map.get(metric)
-                        entries = data.get(section, [])
-                        series = np.array([entry.get(metric) for entry in entries if metric in entry])
-                        
-                        # Check if data is valid
-                        if len(series) == 0 or len(time) == 0:
-                            continue
-                        
-                        # Trim time to match series length
-                        time_trimmed = time[:len(series)]
-                        
-                        # Apply log scale if needed
-                        if metric in log_vals:
-                            safe = np.maximum(series, 1e-10)
-                            series = np.log10(safe)
-                        
-                        # Format label: solver - metric (cgerr)
-                        label = f"{metric} - {solver}"
-                        if solver == "CG" or solver == "CG_LLT" or solver == "CG_GS":
-                            cgerr = data.get("args", {}).get("cg_rel_err", "?")
-                            if cgerr != "?":
-                                cgerr = f"{float(cgerr):.0e}"
-                                label = f"{metric} - {solver} ({cgerr})"
-                        
-                        color = metric_colors.get(metric, "black")
-                        linestyle = solver_linestyles.get(solver, "-")
-                        ax.plot(time_trimmed, series, label=label, linewidth=2.5, color=color,
-                               linestyle=linestyle, alpha=0.8)
-                    
-                    # Collect info for this solver
-                    total_time = data.get("total_time", "?")
-                    iters = data.get("iters", "?")
-                    
-                    # Get last values for each metric
-                    metric_values = []
-                    for metric in metrics:
-                        section = section_map.get(metric)
-                        entries = data.get(section, [])
-                        series = np.array([entry.get(metric) for entry in entries if metric in entry])
-                        if len(series) > 0:
-                            last_val = series[-1]
-                            if isinstance(last_val, (int, float)):
-                                last_val = f"{last_val:.2e}"
-                            metric_values.append(f"{metric}={last_val}")
-                    
-                    info = f"{solver}: time={total_time}s, iters={iters}, {', '.join(metric_values)}"
-                    info_lines.append(info)
-                    
-                except Exception as e:
-                    print(f"Error loading {json_file}: {e}")
+        mesh_name = mesh_folder.name
+        json_files = list(mesh_folder.glob("*.json"))
+        
+        if not json_files:
+            continue
+        
+        for json_file in json_files:
+            try:
+                with open(json_file) as f:
+                    data = json.load(f)
+                
+                # Extract ONLY entries with BOTH elapsed_time AND E_worst
+                opt_log = data.get("opt_log", [])
+                
+                time_list = []
+                E_worst_list = []
+                E_avg_list = []
+                E_avg_step = []
+                for entry in opt_log:
+                    if "elapsed_time" in entry and "E_worst" in entry:
+                        time_list.append(entry["elapsed_time"])
+                        E_worst_list.append(entry["E_worst"])
+                        E_avg_list.append(entry.get("E_avg"))                
+                for i in range(1, len(E_avg_list)):
+                    E_avg_step.append(abs(E_avg_list[i] - E_avg_list[i-1]) / E_avg_list[i-1])
+                time = np.array(time_list)
+                max_time = max(max_time, np.max(time))
+                E_worst = np.array(E_worst_list)
+                E_avg_step = np.array(E_avg_step)
+                # Check if data is valid
+                if len(E_worst) == 0 or len(time) == 0:
                     continue
-        
-        # Set titles and labels
-        ax.set_title(f"{mesh_name}", fontsize=12, fontweight='bold')
-        ax.set_xlabel("Time (s)", fontsize=10)
-        ax.set_ylabel("Energy (log scale)", fontsize=10)
-        ax.legend(fontsize=8, loc='best')
-        ax.grid(True, alpha=0.3, linestyle="--")
-        ax.tick_params(labelsize=8)
-        
-        # Add info box below plot
-        if info_lines:
-            info_text = "\n".join(info_lines)
-            ax.text(0.5, -0.20, info_text, transform=ax.transAxes,
-                   fontsize=7, ha='center', va='top',
-                   bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+                
+                # Plot
+                color = mesh_colors[mesh_name]
+                style = '-'
+                if data.get("converge_reason") != "Energy reached 1.0":
+                    mesh_converged += 1
+                    style = '--'
+                ax.plot(time, E_worst, label=mesh_name, linewidth=2.5,
+                       color=color, markersize=3, alpha=0.8, linestyle=style)
+                mesh_count += 1
+                
+                break  # Only use first JSON file per mesh
+                
+            except Exception as e:
+                print(f"Error loading {json_file}: {e}")
+                continue
     
-    # Hide unused subplots
-    for idx in range(len(mesh_folders_cg), len(axes)):
-        axes[idx].set_visible(False)
+    # Set labels and grid
+    ax.set_xlabel("Time (s)", fontsize=9)
+    ax.set_ylabel("E_worst", fontsize=9)
+    ax.set_yscale("log")
+
+    ax.set_xlim(0, global_max_time * 1.1)
+    ax.set_title(f"p={p_value}, err={err_value}", fontsize=10, fontweight='bold')
+    ax.grid(True, alpha=0.3, linestyle="--")
+    ax.tick_params(labelsize=8)
+
+    # Add legend to the right of the plot
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=8, frameon=True, ncol=2)
+
+    return ax, mesh_count, mesh_converged
+
+def create_convergence_plots(output_base, solver, lp_value, ps, errs, output_dir=None):
+    """
+    Create convergence plots (one per p and err combination) and save separately
     
-    metrics_str = "_vs_".join(metrics)
-    plt.suptitle(f"Metrics: {metrics_str} (L_{lp_value})", fontsize=14, fontweight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    Args:
+        output_base: Base output directory
+        solver: Solver type ("CG" or "Ch_LLT")
+        lp_value: Lp norm value
+        ps: List of p values
+        errs: List of error values
+        output_dir: Directory to save plots
+    """
+    if output_dir is None:
+        output_dir = output_base / ("Lp_" + str(lp_value))
     
-    base_path = output_base / ("Lp_" + str(lp_value))
-    output_path = base_path / f"all_meshes_comparison_{metrics_str}.png"
-    base_path.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"Saved plot to {output_path}")
-    plt.close()
-
-def plot_graphs(series_list, time_list, labels, x_name, y_name, title, output_path, info_lines=None):
-    plt.figure(figsize=(6, 6))
-    colors = ["red", "green", "blue", "orange", "purple", "brown", "magenta", "cyan", "olive", "teal"]
-    last_point = ["max_grad", "E_avg", "correction", "newton_decr", "residual", "iter_solver"]
-
-    for i, series in enumerate(series_list):
-        time = time_list[i]  # Use time_list instead of iteration count
-        last_idx, last_val = len(series) - 1, series[-1]
-        c = colors[i % len(series_list)]
-        plt.plot(time, series, label=f"{labels[i]}", linewidth=2, color=c)
-        plt.scatter(time[-1], series[-1], color=c, zorder=5)
-
-    plt.xlabel(x_name)
-    plt.ylabel(y_name)
-    plt.title(title if title else y_name)
-
-    plt.legend()
-
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.subplots_adjust(bottom=0.25)
-
-    if info_lines:
-        sorted_info = [info for label, info in sorted(zip(labels, info_lines), key=lambda x: x[0], reverse=False)]
-        plt.text(0.5, -0.12, "\n".join(sorted_info), ha="center", va="top",
-                 transform=plt.gca().transAxes, fontsize=10,
-                 bbox=dict(boxstyle="round", fc="white", ec="gray"))
-
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-
-
-def plot_n_jsons(folder, output_folder, files, name = "", metric="residuals", model = ""):
-    # Resolve paths
-    paths = [os.path.join(folder, f) for f in files]
-    graphs_dir = output_folder
-    os.makedirs(graphs_dir, exist_ok=True)  # auto-create once here, too
-    if name != "":
-        name = "_" + name
-
-    for p in paths:
-        print(f"Loading: {p}")
-
-    # Load JSON data
-    datas = []
-    for p in paths:
-        with open(p, "r") as fp:
-            datas.append(json.load(fp))
-
-    section_map = {
-        "E_avg": "opt_log",
-        "E_worst": "opt_log",
-        "max_grad": "opt_log",
-        "condition_numbers": "hessian_log",
-        "time_solver": "hessian_log",
-        "time_ls": "hessian_log",
-        "iter_solver": "hessian_log",
-        "ls_step_size": "hessian_log",
-        "correction": "hessian_log",
-        "newton_decr": "hessian_log",
-        "residual": "hessian_log"
-    }
-
-    # Extract series and labels
-    series_list = []
-    time_list = []
-    labels = []
-    info_lines = []
-    section = section_map.get(metric)
-    yname = metric
-    log_vals = ["max_grad", "E_avg", "newton_decr", "correction", "residual"]
-    if metric in log_vals:
-        yname = "log(" + metric + ")"
-    for data, fname in zip(datas, files):
-        entries = data.get("opt_log", [])
-        time = [entry.get("elapsed_time", 0) for entry in entries]
-        entries = data.get(section, [])
-        series = [entry.get(metric) for entry in entries if metric in entry]
-        if metric in log_vals:
-            safe = np.maximum(np.array(series, dtype=float), 1e-10)
-            series = np.log10(safe)
-
-        series_list.append(series)
-        time_list.append(time)
-        solver = data.get("solver_type", os.path.splitext(fname)[0])
-        if solver == "CG" or solver == "CG_LLT" or solver == "CG_GS":
-            cgerr = data.get("args", {}).get("cg_rel_err", "?")
-            cgerr = f"{float(cgerr):.0e}" if cgerr != "?" else "?"
-            solver += f" ({cgerr})"
-        labels.append(solver)
-
-        args = data.get("args", {})
-        info = f"{solver}: total_time={data.get('total_time','?')}, iters={data.get('iters','?')}, last_val={series[-1]:.2f}"
-        if solver == "CG" or solver == "CG_LLT" or solver == "CG_GS":
-            cgerr = args.get('cg_rel_err', '?')
-            cgerr = f"{float(cgerr):.0e}" if cgerr != "?" else "?"
-            info += f", rel_err={cgerr}"
-        info_lines.append(info)
-
-    print(len(series_list), "series to plot.")
-    # Sort all lists by labels (solver names) in alphabetical order
-    sorted_data = sorted(zip(labels, series_list, time_list, info_lines), key=lambda x: x[0])
-    if sorted_data:
-        labels, series_list, time_list, info_lines = zip(*sorted_data)
-        labels = list(labels)
-        series_list = list(series_list)
-        time_list = list(time_list)
-        info_lines = list(info_lines)
-
-    output_path = os.path.join(graphs_dir, metric + "_" + model + ".png")
-    plot_graphs(
-        series_list, 
-        time_list,
-        labels,
-        x_name="Total time (s)",
-        y_name=yname,
-        title=model,
-        output_path=output_path,
-        info_lines=info_lines
-    )
-
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Plot each combination
+    for err in errs:
+        for p in ps:
+            fig, ax = plt.subplots(figsize=(12, 6))
+            
+            ax, mesh_count, mesh_converged = plot_convergence_E_worst_all_meshes(
+                output_base=output_base,
+                solver=solver,
+                lp_value=lp_value,
+                p_value=p,
+                err_value=err,
+                ax=ax, global_max_time=120.0
+            )
+            percentage = (mesh_count - mesh_converged) / mesh_count * 100.0
+            # Add text showing number of converged meshes
+            ax.text(1.05, 1.00, f"E_worst reached 1.0: {mesh_count - mesh_converged}/{mesh_count} = {percentage:.2f}%",
+                   transform=ax.transAxes, fontsize=9, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.7))
+            
+            plt.tight_layout()
+            
+            # Save individual plot
+            output_path = output_dir / f"{solver}_Lp{lp_value}_p{p}_err{err}_convergence.png"
+            fig.savefig(str(output_path), dpi=150, bbox_inches='tight')
+            print(f"Saved plot to {output_path}")
+            plt.close()
 
 def get_mesh_folders(output_dir, Lp_value, solver, cgerr = 0.0, Lp_shift = 1.0):
     mesh_folders = {}
@@ -316,7 +170,7 @@ def get_mesh_folders(output_dir, Lp_value, solver, cgerr = 0.0, Lp_shift = 1.0):
                         face_count += 1
         
             # Only include meshes with ~100K faces (allowing ±10% tolerance)
-            if 90000 <= face_count <= 110000:
+            if face_count >= 90000:
                 mesh_folders[obj_path] = obj_name
                 print(f"  Added {folder.name} with {face_count} faces")
 
@@ -401,7 +255,21 @@ def main():
     parser.add_argument("--Lp")
     args = parser.parse_args()
 
-    plot_all_meshes_combined(INPUT_DIR, args.Lp, metrics=["E_worst", "E_avg"], solvers=["CG", "Ch_LLT"])
+    # ps = [0.1, 0.5, 1, 3, 5, 7.5, 10]
+    ps = [1, 3, 5, 8, 10]
+    errs = [0.05]
+    
+    # Create separate plots for each solver
+    lp_solver = {"CG": 2, "Ch_LLT": 1}
+    for solver in ["CG", "Ch_LLT"]:
+        create_convergence_plots(
+            output_base=INPUT_DIR,
+            solver=solver,
+            lp_value=lp_solver[solver],
+            ps=ps,
+            errs=errs,
+            output_dir=OUTPUT_DIR
+        )
 
 if __name__ == "__main__":
     main()

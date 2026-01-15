@@ -1,6 +1,6 @@
 {
     "max_iters": 200,
-    "projected_newton": true,
+    "projected_newton": false,
     "max_time": 180,
     "smooth_only_iters": 30,
     "do_feature_alignment": true,
@@ -24,15 +24,15 @@
     "symdir_weight": 1.0,
     "alignment_weight": 0.0,
     "use_rref": true,
-    "percent": 1,
+    "percent": 5,
     "p_energy": 1,
     "precompute_seamless": true,
     "E_rel_err": 1e-6,
     "E_abs_err": 1e-6,
     "grad_abs_err": 1e-10,
     "grad_rel_err": 1e-10,
-    "cg_rel_err": 1e-1,
+    "cg_rel_err": 1e-3,
     "diff_err": 0.001,
     "soft_max": false,
-    "t": 20
+    "t": 5.0
 }

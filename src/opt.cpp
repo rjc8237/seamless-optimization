@@ -1093,6 +1093,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
     // get edge length thresholds for collapsing operation
     Eigen::MatrixXd uv;
     export_mesh(V, F, uv);
+
     elen_threshold = sqrt(
         pow((uv.col(0).maxCoeff() - uv.col(0).minCoeff()), 2) +
         pow((uv.col(1).maxCoeff() - uv.col(1).minCoeff()), 2));
@@ -1151,22 +1152,29 @@ void ExtremeOpt::do_optimization(json& opt_log)
     {
     }
 
+    Eigen::SparseMatrix<double> hessian;
+    get_hessian(hessian);
+    double max_abs_hess = 0.0;
+    for (int k = 0; k < hessian.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(hessian, k); it; ++it) {
+            max_abs_hess = std::max(max_abs_hess, std::abs(it.value()));
+        }
+    }
+    std::cout << "Max abs Hessian value: " << max_abs_hess << std::endl;
+
     std::vector<HessianStats> hessian_log;
     bool failed = false;
 
-    double val_e_min = 1.0;
-    m_params.E_min = val_e_min;
     double max_grad_0 = smooth_global(failed, hessian_log);
-    m_params.E_min = 1.0;
     double max_grad = max_grad_0;
 
     double E = get_quality_avg_for_smooth_only();
     double E_worst = get_quality_avg_worst_for_smooth_only();
     spdlog::info("Initial E = {}, E_worst = {}, E_min = {}", E, E_worst, m_params.E_min);
 
-    max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
-    E = std::pow(E, 1.0 / (2 * m_params.Lp));
-    E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
+    // max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
+    // E = std::pow(E, 1.0 / (2 * m_params.Lp));
+    // E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
     double E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
     double E_2 = get_quality_avg_for_smooth_only(1.0);
     opt_log["opt_log"].push_back(
@@ -1193,9 +1201,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         
         if (this->m_params.global_smooth) {
             timer.start();
-            m_params.E_min = val_e_min;
             max_grad = smooth_global(failed, hessian_log);
-            m_params.E_min = 1.0;
             spdlog::info("GLOBAL smoothing operation time serial: {}s", timer.getElapsedTime());
             // E = get_quality();
 
@@ -1211,9 +1217,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
             spdlog::info("max gradient = {}", max_grad);
 
         }
-        max_grad = max_grad * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
-        E = std::pow(E, 1.0 / (2 * m_params.Lp));
-        E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
+        // max_grad = max_grad * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
+        // E = std::pow(E, 1.0 / (2 * m_params.Lp));
+        // E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
 
         // opt_log["opt_log"].push_back(
         //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
@@ -1295,6 +1301,15 @@ void ExtremeOpt::do_optimization(json& opt_log)
     opt_log["time_log"]["grad_hessian_time"] = time_grad_hessian;
     m_params.percent = 5.0;
     E_worst = get_quality_avg_worst_for_smooth_only(1.0);
-    opt_log["E_worst"] = E_worst;
+    opt_log["E_worst"] = E_worst_2;
+    hessian.makeCompressed();
+    
+    std::vector<std::vector<double>> triplets;
+    for (int k = 0; k < hessian.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(hessian, k); it; ++it) {
+            triplets.push_back({(double)it.row(), (double)it.col(), it.value()});
+        }
+    }
+    opt_log["hessian"] = triplets;
 }
 } // namespace SymDir

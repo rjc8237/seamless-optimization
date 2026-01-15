@@ -10,6 +10,9 @@
 #include "energy.h"
 #include <numeric>
 
+#include <numeric>
+#include <fstream>
+
 using json = nlohmann::json;
 
 using namespace SymDir;
@@ -24,6 +27,7 @@ glm::vec3 DARK_TEAL(0., 0.5*0.375, 0.5*0.5);
 glm::vec3 BLUE(0., 0., 1.);
 glm::vec3 RED(1., 0., 0.);
 
+template <typename Scalar>
 void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE);
 void transform_EE(
     const Eigen::MatrixXi& F,
@@ -115,7 +119,7 @@ int main(int argc, char** argv)
         extremeopt.FE = FE;
         extremeopt.m_params.do_feature_alignment = true;
         if (ffield != "") extremeopt.comb_matchings(ffield);
-        // extremeopt.m_params.Lp = json_configs[i]["args"]["Lp"];
+        extremeopt.m_params.Lp = 2;
         extremeopts.push_back(extremeopt);
         spdlog::warn("PD1 = {}, PD2 = {} expected {}", extremeopt.PD1.size(), extremeopt.PD2.size(), 3 * F.rows());
 
@@ -123,7 +127,7 @@ int main(int argc, char** argv)
     
     
     //extremeopt.view();
-    view(extremeopts, EE, FE);
+    view<double>(extremeopts, EE, FE);
 
 }
 
@@ -159,6 +163,7 @@ Eigen::VectorXd get_worst_faces(const Eigen::VectorXd& face_energies, double per
     return worst_faces;
 }
 
+template <typename Scalar>
 void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const Eigen::MatrixXi &FE)
 {
     if (extremeopts.empty()) {
@@ -175,9 +180,15 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
     std::vector<Eigen::VectorXd> alignment_face_energies;
     std::vector<Eigen::VectorXd> symdir_face_energies;
     std::vector<Eigen::VectorXd> symdir_face_worst;
+    std::vector<Eigen::VectorXd> max_hessian_values;
+    std::vector<Eigen::VectorXd> vertex_hessian_values;
+
 
     std::vector<Eigen::MatrixXd> G_us;
     std::vector<Eigen::MatrixXd> G_vs;
+
+    std::ofstream out_file("/Users/aa13586/Desktop/symmetric-dirichlet/output/max_hessian_vertices.csv");
+    int eo_idx = 0;
 
     for (auto& extremeopt : extremeopts)
     {
@@ -186,6 +197,9 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         uvs.push_back(uv);
         SymDir::get_grad_op(V, F, extremeopt.G);
         igl::doublearea(V, F, extremeopt.area);
+
+        Eigen::VectorXd grad_uv;
+   
 
         Eigen::MatrixXd Guv = extremeopt.Grad * uv;
 
@@ -206,17 +220,61 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         extremeopt.m_params.alignment_weight = 0.0;
         extremeopt.m_params.symdir_weight = 1.0;
         symdir_energies.push_back(extremeopt.compute_energy(uv));
-
+        
+        Eigen::SparseMatrix<double> hessian;
+        extremeopt.get_hessian(hessian);
+        // print largest absolute value in sparse hessian
+        double max_abs_hess = 0.0;
+        for (int k = 0; k < hessian.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(hessian, k); it; ++it) {
+                max_abs_hess = std::max(max_abs_hess, std::abs(it.value()));
+            }
+        }
+        std::cout << extremeopt.m_params.alignment_weight << " " << extremeopt.m_params.symdir_weight << " " << extremeopt.m_params.Lp << std::endl;
+        std::cout << "Max abs Hessian value: " << max_abs_hess << std::endl;
+        
         Eigen::MatrixXd Ji;
         SymDir::jacobian_from_uv(extremeopt.G, uv, Ji);
         Eigen::VectorXd symdir_e(F.rows());
-        
+        Eigen::VectorXd max_hessian_v(F.rows());
+
+
         for (int i = 0; i < F.rows(); ++i)
         {
             Eigen::MatrixXd J = Ji.row(i);
             symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), 1.0);
         }
         symdir_face_energies.push_back(symdir_e);
+        
+        int nV = V.rows();
+        Eigen::VectorXd vertex_hess(nV);
+        double max_hess = 0.0;
+        const double eps = 1e-12;
+        for (int k = 0; k < nV; ++k) {
+            int ui = k;
+            int vi = k + nV;
+            double Huu = hessian.coeff(ui, ui);
+            double Hvv = hessian.coeff(vi, vi);
+            double Huv = hessian.coeff(ui, vi); // symmetric => Huv == Hvu
+            double val = std::max(std::abs(Huu), std::abs(Hvv));
+            val = std::max(val, std::abs(Huv));
+            max_hess = std::max(max_hess, val);
+            vertex_hess[k] = std::log10(std::max(val, 1e-12));
+        }
+        double max_hess_threshold = max_hess * 1e-9;
+        vertex_hessian_values.push_back(vertex_hess);
+        for (int k = 0; k < nV; ++k) {
+            int ui = k;
+            int vi = k + nV;
+            double Huu = hessian.coeff(ui, ui);
+            double Hvv = hessian.coeff(vi, vi);
+            double Huv = hessian.coeff(ui, vi); // symmetric => Huv == Hvu
+            double val = std::max(std::abs(Huu), std::abs(Hvv));
+            val = std::max(val, std::abs(Huv));
+            if (val > max_hess_threshold) {
+                out_file << k << " ";
+            } 
+        }
         // symdir_face_worst.push_back(get_worst_faces(symdir_e, 0.05));
 
         Eigen::VectorXd residuals = (Rx.array().square() 
@@ -224,8 +282,9 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
                             + Rz.array().square()).rowwise().sum();
         alignment_face_energies.push_back(residuals);
     }
+    out_file.close();
 
-    
+    std::cout << vertex_hessian_values[0].minCoeff() << " " << vertex_hessian_values[0].maxCoeff() << std::endl;
     std::unordered_set<int> unique_seamless_vertices;
     std::unordered_set<int> unique_feature_vertices;
 
@@ -317,6 +376,7 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
             ->setVectorColor(RED)
             ->setVectorRadius(0.0005)
             ->setVectorLengthScale(0.005);
+            mesh->addVertexScalarQuantity("hessian_uv_log_" + std::to_string(i), vertex_hessian_values[i]);
     }
 
     polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);

@@ -1,273 +1,395 @@
-from glob import glob
-import json
+# Script to generate histograms for per-vertex colormaps used for rendering meshes
+
+import igl
+import matplotlib
+import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import os
+import sys
 import argparse
-from pathlib import Path
 import numpy as np
+script_dir = os.path.dirname(__file__)
+module_dir = os.path.join(script_dir, '..', 'py')
+sys.path.append(module_dir)
+import symdir
+import json
+from pathlib import Path
+from collections import defaultdict
 
-OUTPUT_DIR = Path("./output/Lp_shifted")
+def calculate_weighted_energy_score(X, args):
+    """Calculate weighted energy score: sum(count_i * threshold_i)"""
+    
+    bin_min = args.get('bin_min') or 0
+    bin_max = args.get('bin_max') or int(np.max(X)) + 1
+    
+    thresholds = np.arange(bin_min, bin_max + 1, 0.5)
+    weighted_score = 0
+    
+    for threshold in thresholds:
+        count = np.sum(X >= threshold)
+        weighted_score += count * threshold
+    
+    return weighted_score
 
-def plot_scatter_distribution_combined(output_base, lp_values, solver="Ch_LLT", metric_x="total_time", metric_y="E_worst"):
-    """Plot scatter distribution for a solver across multiple Lp values on one plot"""
+def find_best_solver_pair(xs_dict, args):
+    """Find best (n, m) pair for CG and Ch_LLT solvers"""
     
-    fig, ax = plt.subplots(figsize=(12, 8))
+    cg_scores = {}  # {n: weighted_score}
+    chllт_scores = {}  # {n: weighted_score}
     
-    colors = ['blue', 'green', 'red']
-    markers = ['o', 's', '^']
-    
-    all_values, all_times = [], []  # Collect all values for y-axis limits
-
-    for lp_idx, lp_value in enumerate(lp_values):
-        base_path = output_base / ("Lp_" + str(lp_value))
-        
-        # Get all mesh folders
-        mesh_folders = sorted([f for f in base_path.iterdir() if f.is_dir()])
-        
-        if not mesh_folders:
-            print(f"No mesh folders found in {base_path}")
-            continue
-        
-        print(f"Found {len(mesh_folders)} mesh folders for Lp={lp_value}")
-        
-        # Collect data for all meshes
-        times = []
-        values = []
-        
-        for mesh_folder in mesh_folders:
-            mesh_name = mesh_folder.name
+    # Group by solver and calculate scores
+    for mesh_name, data_list in xs_dict.items():
+        for X, mesh_params, Lp in data_list:
+            # Parse mesh_params: "mesh=name, L{Lp}, p={p}, err={d}"
+            parts = mesh_params.split(", ")
+            p_val = int(parts[2].split("=")[1])  # Get p value
+            d_val = float(parts[3].split("=")[1])  # Get err value
             
-            # Look for solver json file
-            solver_folder = mesh_folder / solver
-            if solver_folder.exists():
-                json_files = list(solver_folder.glob("*.json"))
-                if json_files:
-                    try:
-                        with open(json_files[0], 'r') as f:
-                            data = json.load(f)
-                            total_time = data.get(metric_x, 0)
-                            # Extract E_worst from opt_log
-                            e_worst = data.get("E_worst", 1e-10)
-                            
-                            # Ensure positive values for log scale
-                            e_worst = max(e_worst, 1e-10)
-                            e_worst = np.log10(e_worst)
-                            
-                            times.append(total_time)
-                            values.append(e_worst)
-                            all_values.append(e_worst)
-                            all_times.append(total_time)
-                    except Exception as e:
-                        print(f"Error loading {solver} JSON for {mesh_name}: {e}")
-        print("The min values for Lp =", lp_value, "is", min(times), end = ';')
-        print("The max values for Lp =", lp_value, "is", max(times))
-        # Plot scatter for this Lp value
-        color = colors[lp_idx % len(colors)]
-        marker = markers[lp_idx % len(markers)]
-        
-        ax.scatter(times, values, s=120, color=color, 
-                  alpha=0.7, edgecolor='black', linewidth=1.2, 
-                  marker=marker, label=f'Lp={lp_value}')
+            score = calculate_weighted_energy_score(X, args)
+            
+            # Store score with (p, err) key
+            key = (p_val, d_val)
+            
+            # Determine solver from mesh_name or add parameter
+            # For now, assume we process CG and Ch_LLT separately
+            if "CG" in mesh_params:
+                if key not in cg_scores:
+                    cg_scores[key] = []
+                cg_scores[key].append(score)
+            else:  # Ch_LLT
+                if key not in chllт_scores:
+                    chllт_scores[key] = []
+                chllт_scores[key].append(score)
     
-    # Customize plot
-    ax.set_xlabel(metric_x.replace("_", " ").title(), fontsize=10, fontweight='bold')
-    ax.set_ylabel(f'log10(||{metric_y.title()}||_2)', fontsize=10, fontweight='bold')
-    ax.set_title(f'{solver} - {metric_x} vs log10({metric_y})', fontsize=12, fontweight='bold')
-    ax.legend(fontsize=10, loc='best')
-    ax.grid(True, alpha=0.3, linestyle='--')
+    # Average scores for each (p, err) pair
+    cg_avg = {k: np.mean(v) for k, v in cg_scores.items()}
+    chllт_avg = {k: np.mean(v) for k, v in chllт_scores.items()}
     
-    # Adjust y-axis limits based on all collected values
-    if all_values:
-        y_min = min(all_values)
-        y_max = max(all_values)
-        y_margin = (y_max - y_min) * 0.15
-        ax.set_ylim(y_min - 1, y_max + y_margin)
+    # Find best pairs (lowest score is better)
+    best_cg = min(cg_avg.items(), key=lambda x: x[1]) if cg_avg else None
+    best_chllт = min(chllт_avg.items(), key=lambda x: x[1]) if chllт_avg else None
     
-    # Adjust x-axis limits based on all collected times
-    if all_times:
-        x_min = min(all_times)
-        x_max = 180
-        x_margin = (x_max - x_min) * 0.1
-        ax.set_xlim(x_min - x_margin, x_max + x_margin)
+    return best_cg, best_chllт, cg_avg, chllт_avg
 
-    plt.tight_layout()
+def histogram_energy_threshold_combined(xs, mesh_name, args):
+    """Create single plot with 9 overlaid bar histograms for a mesh/solver combination"""
     
-    graphs_dir = output_base / "histograms"
-    graphs_dir.mkdir(parents=True, exist_ok=True)
-    output_path = graphs_dir / f"scatter_{solver}_{metric_x}_vs_log_{metric_y}_combined.png"
-    
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"Saved scatter plot to {output_path}")
-    plt.close()
-
-def plot_all_histograms_grid(output_base, lp_value, metric="total_time"):
-    """Plot histograms in a grid, each subplot has up to 10 meshes"""
-    
-    base_path = output_base / ("Lp_" + str(lp_value))
-    
-    # Get all mesh folders
-    mesh_folders = sorted([f for f in base_path.iterdir() if f.is_dir()])
-    
-    if not mesh_folders:
-        print(f"No mesh folders found in {base_path}")
+    if not xs or len(xs) == 0:
+        print(f"Warning: No data for {mesh_name}")
         return
     
-    print(f"Found {len(mesh_folders)} mesh folders")
+    # Get histogram colors
+    color_dict = {
+        'red': "#b90f29",
+        'blue': "#3c4ac8",
+        'green': "#2ecc71",
+        'orange': "#e74c3c",
+        'purple': "#9b59b6",
+        'cyan': "#1abc9c",
+        'yellow': "#f39c12",
+        'pink': "#e91e63",
+        'brown': "#795548"
+    }
     
-    # Collect data for all meshes
-    mesh_data = {}
-    
-    for mesh_folder in mesh_folders:
-        mesh_name = mesh_folder.name
-        
-        cg_time = 0
-        cg_label = "CG"
-        ch_llt_time = 0
-        ch_llt_label = "Ch_LLT"
-        
-        # Look for CG json file
-        cg_folder = mesh_folder / "CG"
-        if cg_folder.exists():
-            json_files = list(cg_folder.glob("*.json"))
-            if json_files:
-                try:
-                    with open(json_files[0], 'r') as f:
-                        data = json.load(f)
-                        cg_time = data.get(metric, 0)
-                        # Extract cg_rel_err if it exists
-                        cg_rel_err = data.get("args", {}).get("cg_rel_err")
-                        if cg_rel_err is not None:
-                            # Format as scientific notation
-                            if isinstance(cg_rel_err, str):
-                                cg_label = f"CG_{cg_rel_err}"
-                            else:
-                                cg_label = f"CG_{cg_rel_err:.0e}"
-                except Exception as e:
-                    print(f"Error loading CG JSON for {mesh_name}: {e}")
-        
-        # Look for Ch_LLT json file
-        ch_llt_folder = mesh_folder / "Ch_LLT"
-        if ch_llt_folder.exists():
-            json_files = list(ch_llt_folder.glob("*.json"))
-            if json_files:
-                try:
-                    with open(json_files[0], 'r') as f:
-                        data = json.load(f)
-                        ch_llt_time = data.get(metric, 0)
-                except Exception as e:
-                    print(f"Error loading Ch_LLT JSON for {mesh_name}: {e}")
-        
-        mesh_data[mesh_name] = (cg_time, ch_llt_time, cg_label, ch_llt_label)
-    
-    # Split meshes into groups of 10
-    meshes_list = list(mesh_data.keys())
-    meshes_per_plot = 10
-    num_plots = (len(meshes_list) + meshes_per_plot - 1) // meshes_per_plot
-    
-    # Create grid: 3 columns
-    cols = 3
-    rows = (num_plots + cols - 1) // cols
-    
-    fig, axes = plt.subplots(rows, cols, figsize=(16 * cols, 7 * rows))
-    axes = axes.flatten()
-    
-    # Plot each group of meshes
-    for plot_idx in range(num_plots):
-        start_idx = plot_idx * meshes_per_plot
-        end_idx = min(start_idx + meshes_per_plot, len(meshes_list))
-        meshes_group = meshes_list[start_idx:end_idx]
-        
-        ax = axes[plot_idx]
-        plot_combined_histogram(meshes_group, mesh_data, lp_value, metric, ax)
-        
-        ax.set_title(f'Meshes {start_idx + 1}-{end_idx} (Lp={lp_value})', 
-                    fontsize=11, fontweight='bold')
-    
-    # Hide unused subplots
-    for idx in range(num_plots, len(axes)):
-        axes[idx].set_visible(False)
-    
-    plt.suptitle(f'Total Time Comparison - All {len(meshes_list)} Meshes (Lp={lp_value})', 
-                fontsize=14, fontweight='bold', y=0.995)
-    plt.tight_layout(rect=[0, 0, 1, 0.99])
-    
-    graphs_dir = output_base / "histograms"
-    graphs_dir.mkdir(parents=True, exist_ok=True)
-    output_path = graphs_dir / f"histogram_grid_{metric}_Lp{lp_value}.png"
-    
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"Saved histogram grid to {output_path}")
-    plt.close()
+    colors = list(color_dict.values())[:len(xs)]
 
+    try:
+        lp_value = xs[0][2]
+    except (IndexError, TypeError):
+        lp_value = 2
+    
+    output_dir = Path(args['output_dir']) / f"Lp_{lp_value}"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = output_dir / f"{mesh_name}_histograms.png"
+    
+    matplotlib.rcParams['figure.figsize'] = (18, 10)
+    
+    fig, ax = plt.subplots(figsize=(18, 10))
+    
+    # Get bin range
+    bin_min = args.get('bin_min') or 0
+    try:
+        bin_max = args.get('bin_max') or max(int(np.max(X)) for X, _, _ in xs)
+    except (ValueError, TypeError):
+        bin_max = 5
+    
+    thresholds = np.arange(bin_min, bin_max + 1, 1)
+    bar_width = 0.08  # Width of each bar (for 9 datasets: 0.08 * 9 ≈ 0.72)
+    
+    # Plot each dataset as grouped bars
+    for idx, (X, dataset_name, Lp) in enumerate(xs):
+        if len(X) == 0:
+            print(f"  Skipping {dataset_name} - empty data")
+            continue
+        
+        percentages = []
+        total_triangles = len(X)
+        
+        for threshold in thresholds:
+            count = np.sum(X >= threshold)
+            percent = (count / total_triangles) * 100.0
+            percentages.append(percent)
+        
+        # Offset bar positions for grouped bars
+        x_positions = thresholds + (idx - 4) * bar_width  # Center around threshold
+        color = colors[idx]
+        ax.bar(x_positions, percentages, width=bar_width, 
+               label=dataset_name, color=color, alpha=0.8)
+    
+    # Set axes labels and formatting
+    ax.set_xlabel('Energy Threshold', fontsize=40)
+    ax.set_ylabel('Percentage (%)', fontsize=40)
+    ax.set_title(f"Energy Threshold Comparison - {mesh_name}", fontsize=45, fontweight='bold')
+    ax.set_xticks(thresholds)
+    ax.tick_params(labelsize=28)
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax.legend(fontsize=14, loc='upper right', framealpha=0.95, ncol=2)
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.set_ylim(0, 105)
+    
+    plt.tight_layout()
+    fig.savefig(str(output_path), bbox_inches='tight', dpi=150)
+    plt.close(fig)
+    
+    print(f"Saved: {output_path}")
 
-def plot_combined_histogram(meshes, mesh_data, lp_value, metric="total_time", ax=None):
-    """Plot one histogram with up to 10 meshes, comparing CG and Ch_LLT"""
+def histogram_energy_threshold(X, args, m):
+    """Create histogram showing triangle counts for energy >= threshold"""
     
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(16, 7))
+    # Get bin range with proper defaults
+    bin_min = args.get('bin_min') or 0
+    bin_max = args.get('bin_max') or int(np.max(X)) + 1
     
-    cg_times = [mesh_data[m][0] for m in meshes]
-    ch_llt_times = [mesh_data[m][1] for m in meshes]
-    cg_labels = [mesh_data[m][2] for m in meshes]
-    ch_llt_labels = [mesh_data[m][3] for m in meshes]
+    # Get histogram color
+    color_dict = {
+        'red': "#b90f29",
+        'blue': "#3c4ac8"
+    }
+    color = args.get('color', 'red')
+    if color in color_dict:
+        color = color_dict[color]
+    colors = [color]
+    sns.set_palette(colors)
     
-    # Set up bar positions
-    x = np.arange(len(meshes))
-    bar_width = 0.35
+    os.makedirs(args['output_dir'], exist_ok=True)
+    output_path = os.path.join(args['output_dir'], m + "_energy_threshold.png")
     
-    # Create bars
-    # Use the first label as legend (they should all be the same)
-    bars1 = ax.bar(x - bar_width/2, cg_times, bar_width, label=cg_labels[0] if cg_labels else "CG", 
-                   color='blue', edgecolor='black', alpha=0.7)
-    bars2 = ax.bar(x + bar_width/2, ch_llt_times, bar_width, label=ch_llt_labels[0] if ch_llt_labels else "Ch_LLT",
-                   color='red', edgecolor='black', alpha=0.7)
+    matplotlib.rcParams['figure.figsize'] = (args.get('width', 12.80), args.get('height', 8.00))
     
-    # Add value labels on bars
-    for bars in [bars1, bars2]:
-        for bar in bars:
-            height = bar.get_height()
-            if height > 0:
-                ax.text(bar.get_x() + bar.get_width()/2., height,
-                       f'{height:.2f}',
-                       ha='center', va='bottom', fontsize=8)
+    # Create thresholds data for histogram
+    thresholds = np.arange(bin_min, bin_max + 1, 1)
+    counts = []
+    percentages = []
+    total_triangles = len(X)
     
-    # Customize plot
-    ax.set_xlabel('Mesh Name', fontsize=10, fontweight='bold')
-    ax.set_ylabel('Total Time (s)', fontsize=10, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(meshes, rotation=45, ha='right', fontsize=9)
-    ax.legend(fontsize=9, loc='upper left')
-    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    for threshold in thresholds:
+        count = np.sum(X >= threshold)
+        percent = (count / total_triangles) * 100.0
+        counts.append(count)
+        percentages.append(percent)
     
-    if cg_times and ch_llt_times:
-        max_time = max(max(cg_times), max(ch_llt_times))
-        ax.set_ylim(0, 180)
+    # Plot using sns.histplot style with percentage data
+    fig, ax = plt.subplots(1)
+    bars = ax.bar(thresholds, percentages, color=color, width=0.8)
+    
+    # Add count and percentage labels on top of each bar
+    for bar, count, percent in zip(bars, counts, percentages):
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height,
+                f'{int(count)}\n({percent:.1f}%)',
+                ha='center', va='bottom', fontsize=15)
+    
+    # Set axes labels
+    ax.set_xlabel(args.get('label', 'Energy Threshold'), fontsize=50)
+    ax.tick_params(labelsize=30)
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax.set_ylim(0, max(percentages) * 1.1)
+    
+    # Save figure to file
+    fig.savefig(output_path, bbox_inches='tight')
+    plt.close(fig)
+    
+    # Print summary
+    print(f"\nEnergy Threshold Summary:")
+    for t, c, p in zip(thresholds, counts, percentages):
+        print(f"  Triangles with energy >= {t}: {c} ({p:.2f}%)")
+
+def histogram_data(X, args, m):
+    # Get histogram color
+    color_dict = {
+        'red': "#b90f29",
+        'blue': "#3c4ac8"
+    }
+    color = args['color']
+    if color in color:
+        color = color_dict[color]
+    colors = [color,]
+    sns.set_palette(colors)
+
+    # Get bin range (or None if no range values provided)
+    if (args['bin_min'] and args['bin_max']):
+        binrange = (args['bin_min'], args['bin_max'])
+    elif args['bin_min']:
+        binrange = (args['bin_min'], np.max(X))
+    elif args['bin_max']:
+        binrange = (np.min(X), args['bin_max'])
     else:
-        ax.set_ylim(0, 1)
+        binrange = None
 
-    
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Plot histogram grid and scatter distribution for all meshes."
+    # Generate histogram and save to file
+    os.makedirs(args['output_dir'], exist_ok=True)
+    output_path = os.path.join(
+        args['output_dir'],
+        m+"_sym_dir.png"
     )
-    parser.add_argument("--metric", default="total_time", help="Which metric to plot")
-    parser.add_argument("--Lp", default="1", help="Lp value")
-    parser.add_argument("--scatter", action='store_true', help="Plot scatter distribution")
-    parser.add_argument("--scatter-multi", action='store_true', help="Plot scatter for multiple Lp values")
 
-    args = parser.parse_args()
+    matplotlib.rcParams['figure.figsize'] = (args['width'], args['height'])
+
+    # Set percentage or absolute scale for y axis
+    fig, ax = plt.subplots(1)
+    bins=21
+    hist = sns.histplot(X, bins = bins, stat='percent', binrange=binrange, ax=ax)
+    hist.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax.set_ylim(0, args['ylim'])
+
+    # Set axes labels
+    hist.set_xlabel(args['label'], fontsize=50)
+    hist.set_ylabel("")
+    hist.tick_params(labelsize=30)
     
-    if args.scatter_multi:
-        lp_values = [1, 2, 3]
-        # Plot Ch_LLT - all Lp on one plot
-        plot_scatter_distribution_combined(OUTPUT_DIR, lp_values, solver="Ch_LLT", 
-                                           metric_x="total_time", metric_y="E_worst")
-        # Plot CG - all Lp on one plot
-        plot_scatter_distribution_combined(OUTPUT_DIR, lp_values, solver="CG", 
-                                           metric_x="total_time", metric_y="E_worst")
-    else:
-        plot_all_histograms_grid(OUTPUT_DIR, args.Lp, metric=args.metric)
+    # Save figure to file
+    fig.savefig(output_path, bbox_inches='tight')
+
+def add_histogram_arguments(parser):
+    parser.add_argument(
+        "-o", "--output_dir",
+        help="directory for output images",
+        default="./"
+    )
+    parser.add_argument(
+        "--uv_path",
+        help="path for mesh with uv coordinates"
+    )
+    parser.add_argument(
+        "--bin_min",
+        help="minimum value for bin",
+        type=float
+    )
+    parser.add_argument(
+        "--bin_max",
+        help="maximum value for bin",
+        type=float
+    )
+    parser.add_argument(
+        "--ylim",
+        help="y limit for the histogam",
+        type=float,
+        default=100
+    )
+    parser.add_argument(
+        "--label",
+        help="label for histogram",
+    )
+    parser.add_argument(
+        "--color",
+        help="color for histogram",
+        default='red'
+    )
+    parser.add_argument(
+        "-H", "--height",
+        help="image height",
+        default=8.00
+    )
+    parser.add_argument(
+        "-W", "--width",
+        help="image width",
+        default=12.80
+    )
 
 if __name__ == "__main__":
-    main()
+    # Parse arguments for the script
+    parser = argparse.ArgumentParser("Generate histograms for mesh")
+    add_histogram_arguments(parser)
+    args = vars(parser.parse_args())
+
+    Lp = 2
+    solver = {"CG": 2, "Ch_LLT": 1}
+    percents = [1, 3, 5]
+    dif_err = [0.001, 0.01, 0.05]
+    xs = defaultdict(list)  # Use defaultdict to auto-initialize lists
+
+    for s in solver:
+        for p in percents:
+            for d in dif_err:
+                folder = Path(f"output/test4/Lp_{solver[s]}_{p}_{d}/{s}")
+
+                # Iterate through subdirectories (mesh folders)
+                for mesh_dir in folder.iterdir():
+                    if not mesh_dir.is_dir():
+                        continue
+                    
+                    # Find JSON file in the mesh folder
+                    json_files = list(mesh_dir.glob("*.json"))
+                    if json_files:
+                        json_file = json_files[0]
+                        
+                        try:
+                            # Load JSON file
+                            with open(json_file, 'r') as f:
+                                json_data = json.load(f)
+                            
+                            # Read energy vector from JSON
+                            X = np.array(json_data.get('energy', []))
+                            
+                            if len(X) == 0:
+                                print(f"Warning: No energy data in {json_file.name}")
+                                continue
+                            
+                            # Get mesh name from folder
+                            base_mesh_name = json_file.stem.split("_")[0]
+                            mesh_name = f"p={p}, err={d}"
+                            
+                            # Store with solver as key
+                            xs[(base_mesh_name, s)].append([X, mesh_name, solver[s]])
+                            print(f"Processed: {s} - {mesh_name} from {json_file.name}")
+                            
+                        except Exception as e:
+                            print(f"Error processing {json_file.name}: {e}")
+
+    print("\nProcessing complete. Generating histograms...")
+    
+    # Group by mesh and solver
+    meshes_dict = defaultdict(lambda: defaultdict(list))
+    
+    for (mesh_base, solver_name), data_list in xs.items():
+        meshes_dict[mesh_base][solver_name] = data_list
+    
+    # Generate separate histograms for CG and Ch_LLT for each mesh
+    for mesh_base, solver_data in meshes_dict.items():
+        for solver_name, data_list in solver_data.items():
+            if data_list:
+                plot_name = f"{mesh_base}_{solver_name}"
+                histogram_energy_threshold_combined(data_list, plot_name, args)
+                print(f"Finished histogram for {plot_name}")    # # Calculate weighted energy scores and find best pairs
+    # print("\n" + "="*80)
+    # print("WEIGHTED ENERGY SCORE ANALYSIS")
+    # print("="*80)
+    
+    # best_cg, best_chllт, cg_scores, chllт_scores = find_best_solver_pair(xs, args)
+    
+    # print("\nCG Solver Scores:")
+    # for (p, err), score in sorted(cg_scores.items()):
+    #     print(f"  (n={p}, m={err}): {score:.2f}")
+    
+    # if best_cg:
+    #     print(f"\nBest CG pair: (n={best_cg[0][0]}, m={best_cg[0][1]}) with score {best_cg[1]:.2f}")
+    
+    # print("\nCh_LLT Solver Scores:")
+    # for (p, err), score in sorted(chllт_scores.items()):
+    #     print(f"  (n={p}, m={err}): {score:.2f}")
+    
+    # if best_chllт:
+    #     print(f"\nBest Ch_LLT pair: (n={best_chllт[0][0]}, m={best_chllт[0][1]}) with score {best_chllт[1]:.2f}")
+    
+    # print("="*80)

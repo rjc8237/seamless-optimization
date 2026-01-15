@@ -1,0 +1,7 @@
+Solver,p,Converged_Meshes,Total_Meshes
+CG,1.0,36,44
+CG,3.0,36,44
+CG,5.0,35,44
+Ch_LLT,1.0,43,44
+Ch_LLT,3.0,43,44
+Ch_LLT,5.0,43,44

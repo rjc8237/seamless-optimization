@@ -420,10 +420,11 @@ public:
         std::array<int, 4> num_triangles;
         // Add JSON serialization
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
-            iteration, condition_number, residual, correction, time_solver, time_ls, time_grad_hessian, iter_solver, ls_step_size, newton_decr, num_triangles)
+            iteration, condition_number, residual, correction, time_solver, time_ls, time_grad_hessian, iter_solver, ls_step_size, newton_decr)
 
     };
 
+    double get_hessian(Eigen::SparseMatrix<double>& hessian);
     double smooth_global(bool& failed, std::vector<HessianStats>& hessian_log);
 
     void create_mesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv);

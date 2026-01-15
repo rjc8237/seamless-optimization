@@ -9,13 +9,39 @@
 #include "pybind11_json.hpp"
 #include "main_helper.h"
 #include "energy.h"  // Include headers for your functions
+#include "SYMDIR_NEW.h"  // Add this
 
 using namespace SymDir;
+namespace py = pybind11;
 
 #ifdef PYBIND
 #ifndef MULTIPRECISION
 
 using json = nlohmann::json;
+
+// Helper function wrapper for pybind11
+inline Eigen::VectorXd compute_symmetric_dirichlet_energy(
+    const Eigen::MatrixXd& V,
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F)
+{
+    Eigen::VectorXd energy(F.rows());
+    SymmetricDirichletEnergy sd_energy(SymmetricDirichletEnergy::EnergyType::Lp, 2);
+    
+    for (int i = 0; i < F.rows(); i++) {
+        int v0 = F(i, 0), v1 = F(i, 1), v2 = F(i, 2);
+        // Cast row blocks to Vector3d explicitly
+        Eigen::Vector3d A = V.row(v0).transpose();
+        Eigen::Vector3d B = V.row(v1).transpose();
+        Eigen::Vector3d C = V.row(v2).transpose();
+        Eigen::Vector2d a = uv.row(v0).head(2).transpose();
+        Eigen::Vector2d b = uv.row(v1).head(2).transpose();
+        Eigen::Vector2d c = uv.row(v2).head(2).transpose();
+        
+        energy(i) = sd_energy.symmetric_dirichlet_energy(A, B, C, a, b, c);
+    }
+    return energy;
+}
 
 // wrap as Python module
 PYBIND11_MODULE(symdir, m)
@@ -71,7 +97,9 @@ PYBIND11_MODULE(symdir, m)
         .def_readwrite("Lp", &Parameters::Lp);
     
     //m.def("check_constraints", &check_constraints);
-    // m.def("symmetric_dirichlet_energy", &SymDir::symmetric_dirichlet_energy);
+    m.def("symmetric_dirichlet_energy", &compute_symmetric_dirichlet_energy,
+          "Compute symmetric Dirichlet energy per triangle",
+          py::arg("V"), py::arg("uv"), py::arg("F"));
     m.def("transform_EE", &transform_EE);
     m.def("transform_FE", &transform_FE);
 

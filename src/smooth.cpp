@@ -276,6 +276,18 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     return energy;
 }
 
+double ExtremeOpt::get_hessian(Eigen::SparseMatrix<double>& hessian) {
+    Eigen::MatrixXd uv;
+    export_uv(uv);
+    Eigen::MatrixXd Guv = Grad * uv;
+
+    Eigen::VectorXd newton, initial_guess;
+    // get grad and hessian
+    Eigen::VectorXd grad;
+
+    double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, true);
+    return energy_0;
+}
 
 double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessian_log)
 {
@@ -293,7 +305,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     timer.start();
     double energy_0 = get_energy_grad_and_hessian(input_V, input_F, uv, Guv, grad, hessian, m_params.do_newton);
     time_grad_hessian = timer.getElapsedTime();
-
     double misalignment_weight = 1.;
 
     bool use_rref = m_params.use_rref;

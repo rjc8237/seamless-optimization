@@ -13,7 +13,7 @@ namespace jakob
   Scalar gradient_and_hessian_from_J(const Eigen::Matrix<Scalar, 1, 4> &J,
                                      Eigen::Matrix<Scalar, 1, 4> &local_grad,
                                      Eigen::Matrix<Scalar, 4, 4> &local_hessian,
-                                     double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0)
+                                     double norm_p, bool soft_max, double t, double E_min)
   {
       typedef DScalar2<Scalar, Eigen::Matrix<Scalar, 4, 1>, Eigen::Matrix<Scalar, 4, 4>> DScalar;
       DiffScalarBase::setVariableCount(4);
@@ -201,7 +201,7 @@ namespace SymDir{
 
         Eigen::Matrix<Scalar, -1, 1> vec_grad = Eigen::Map<Eigen::Matrix<Scalar, -1, 1>>(total_grad.data(), total_grad.size());
         
-        hessian = G.transpose() * hessian * G;
+        // hessian = G.transpose() * hessian * G;
         grad = vec_grad.transpose() * G;
 
         return energy;
@@ -229,3 +229,11 @@ namespace SymDir{
         double, bool, double);
     template Eigen::ArrayXd get_sym_dirich_per_triangle_from_jacobian(const Eigen::Matrix<double, -1, -1>&);
 } // namespace SymDir
+namespace jakob
+{
+    template double gradient_and_hessian_from_J<double>(
+        const Eigen::Matrix<double, 1, 4> &,
+        Eigen::Matrix<double, 1, 4> &,
+        Eigen::Matrix<double, 4, 4> &,
+        double, bool, double, double);
+}

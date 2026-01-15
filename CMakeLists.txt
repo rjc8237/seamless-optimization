@@ -132,6 +132,12 @@ target_link_libraries(symdir PUBLIC
   pybind11::module
 )
 
+target_compile_definitions(symdir PRIVATE PYBIND)
+set_target_properties(symdir PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/py
+  PREFIX "${PYTHON_MODULE_PREFIX}"
+  SUFFIX "${PYTHON_MODULE_EXTENSION}"
+)
 # Set pybinding settings
 set_target_properties(symdir PROPERTIES LIBRARY_OUTPUT_DIRECTORY
   ${PROJECT_SOURCE_DIR}/py

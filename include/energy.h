@@ -6,6 +6,8 @@
 #include <Eigen/Sparse>
 #include <iostream>
 
+#include "autodiff_jakob.h"
+
 // #define SOFT_MAX
 // #define TEST_AMIPS_OLD
 namespace SymDir {
@@ -88,3 +90,11 @@ void jacobian_from_uv(
     const Eigen::Matrix<Scalar, -1, -1>& uv,
     Eigen::Matrix<Scalar, -1, -1>& Ji);
 } // namespace SymDir
+namespace jakob
+{
+    template <typename Scalar>
+    Scalar gradient_and_hessian_from_J(const Eigen::Matrix<Scalar, 1, 4> &J,
+                                       Eigen::Matrix<Scalar, 1, 4> &local_grad,
+                                       Eigen::Matrix<Scalar, 4, 4> &local_hessian,
+                                       double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0);
+}
