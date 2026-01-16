@@ -389,9 +389,8 @@ public:
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
     double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
-    double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
+    double compute_worst_n_energy(const Eigen::MatrixXd& aaa);
     double compute_threshold_energy(const Eigen::MatrixXd& aaa);
-    Eigen::ArrayXd get_sym_dirich_per_triangle(const Eigen::MatrixXd& aaa);
 
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
@@ -401,7 +400,7 @@ public:
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only(double Lp = 0);
-    double get_quality_avg_worst_for_smooth_only(double Lp = 0);
+    double get_quality_avg_worst_for_smooth_only();
     double get_threshold_energy();
 
     
@@ -417,10 +416,22 @@ public:
         int iter_solver;
         double ls_step_size;
         double newton_decr;
-        std::array<int, 4> num_triangles;
-        // Add JSON serialization
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(HessianStats, 
-            iteration, condition_number, residual, correction, time_solver, time_ls, time_grad_hessian, iter_solver, ls_step_size, newton_decr)
+
+        // Custom JSON serialization
+        friend void to_json(json& j, const HessianStats& s) {
+            j = json{
+                {"iteration", s.iteration},
+                {"condition_number", s.condition_number},
+                {"residual", s.residual},
+                {"correction", s.correction},
+                {"time_solver", s.time_solver},
+                {"time_ls", s.time_ls},
+                {"time_grad_hessian", s.time_grad_hessian},
+                {"iter_solver", s.iter_solver},
+                {"ls_step_size", s.ls_step_size},
+                {"newton_decr", s.newton_decr}
+            };
+        }
 
     };
 

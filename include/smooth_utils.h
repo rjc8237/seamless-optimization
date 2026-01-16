@@ -104,6 +104,7 @@ bool solveGaussSeidel(const Eigen::SparseMatrix<double>& A,
                       Eigen::VectorXd& x, 
                       int max_iters = 2000, 
                       double tolerance = 1e-10);
+// double get_cond_num_from_hessian(const Eigen::SparseMatrix<double>& hessian);
 
 struct CgResult {
     int iterations = 0;

@@ -27,12 +27,13 @@
     "percent": 5,
     "p_energy": 1,
     "precompute_seamless": true,
+    "E_worst_2_target": 1.0,
     "E_rel_err": 1e-6,
     "E_abs_err": 1e-6,
     "grad_abs_err": 1e-10,
     "grad_rel_err": 1e-10,
     "cg_rel_err": 1e-3,
-    "diff_err": 0.001,
+    "diff_err": 0,
     "soft_max": false,
     "t": 5.0
 }

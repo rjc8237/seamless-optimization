@@ -1148,46 +1148,31 @@ void ExtremeOpt::do_optimization(json& opt_log)
     opt_log["time_log"]["constraint_elimination_time"] = time;
     spdlog::info("constraint elimination time serial: {}s", time);
 
-    if (m_params.use_rref)
-    {
-    }
-
-    Eigen::SparseMatrix<double> hessian;
-    get_hessian(hessian);
-    double max_abs_hess = 0.0;
-    for (int k = 0; k < hessian.outerSize(); ++k) {
-        for (Eigen::SparseMatrix<double>::InnerIterator it(hessian, k); it; ++it) {
-            max_abs_hess = std::max(max_abs_hess, std::abs(it.value()));
-        }
-    }
-    std::cout << "Max abs Hessian value: " << max_abs_hess << std::endl;
-
     std::vector<HessianStats> hessian_log;
     bool failed = false;
 
     double max_grad_0 = smooth_global(failed, hessian_log);
     double max_grad = max_grad_0;
 
+    total_timer.start();
     double E = get_quality_avg_for_smooth_only();
-    double E_worst = get_quality_avg_worst_for_smooth_only();
-    spdlog::info("Initial E = {}, E_worst = {}, E_min = {}", E, E_worst, m_params.E_min);
-
-    // max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
-    // E = std::pow(E, 1.0 / (2 * m_params.Lp));
-    // E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
-    double E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
+    double E_worst_2 = get_quality_avg_worst_for_smooth_only();
     double E_2 = get_quality_avg_for_smooth_only(1.0);
+
+    spdlog::info("Initial E = {}, E_worst_2 = {}", E, E_worst_2, m_params.E_min);
+
+    max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
     opt_log["opt_log"].push_back(
-        {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E_2}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
+        {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
 
     std::vector<double> residuals;
-    double E_0 = E_worst;
+    double E_0 = E;
     bool reached_one = false;
-    total_timer.start();
     int count = 0;
+    double avr_step = 0;
     for (int i = 1; i <= m_params.max_iters; i++) {
-        double E_old = E_worst;
-
+        double E_old = E;
+        double E_old_2 = E_2;
         // if times exceeds 3 minutes, stop optimization
         if (total_timer.getElapsedTime() > m_params.max_time) {
             spdlog::info("Time limit exceeded (>{}s). Stopping optimization early.", m_params.max_time);
@@ -1206,10 +1191,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
             // E = get_quality();
 
             E = get_quality_avg_for_smooth_only();
-            E_worst = get_quality_avg_worst_for_smooth_only();
-
+            E_worst_2 = get_quality_avg_worst_for_smooth_only();
             E_2 = get_quality_avg_for_smooth_only(1.0);
-            E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
             //E_max = get_quality_max();
 
             // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
@@ -1217,63 +1200,61 @@ void ExtremeOpt::do_optimization(json& opt_log)
             spdlog::info("max gradient = {}", max_grad);
 
         }
-        // max_grad = max_grad * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
-        // E = std::pow(E, 1.0 / (2 * m_params.Lp));
-        // E_worst = std::pow(E_worst, 1.0 / (2 * m_params.Lp));
+        max_grad = max_grad * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
 
         // opt_log["opt_log"].push_back(
         //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
         opt_log["opt_log"].push_back(
-            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E_2}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
+            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
         
         iters = i;
 
         // TODO: terminate criteria
         // 1. gradient stopping condition
-        if (max_grad < m_params.grad_abs_err) {
-            std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
-            spdlog::info(reason);
-            opt_log["converge_reason"] = reason;
-            break;
-        }
-        if (max_grad < max_grad_0 * m_params.grad_rel_err) {
-            std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
-            spdlog::info(reason);
-            opt_log["converge_reason"] = reason;
-            break;
-        }
+        // if (max_grad < m_params.grad_abs_err) {
+        //     std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
+        //     spdlog::info(reason);
+        //     opt_log["converge_reason"] = reason;
+        //     break;
+        // }
+        // if (max_grad < max_grad_0 * m_params.grad_rel_err) {
+        //     std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
+        //     spdlog::info(reason);
+        //     opt_log["converge_reason"] = reason;
+        //     break;
+        // }
         // 2. energy stopping condition
-        if (E_worst < 1.0) {
-            std::string reason = "Energy reached 1.0, optimization converge!";
-            spdlog::info(reason);
+        if (fabs(E_worst_2 - m_params.E_worst_2_target) < 1e-8) {
+            std::string reason = fmt::format("Energy reached {}", m_params.E_worst_2_target);
+            spdlog::info("Energy reached {}, optimization converge!", m_params.E_worst_2_target);
             opt_log["converge_reason"] = reason;
             break;        
 
         }
-        if (fabs(E_worst - E_old) < m_params.diff_err * E_old) {
-            count += 1;
-            if (count > 2) {
-                std::string reason = fmt::format("Energy change too small ({}) in {} steps, optimization succeed!", fabs(E_worst - E_old) / E_old, count);
-                spdlog::info(reason);
+        avr_step += fabs(E - E_old) / E_old;
+        count += 1;
+        if (count % 3) {
+            if (avr_step / 3.0 < m_params.diff_err) {
+                std::string reason = fmt::format("Energy change too small ({}) in {} steps", avr_step / 3.0, count);
+                spdlog::info("Energy change too small ({}) in {} steps, optimization succeed!", avr_step / 3.0, count);
                 opt_log["converge_reason"] = reason;
                 break;        
             }
-        } else {
-            count = 0;
+            avr_step = 0;
         }
 
-        if (fabs(E_worst) < m_params.E_abs_err) {
-            std::string reason = fmt::format("Energy converged to {} with abs err {}, optimization succeed!", E_worst, m_params.E_abs_err);
-            spdlog::info(reason);
-            opt_log["converge_reason"] = reason;
-            break;
-        }
-        if (fabs(E_worst) < m_params.E_rel_err * E_0) {
-            std::string reason = fmt::format("Energy converged to {} with rel err {}, optimization succeed!", E_worst, m_params.E_rel_err);
-            spdlog::info(reason);
-            opt_log["converge_reason"] = reason;
-            break;
-        }
+        // if (fabs(E_worst) < m_params.E_abs_err) {
+        //     std::string reason = fmt::format("Energy converged to {} with abs err {}, optimization succeed!", E_worst, m_params.E_abs_err);
+        //     spdlog::info(reason);
+        //     opt_log["converge_reason"] = reason;
+        //     break;
+        // }
+        // if (fabs(E_worst) < m_params.E_rel_err * E_0) {
+        //     std::string reason = fmt::format("Energy converged to {} with rel err {}, optimization succeed!", E_worst, m_params.E_rel_err);
+        //     spdlog::info(reason);
+        //     opt_log["converge_reason"] = reason;
+        //     break;
+        // }
         
         if (failed) {
             std::string reason = "Line search step failed.";
@@ -1299,17 +1280,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
     opt_log["time_log"]["line_search_time"] = time_ls;
     opt_log["time_log"]["solver_time"] = time_solver;
     opt_log["time_log"]["grad_hessian_time"] = time_grad_hessian;
-    m_params.percent = 5.0;
-    E_worst = get_quality_avg_worst_for_smooth_only(1.0);
     opt_log["E_worst"] = E_worst_2;
-    hessian.makeCompressed();
-    
-    std::vector<std::vector<double>> triplets;
-    for (int k = 0; k < hessian.outerSize(); ++k) {
-        for (Eigen::SparseMatrix<double>::InnerIterator it(hessian, k); it; ++it) {
-            triplets.push_back({(double)it.row(), (double)it.col(), it.value()});
-        }
-    }
-    opt_log["hessian"] = triplets;
 }
 } // namespace SymDir

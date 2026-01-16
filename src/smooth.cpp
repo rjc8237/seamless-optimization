@@ -191,25 +191,16 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double Lp) {
     // return compute_worst_n_energy(Ji, area, m_params.Lp, m_params.percent, m_params.p_energy);
 }
 
-double ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp) {
+double ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
-    if (Lp == 0) {
-        Lp = m_params.Lp;
-    }
-    return compute_worst_n_energy_from_jacobian(Ji, area, Lp, m_params.percent, m_params.soft_max, m_params.t, m_params.E_min);
+    return compute_worst_n_energy_from_jacobian(Ji, area, 1.0, m_params.percent, m_params.soft_max, m_params.t, m_params.E_min);
 }
 
 double ExtremeOpt::compute_threshold_energy(const Eigen::MatrixXd& aaa) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
     return SymDir::compute_threshold_energy_from_jacobian(Ji, area, m_params.Lp, 5.0, m_params.soft_max, m_params.t);
-}
-
-Eigen::ArrayXd ExtremeOpt::get_sym_dirich_per_triangle(const Eigen::MatrixXd& aaa) {
-    Eigen::MatrixXd Ji;
-    SymDir::jacobian_from_uv(G, aaa, Ji);
-    return SymDir::get_sym_dirich_per_triangle_from_jacobian(Ji);
 }
 
 double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
@@ -586,7 +577,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                     {
                         // cond_num = get_cond_num_from_hessian(hessian);
                         if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
-                            // iter_solver = solver.iterations();
+                            iter_solver = solver.iterations();
                         }
                         break;
                     }
@@ -614,6 +605,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     double ls_step_size = 1.0;
     bool ls_good = false;
     double E_worst_0 = compute_worst_n_energy(uv);
+    int count_e = 0, count_f = 0;
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
         double new_E = compute_energy(new_x);
@@ -624,16 +616,27 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             new_E += misalignment_weight * misalignment_energy;
         }
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
+            std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
+            // ls_good = true;
+            // break;
             double new_E_worst = compute_worst_n_energy(new_x);
-            if (new_E_worst < E_worst_0 + 1e-6) {
-                std::cout << "energy from " << E_worst_0 << " to " << new_E_worst << std::endl;
+            if (new_E_worst < E_worst_0) {
+                std::cout << "E_worst_2 from " << E_worst_0 << " to " << new_E_worst << std::endl;
                 ls_good = true;
                 break;
+            }
+            std::cout << "E_worst_2 did not improve: " << new_E_worst << std::endl;
+        } else {
+            if (new_E >= energy_0) {
+                count_e++;
+            } 
+            if (check_flip(new_x, F) > 0) {
+                count_f++;
             }
         }
         ls_step_size *= 0.8;
     }
-
+    spdlog::info("Linesearch failures: energy {}, flip {}", count_e, count_f);
     if (ME.rows() > 0) 
     {
         Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
@@ -654,14 +657,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     time_ls = timer.getElapsedTimeInSec();
     // Store in log
 
-    Eigen::ArrayXd sd = get_sym_dirich_per_triangle(new_x);
-    std::array<int, 4> triangle_counts = {
-        static_cast<int>((sd <= 1.0).count()),
-        static_cast<int>((sd <= 2.0).count()),
-        static_cast<int>((sd <= 3.0).count()),
-        static_cast<int>((sd <= 4.0).count())
-    };
-
     hessian_log.push_back({
         static_cast<int>(hessian_log.size()),
         cond_num,
@@ -673,7 +668,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         iter_solver,
         ls_step_size,
         fabs(newton_decr),
-        triangle_counts
     });
 
     double grad_norm;
