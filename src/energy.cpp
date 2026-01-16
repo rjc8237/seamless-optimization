@@ -79,14 +79,16 @@ namespace SymDir{
         }
         for (int i = 0; i < num_tris; i++) {
             p_norm_sum += energy_per_tri[indices[i]] * area[indices[i]];
+            // p_norm_sum += energy_per_tri[indices[i]];
         }
         // Return average of worst N% triangles
         return p_norm_sum / area_sum;
+        // return p_norm_sum / Scalar(num_tris);
     }
     template <typename Scalar>
     Scalar compute_threshold_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, int norm_p, double percent, bool soft_max, double t){
                 // Compute per-triangle energy vector
-        Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), 1, soft_max, t).array();
+        Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p, soft_max, t).array();
         // Sort indices based on energy values
         std::vector<int> indices(energy_per_tri.size());
         std::iota(indices.begin(), indices.end(), 0);

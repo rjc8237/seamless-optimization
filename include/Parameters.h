@@ -47,6 +47,7 @@ struct Parameters
     double t = 1.0; // temperature for soft max
     
     double E_min = 1.0;
+    double E_worst_2_target = 1.0;
     /* data */
 };
 

@@ -123,6 +123,7 @@ int main(int argc, char** argv)
     param.soft_max = config["soft_max"];
     param.t = config["t"];
     param.precompute_seamless = config["precompute_seamless"];
+    param.E_worst_2_target = config["E_worst_2_target"];
     
     json opt_log;
     opt_log["model_name"] = model;
