@@ -35,21 +35,21 @@ def get_mesh_folders(output_dir, Lp_value = None, solver = None, cgerr = 0.0):
 
     return mesh_folders
 
-def compute_aspect_ratio(v3d, f):
+def compute_aspect_ratio(vs, f):
     """Compute aspect ratio statistics for the mesh."""
     def triangle_aspect_ratio(v0, v1, v2):
         a = np.linalg.norm(v1 - v0)
         b = np.linalg.norm(v2 - v1)
         c = np.linalg.norm(v0 - v2)
         s = (a + b + c) / 2.0
-        area = max(s * (s - a) * (s - b) * (s - c), 1e-10)**0.5
+        area = (s * (s - a) * (s - b) * (s - c))**0.5
         inradius = area / s
         circumradius = (a * b * c) / (4.0 * area)
         return circumradius / inradius
 
     aspect_ratios = []
     for face in f:
-        v0, v1, v2 = v3d[face]
+        v0, v1, v2 = vs[face]
         ar = triangle_aspect_ratio(v0, v1, v2)
         aspect_ratios.append(ar)
 

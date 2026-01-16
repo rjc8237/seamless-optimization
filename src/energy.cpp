@@ -201,7 +201,7 @@ namespace SymDir{
 
         Eigen::Matrix<Scalar, -1, 1> vec_grad = Eigen::Map<Eigen::Matrix<Scalar, -1, 1>>(total_grad.data(), total_grad.size());
         
-        // hessian = G.transpose() * hessian * G;
+        hessian = G.transpose() * hessian * G;
         grad = vec_grad.transpose() * G;
 
         return energy;

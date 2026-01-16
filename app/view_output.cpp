@@ -12,6 +12,7 @@
 
 #include <numeric>
 #include <fstream>
+#include <smooth_utils.h>
 
 using json = nlohmann::json;
 
@@ -182,12 +183,14 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
     std::vector<Eigen::VectorXd> symdir_face_worst;
     std::vector<Eigen::VectorXd> max_hessian_values;
     std::vector<Eigen::VectorXd> vertex_hessian_values;
-
+    std::vector<Eigen::VectorXd> face_areas;
 
     std::vector<Eigen::MatrixXd> G_us;
     std::vector<Eigen::MatrixXd> G_vs;
 
-    std::ofstream out_file("/Users/aa13586/Desktop/symmetric-dirichlet/output/max_hessian_vertices.csv");
+    std::ofstream out_file1("/Users/aa13586/Desktop/symmetric-dirichlet/output/max_hessian_faces.csv");
+    std::ofstream out_file2("/Users/aa13586/Desktop/symmetric-dirichlet/output/max_hessian_vertex.csv");
+
     int eo_idx = 0;
 
     for (auto& extremeopt : extremeopts)
@@ -195,9 +198,27 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         Eigen::MatrixXd uv;
         extremeopt.export_mesh(V, F, uv);
         uvs.push_back(uv);
+
+        Eigen::SparseMatrix<double> G;
+        igl::grad(V, F, G, false);
+        double max_G = 0.0;
+        for (int k = 0; k < G.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(G, k); it; ++it) {
+                max_G = std::max(max_G, std::abs(it.value()));
+            }
+        }
+        std::cout << "Max value of G: " << max_G << std::endl;   
+
         SymDir::get_grad_op(V, F, extremeopt.G);
         igl::doublearea(V, F, extremeopt.area);
-
+        face_areas.push_back(extremeopt.area);
+        double max_G_pr = 0.0; 
+        for (int k = 0; k < extremeopt.G.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(extremeopt.G, k); it; ++it) {
+                max_G_pr = std::max(max_G_pr, std::abs(it.value()));
+            }
+        }
+        std::cout << "Max value of G_pr: " << max_G_pr << std::endl;        
         Eigen::VectorXd grad_uv;
    
 
@@ -238,12 +259,48 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
         Eigen::VectorXd symdir_e(F.rows());
         Eigen::VectorXd max_hessian_v(F.rows());
 
+        Scalar energy = 0;
+        Eigen::VectorXd area = extremeopt.area;  // ADD THIS LINE
+        Scalar total_area = area.sum();
+        std::cout << "Total area: " << total_area << std::endl;
+        std::vector<Eigen::Matrix<Scalar, 4, 4>> all_hessian(F.rows());
+        extremeopt.m_params.projected_newton = true;
 
+        double max_hessian = 0.0, min_hessian = 0.0;
         for (int i = 0; i < F.rows(); ++i)
         {
-            Eigen::MatrixXd J = Ji.row(i);
+            // Eigen::MatrixXd J = Ji.row(i);
+            Eigen::Matrix<Scalar, 1, 4> J = Ji.row(i);
+            Eigen::Matrix<Scalar, 4, 4> local_hessian;
+            Eigen::Matrix<Scalar, 1, 4> local_grad;
+            energy += jakob::gradient_and_hessian_from_J(J, local_grad, local_hessian, extremeopt.m_params.Lp) * area(i) / total_area;
+            local_grad *= area(i) / total_area;
+            local_hessian *= area(i) / total_area;
+            if (extremeopt.m_params.projected_newton)
+                SymDir::projected_local_hessian(local_hessian);  // FIX: use SymDir:: namespace
+            all_hessian[i] = local_hessian;
             symdir_e[i] = SymDir::symmetric_dirichlet_energy_t(J(0), J(1), J(2), J(3), 1.0);
         }
+        max_hessian = all_hessian[0].cwiseAbs().maxCoeff();
+        min_hessian = all_hessian[0].cwiseAbs().minCoeff();
+        for (int i = 1; i < F.rows(); ++i) {
+            double local_max = all_hessian[i].cwiseAbs().maxCoeff();
+            double local_min = all_hessian[i].cwiseAbs().minCoeff();
+            if (local_max > max_hessian) {
+                max_hessian = local_max;
+            }
+            if (local_min < min_hessian) {
+                min_hessian = local_min;
+            }
+        }
+        for (int i = 0; i < F.rows(); ++i) {
+            double local_max = all_hessian[i].cwiseAbs().maxCoeff();
+            if (local_max > max_hessian * 1e-9) {
+                out_file1 << i << " ";
+            }
+        }
+        std::cout << "Max local hessian entry: " << max_hessian << std::endl;
+        std::cout << "Min local hessian entry: " << min_hessian << std::endl;
         symdir_face_energies.push_back(symdir_e);
         
         int nV = V.rows();
@@ -272,7 +329,7 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
             double val = std::max(std::abs(Huu), std::abs(Hvv));
             val = std::max(val, std::abs(Huv));
             if (val > max_hess_threshold) {
-                out_file << k << " ";
+                out_file2 << k << " ";
             } 
         }
         // symdir_face_worst.push_back(get_worst_faces(symdir_e, 0.05));
@@ -282,9 +339,10 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
                             + Rz.array().square()).rowwise().sum();
         alignment_face_energies.push_back(residuals);
     }
-    out_file.close();
+    out_file1.close();
+    out_file2.close();
 
-    std::cout << vertex_hessian_values[0].minCoeff() << " " << vertex_hessian_values[0].maxCoeff() << std::endl;
+    // std::cout << vertex_hessian_values[0].minCoeff() << " " << vertex_hessian_values[0].maxCoeff() << std::endl;
     std::unordered_set<int> unique_seamless_vertices;
     std::unordered_set<int> unique_feature_vertices;
 
@@ -376,7 +434,9 @@ void view(std::vector<ExtremeOpt>& extremeopts, const Eigen::MatrixXi &EE, const
             ->setVectorColor(RED)
             ->setVectorRadius(0.0005)
             ->setVectorLengthScale(0.005);
-            mesh->addVertexScalarQuantity("hessian_uv_log_" + std::to_string(i), vertex_hessian_values[i]);
+        mesh->addFaceScalarQuantity("triangle_area " + std::to_string(i), face_areas[i]);  // CHANGE: use face_areas
+
+            // mesh->addVertexScalarQuantity("hessian_uv_log_" + std::to_string(i), vertex_hessian_values[i]);
     }
 
     polyscope::registerCurveNetwork("seamless edges", V_seamless, edges_seamless);
