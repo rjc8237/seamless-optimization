@@ -1155,10 +1155,10 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     total_timer.start();
     double E = get_quality_avg_for_smooth_only();
-    double E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
+    double E_worst_2 = get_quality_avg_worst_for_smooth_only();
     double E_2 = get_quality_avg_for_smooth_only(1.0);
 
-    spdlog::info("Initial E = {}, E_worst_2 = {}, E_min = {}", E, E_worst_2, m_params.E_min);
+    spdlog::info("Initial E = {}, E_worst_2 = {}", E, E_worst_2, m_params.E_min);
 
     max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
     opt_log["opt_log"].push_back(
@@ -1190,7 +1190,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
             // E = get_quality();
 
             E = get_quality_avg_for_smooth_only();
-            E_worst_2 = get_quality_avg_worst_for_smooth_only(1.0);
+            E_worst_2 = get_quality_avg_worst_for_smooth_only();
             E_2 = get_quality_avg_for_smooth_only(1.0);
             //E_max = get_quality_max();
 

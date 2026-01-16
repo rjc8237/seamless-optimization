@@ -389,7 +389,7 @@ public:
     int vert_capacity() const { return vertex_attrs.size(); }
     void do_optimization(json& opt_log);
     double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
-    double compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
+    double compute_worst_n_energy(const Eigen::MatrixXd& aaa);
     double compute_threshold_energy(const Eigen::MatrixXd& aaa);
 
     void export_uv(Eigen::MatrixXd& uv);
@@ -400,7 +400,7 @@ public:
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only(double Lp = 0);
-    double get_quality_avg_worst_for_smooth_only(double Lp = 0);
+    double get_quality_avg_worst_for_smooth_only();
     double get_threshold_energy();
 
     

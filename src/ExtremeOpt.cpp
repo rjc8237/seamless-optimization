@@ -617,12 +617,12 @@ double ExtremeOpt::get_quality_avg_for_smooth_only(double Lp)
     return compute_energy(uv, Lp);
 }
 
-double ExtremeOpt::get_quality_avg_worst_for_smooth_only(double Lp)
+double ExtremeOpt::get_quality_avg_worst_for_smooth_only()
 {
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;
     export_mesh(V, F, uv);
-    return compute_worst_n_energy(uv, Lp);
+    return compute_worst_n_energy(uv);
 }
 
 double ExtremeOpt::get_threshold_energy()

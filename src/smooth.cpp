@@ -191,13 +191,10 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double Lp) {
     // return compute_worst_n_energy(Ji, area, m_params.Lp, m_params.percent, m_params.p_energy);
 }
 
-double ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa, double Lp) {
+double ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
-    if (Lp == 0) {
-        Lp = m_params.Lp;
-    }
-    return compute_worst_n_energy_from_jacobian(Ji, area, Lp, m_params.percent, m_params.soft_max, m_params.t, m_params.E_min);
+    return compute_worst_n_energy_from_jacobian(Ji, area, 1.0, m_params.percent, m_params.soft_max, m_params.t, m_params.E_min);
 }
 
 double ExtremeOpt::compute_threshold_energy(const Eigen::MatrixXd& aaa) {
@@ -597,6 +594,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     double ls_step_size = 1.0;
     bool ls_good = false;
     double E_worst_0 = compute_worst_n_energy(uv);
+    int count_e = 0, count_f = 0;
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
         double new_E = compute_energy(new_x);
@@ -617,10 +615,17 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
                 break;
             }
             std::cout << "E_worst_2 did not improve: " << new_E_worst << std::endl;
+        } else {
+            if (new_E >= energy_0) {
+                count_e++;
+            } 
+            if (check_flip(new_x, F) > 0) {
+                count_f++;
+            }
         }
         ls_step_size *= 0.8;
     }
-
+    spdlog::info("Linesearch failures: energy {}, flip {}", count_e, count_f);
     if (ME.rows() > 0) 
     {
         Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
