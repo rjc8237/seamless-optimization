@@ -16,7 +16,7 @@ OUTPUT_DIR = Path("./output/aspect_ratio_histograms")
 def get_mesh_folders(output_dir, Lp_value = None, solver = None, cgerr = 0.0):
     mesh_folders = {}
 
-    obj_files = list(output_dir.glob("*_param.obj"))
+    obj_files = list(output_dir.glob("check2.obj"))
     print(len(obj_files))
     for obj in obj_files:
         obj_name = obj.stem.split("_param")[0]
@@ -42,8 +42,18 @@ def compute_aspect_ratio(vs, f):
         b = np.linalg.norm(v2 - v1)
         c = np.linalg.norm(v0 - v2)
         s = (a + b + c) / 2.0
-        area = (s * (s - a) * (s - b) * (s - c))**0.5
+        if s < 0:
+            print(s)
+        if (s < 1e-10):
+            s = 1e-10
+        area = (s * (s - a) * (s - b) * (s - c))
+        if area < 0:
+            print(area)
+            area = 0.0
+        area = np.sqrt(area)
         inradius = area / s
+        if area < 1e-16:
+            return 1e16
         circumradius = (a * b * c) / (4.0 * area)
         return circumradius / inradius
 
@@ -97,7 +107,7 @@ def main():
     parser.add_argument("--folder", nargs="+",help="Folder containing JSON files")
     args = parser.parse_args()
     
-    output_dir = Path("./data/closed-Myles-dijkstra-01-11")
+    output_dir = Path("./data")
 
     mesh_folders = get_mesh_folders(output_dir)
     print(len(mesh_folders))

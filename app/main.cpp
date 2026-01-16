@@ -124,7 +124,14 @@ int main(int argc, char** argv)
     param.t = config["t"];
     param.precompute_seamless = config["precompute_seamless"];
     param.E_worst_2_target = config["E_worst_2_target"];
-    
+    param.do_screenshots = config["do_screenshots"];
+    param.screenshot_interval = config["screenshot_interval"];
+    param.output_dir = config["output_dir"];
+    param.uv_scale_for_screenshots = config["uv_scale_for_screenshots"];
+    param.angle_to_rotate_model_for_screenshots = config["angle_to_rotate_model_for_screenshots"];
+    // Create output directory if it doesn't exist
+    std::filesystem::create_directories(param.output_dir);
+
     json opt_log;
     opt_log["model_name"] = model;
     opt_log["solver_type"] = param.solver_type;

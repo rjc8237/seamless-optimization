@@ -1224,7 +1224,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         //     break;
         // }
         // 2. energy stopping condition
-        if (fabs(E_worst_2 - m_params.E_worst_2_target) < 1e-8) {
+        if (E_worst_2 < m_params.E_worst_2_target + 1e-8) {
             std::string reason = fmt::format("Energy reached {}", m_params.E_worst_2_target);
             spdlog::info("Energy reached {}, optimization converge!", m_params.E_worst_2_target);
             opt_log["converge_reason"] = reason;
@@ -1255,7 +1255,31 @@ void ExtremeOpt::do_optimization(json& opt_log)
         //     opt_log["converge_reason"] = reason;
         //     break;
         // }
-        
+            // VISUALIZATION: take screenshot at each iteration
+        if (i % m_params.screenshot_interval == 0 || i == 1) {  // screenshot every N iterations (adjust interval as needed)
+            polyscope::init();
+            // Rotate mesh for visualization
+            Eigen::Matrix3d rot_matrix;
+            rot_matrix = Eigen::AngleAxisd(igl::PI * m_params.angle_to_rotate_model_for_screenshots / 180.0, Eigen::Vector3d::UnitY());
+            V = (rot_matrix * V.transpose()).transpose();
+
+            auto mesh = polyscope::registerSurfaceMesh("optimization_mesh", V, F);
+            
+            // Add parameterization UV
+            Eigen::MatrixXd uv_current;
+            export_mesh(V, F, uv_current);
+            uv_current = uv_current * m_params.uv_scale_for_screenshots;
+            auto param_qty = mesh->addVertexParameterizationQuantity("UV parameterization", uv_current);
+            param_qty->setEnabled(true);
+            
+            // Save screenshot
+            std::string screenshot_path = fmt::format("{}/iter_{:05d}.png", m_params.output_dir, i);
+            polyscope::screenshot(screenshot_path);
+            spdlog::info("Saved screenshot to {}", screenshot_path);
+            
+            polyscope::removeAllStructures();
+        }
+
         if (failed) {
             std::string reason = "Line search step failed.";
             spdlog::info(reason);
