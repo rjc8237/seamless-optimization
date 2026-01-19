@@ -124,13 +124,22 @@ int main(int argc, char** argv)
     param.t = config["t"];
     param.precompute_seamless = config["precompute_seamless"];
     param.E_worst_2_target = config["E_worst_2_target"];
-    param.do_screenshots = config["do_screenshots"];
+    param.E_worst_2_target_converge = config["E_worst_2_target_converge"];
+    param.max_grad_abs_converge = config["max_grad_abs_converge"];
+    param.max_grad_rel_converge = config["max_grad_rel_converge"];
+    param.energy_diff_converge = config["energy_diff_converge"];
+    param.use_worst_n_energy_in_ls = config["use_worst_n_energy_in_ls"];
+    param.E_abs_converge = config["E_abs_converge"];
+    param.E_rel_converge = config["E_rel_converge"];
+    param.last_screenshot_after_optimization = config["last_screenshot_after_optimization"];
     param.screenshot_interval = config["screenshot_interval"];
-    param.output_dir = config["output_dir"];
+    param.output_dir_for_screenshots = config["output_dir_for_screenshots"];
     param.uv_scale_for_screenshots = config["uv_scale_for_screenshots"];
     param.angle_to_rotate_model_for_screenshots = config["angle_to_rotate_model_for_screenshots"];
+    param.screenshot_during_optimization = config["screenshot_during_optimization"];
+    param.output_dir_for_screenshots = param.output_dir_for_screenshots + "/" + model;
     // Create output directory if it doesn't exist
-    std::filesystem::create_directories(param.output_dir);
+    std::filesystem::create_directories(param.output_dir_for_screenshots);
 
     json opt_log;
     opt_log["model_name"] = model;

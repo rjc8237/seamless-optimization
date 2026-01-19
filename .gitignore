@@ -5,6 +5,8 @@
 *DS_Store
 *__pycache__*
 /py_codes/venv*
+/py_codes/output*
+/py_codes/*.ipynb
 /venv/
 /.vscode/
 /data/closed_myles/

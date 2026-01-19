@@ -49,11 +49,21 @@ struct Parameters
     double E_min = 1.0;
     double E_worst_2_target = 1.0; // Choose the target for E_worst_2
 
-    bool do_screenshots = false;
+    bool last_screenshot_after_optimization = false;
     int screenshot_interval = 5;
-    std::string output_dir = "./output_screenshots/";
+    std::string output_dir_for_screenshots = "./output_screenshots/";
     double uv_scale_for_screenshots = 1.0; // Adjust the grid size for better visibility
     double angle_to_rotate_model_for_screenshots = 0.0; // Rotate the model for a better view
+    bool screenshot_during_optimization = false;
+
+    bool E_worst_2_target_converge = true;
+    bool max_grad_abs_converge = true;
+    bool max_grad_rel_converge = true;
+    bool energy_diff_converge = true;
+    bool use_worst_n_energy_in_ls = true;
+    bool E_abs_converge = true;
+    bool E_rel_converge = true;
+
     /* data */
 };
 

@@ -104,8 +104,8 @@ if __name__ == '__main__':
     solvers = ["Ch_LLT", "CG"]
     cg_rel_errs = [1e-3]
     ns = [1, 3, 5, 8, 10]
-    ms = [0.05]
-    folder_test = "test1"
+    ms = [0]
+    folder_test = "test3"
 
     tasks = []
     for s in solvers:
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     print(f"\nTotal tasks: {len(tasks)}")
 
     # Run in parallel
-    num_workers = 8
+    num_workers = 4
     with Pool(num_workers) as pool:
         pool.map(run_solver, tasks)
 

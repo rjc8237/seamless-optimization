@@ -617,15 +617,18 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         }
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
-            // ls_good = true;
-            // break;
-            double new_E_worst = compute_worst_n_energy(new_x);
-            if (new_E_worst < E_worst_0) {
-                std::cout << "E_worst_2 from " << E_worst_0 << " to " << new_E_worst << std::endl;
+            if (m_params.use_worst_n_energy_in_ls) {
+                double new_E_worst = compute_worst_n_energy(new_x);
+                if (new_E_worst < E_worst_0) {
+                    std::cout << "E_worst_2 from " << E_worst_0 << " to " << new_E_worst << std::endl;
+                    ls_good = true;
+                    break;
+                }
+                std::cout << "E_worst_2 did not improve: " << new_E_worst << std::endl;
+            } else {
                 ls_good = true;
                 break;
             }
-            std::cout << "E_worst_2 did not improve: " << new_E_worst << std::endl;
         } else {
             if (new_E >= energy_0) {
                 count_e++;

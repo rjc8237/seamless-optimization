@@ -1077,6 +1077,31 @@ void buildBeq(
     Beq.setFromTriplets(trips.begin(), trips.end());
 }
 
+void ExtremeOpt::make_screenshot(int iter) {
+    // screenshot every N iterations (adjust interval as needed)
+    polyscope::init();
+    // Rotate mesh for visualization
+    Eigen::Matrix3d rot_matrix;
+    rot_matrix = Eigen::AngleAxisd(igl::PI * m_params.angle_to_rotate_model_for_screenshots / 180.0, Eigen::Vector3d::UnitY());
+    V = (rot_matrix * V.transpose()).transpose();
+
+    auto mesh = polyscope::registerSurfaceMesh("optimization_mesh", V, F);
+    
+    // Add parameterization UV
+    Eigen::MatrixXd uv_current;
+    export_mesh(V, F, uv_current);
+    uv_current = uv_current * m_params.uv_scale_for_screenshots;
+    auto param_qty = mesh->addVertexParameterizationQuantity("UV parameterization", uv_current);
+    param_qty->setEnabled(true);
+    
+    // Save screenshot
+    std::string screenshot_path = fmt::format("{}/iter_{:05d}.png", m_params.output_dir_for_screenshots, iter);
+    polyscope::screenshot(screenshot_path);
+    spdlog::info("Saved screenshot to {}", screenshot_path);
+    
+    polyscope::removeAllStructures();
+}
+
 void ExtremeOpt::do_optimization(json& opt_log)
 {
     igl::Timer timer;
@@ -1161,7 +1186,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     spdlog::info("Initial E = {}, E_worst_2 = {}", E, E_worst_2, m_params.E_min);
 
-    max_grad_0 = max_grad_0 * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
     opt_log["opt_log"].push_back(
         {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
 
@@ -1200,7 +1224,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
             spdlog::info("max gradient = {}", max_grad);
 
         }
-        max_grad = max_grad * std::pow(E, (1.0 - 2 * m_params.Lp) / (2 * m_params.Lp));
 
         // opt_log["opt_log"].push_back(
         //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
@@ -1211,20 +1234,20 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
         // TODO: terminate criteria
         // 1. gradient stopping condition
-        // if (max_grad < m_params.grad_abs_err) {
-        //     std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
-        //     spdlog::info(reason);
-        //     opt_log["converge_reason"] = reason;
-        //     break;
-        // }
-        // if (max_grad < max_grad_0 * m_params.grad_rel_err) {
-        //     std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
-        //     spdlog::info(reason);
-        //     opt_log["converge_reason"] = reason;
-        //     break;
-        // }
+        if (max_grad < m_params.grad_abs_err && m_params.max_grad_abs_converge) {
+            std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
+        if (max_grad < max_grad_0 * m_params.grad_rel_err && m_params.max_grad_rel_converge) {
+            std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
         // 2. energy stopping condition
-        if (E_worst_2 < m_params.E_worst_2_target + 1e-8) {
+        if (E_worst_2 < m_params.E_worst_2_target + 1e-8 && m_params.E_worst_2_target_converge) {
             std::string reason = fmt::format("Energy reached {}", m_params.E_worst_2_target);
             spdlog::info("Energy reached {}, optimization converge!", m_params.E_worst_2_target);
             opt_log["converge_reason"] = reason;
@@ -1234,7 +1257,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         avr_step += fabs(E - E_old) / E_old;
         count += 1;
         if (count % 3) {
-            if (avr_step / 3.0 < m_params.diff_err) {
+            if (avr_step / 3.0 < m_params.diff_err && m_params.energy_diff_converge) {
                 std::string reason = fmt::format("Energy change too small ({}) in {} steps", avr_step / 3.0, count);
                 spdlog::info("Energy change too small ({}) in {} steps, optimization succeed!", avr_step / 3.0, count);
                 opt_log["converge_reason"] = reason;
@@ -1243,41 +1266,23 @@ void ExtremeOpt::do_optimization(json& opt_log)
             avr_step = 0;
         }
 
-        // if (fabs(E_worst) < m_params.E_abs_err) {
-        //     std::string reason = fmt::format("Energy converged to {} with abs err {}, optimization succeed!", E_worst, m_params.E_abs_err);
-        //     spdlog::info(reason);
-        //     opt_log["converge_reason"] = reason;
-        //     break;
-        // }
-        // if (fabs(E_worst) < m_params.E_rel_err * E_0) {
-        //     std::string reason = fmt::format("Energy converged to {} with rel err {}, optimization succeed!", E_worst, m_params.E_rel_err);
-        //     spdlog::info(reason);
-        //     opt_log["converge_reason"] = reason;
-        //     break;
-        // }
-            // VISUALIZATION: take screenshot at each iteration
-        if (i % m_params.screenshot_interval == 0 || i == 1) {  // screenshot every N iterations (adjust interval as needed)
-            polyscope::init();
-            // Rotate mesh for visualization
-            Eigen::Matrix3d rot_matrix;
-            rot_matrix = Eigen::AngleAxisd(igl::PI * m_params.angle_to_rotate_model_for_screenshots / 180.0, Eigen::Vector3d::UnitY());
-            V = (rot_matrix * V.transpose()).transpose();
-
-            auto mesh = polyscope::registerSurfaceMesh("optimization_mesh", V, F);
-            
-            // Add parameterization UV
-            Eigen::MatrixXd uv_current;
-            export_mesh(V, F, uv_current);
-            uv_current = uv_current * m_params.uv_scale_for_screenshots;
-            auto param_qty = mesh->addVertexParameterizationQuantity("UV parameterization", uv_current);
-            param_qty->setEnabled(true);
-            
-            // Save screenshot
-            std::string screenshot_path = fmt::format("{}/iter_{:05d}.png", m_params.output_dir, i);
-            polyscope::screenshot(screenshot_path);
-            spdlog::info("Saved screenshot to {}", screenshot_path);
-            
-            polyscope::removeAllStructures();
+        if (fabs(E) < m_params.E_abs_err && m_params.E_abs_converge) {
+            std::string reason = fmt::format("Energy converged to {} with abs err {}, optimization succeed!", E, m_params.E_abs_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
+        if (fabs(E) < m_params.E_rel_err * E_0 && m_params.E_rel_converge) {
+            std::string reason = fmt::format("Energy converged to {} with rel err {}, optimization succeed!", E, m_params.E_rel_err);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
+        // VISUALIZATION: take screenshot at each iteration
+        if (m_params.screenshot_during_optimization) {
+            if (i % m_params.screenshot_interval == 0 || i == 1) {  
+                make_screenshot(i);
+            }
         }
 
         if (failed) {
@@ -1287,6 +1292,15 @@ void ExtremeOpt::do_optimization(json& opt_log)
             break;
         }
     }
+    if (m_params.last_screenshot_after_optimization) {
+        make_screenshot(iters);
+    }
+
+    std::string reason = "Reached max iteration.";
+    spdlog::info(reason);
+    if (!opt_log.contains("converge_reason"))
+        opt_log["converge_reason"] = reason;
+
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
     opt_log["iters"] = iters;

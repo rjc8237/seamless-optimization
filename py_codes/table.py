@@ -398,7 +398,7 @@ def main():
 
     output_dir = OUTPUT_DIR
     ps = [1, 3, 5, 8, 10]
-    errs = [0.05, 0.1]
+    errs = [0.001]
     for p in ps:
         for err in errs:
             create_solver_comparison_table(output_dir, 2, 1, p, err)
