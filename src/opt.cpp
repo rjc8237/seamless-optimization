@@ -1110,6 +1110,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
     std::cout << "Number of threads: " << Eigen::nbThreads() << std::endl;
 
     igl::Timer total_timer;
+    total_timer.start();
     double total_time = 0;
     int iters = 0;
     opt_log["total_time"] = total_time;
@@ -1179,7 +1180,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
     double max_grad_0 = smooth_global(failed, hessian_log);
     double max_grad = max_grad_0;
 
-    total_timer.start();
     double E = get_quality_avg_for_smooth_only();
     double E_worst_2 = get_quality_avg_worst_for_smooth_only();
     double E_2 = get_quality_avg_for_smooth_only(1.0);
