@@ -1078,6 +1078,7 @@ void buildBeq(
 }
 
 void ExtremeOpt::make_screenshot(int iter) {
+#ifdef ENABLE_VISUALIZATION
     // screenshot every N iterations (adjust interval as needed)
     polyscope::init();
     // Rotate mesh for visualization
@@ -1100,6 +1101,7 @@ void ExtremeOpt::make_screenshot(int iter) {
     spdlog::info("Saved screenshot to {}", screenshot_path);
     
     polyscope::removeAllStructures();
+#endif
 }
 
 void ExtremeOpt::do_optimization(json& opt_log)
