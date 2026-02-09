@@ -383,6 +383,8 @@ public:
     std::vector<int> v_map;
     Eigen::VectorXi C;
     int num_components;
+    double correction, residual;
+    int iter_solver;
 
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }
@@ -435,6 +437,31 @@ public:
         }
 
     };
+
+    Eigen::VectorXd misaligned_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
+    Eigen::VectorXd kkt_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
+    Eigen::VectorXd gs_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
+    Eigen::VectorXd reduced_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
 
     double get_hessian(Eigen::SparseMatrix<double>& hessian);
     double smooth_global(bool& failed, std::vector<HessianStats>& hessian_log);
