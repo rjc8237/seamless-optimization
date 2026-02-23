@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include <umfpack.h>
 #include "smooth_utils.h"
+#include <unsupported/Eigen/KroneckerProduct>
 
 namespace SymDir {
 
@@ -144,6 +145,7 @@ int check_flip(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn)
     return fl;
 }
 
+
 Eigen::SparseMatrix<double> ExtremeOpt::compute_area_weight_matrix()
 {
     int num_faces = area.size();
@@ -166,6 +168,31 @@ Eigen::SparseMatrix<double> ExtremeOpt::compute_area_weight_matrix()
     return weights;
 }
 
+double compute_degenerate_quartic_energy(
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXd& uv0,
+    const Eigen::MatrixXi& F,
+    const std::vector<bool>& is_degenerate_face
+) {
+    int num_faces = F.rows();
+    double energy = 0.;
+    for (int f = 0; f < num_faces; ++f)
+    {
+        if (!is_degenerate_face[f]) continue;
+        for (int i = 0; i < 3; ++i)
+        {
+            int j = (i + 1) % 3;
+            int vi = F(f, i);
+            int vj = F(f, j);
+            double dl = (uv.row(vi) - uv.row(vj)).squaredNorm();
+            double dl0 = (uv0.row(vi) - uv0.row(vj)).squaredNorm();
+            energy += 0.5 * ((dl - dl0) * (dl - dl0)) / (dl0);
+        }
+    }
+
+    return energy;
+}
+
 double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double Lp) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
@@ -184,6 +211,7 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double Lp) {
         Eigen::MatrixXd R = Guv - uT_vT;
         energy = (R.transpose() * (weights * R)).trace();
     }
+
     if (Lp == 0) {
         Lp = m_params.Lp;
     }
@@ -543,6 +571,32 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
 
         residual = (mat * newton + rhs).norm();                    
 
+        bool freeze_degenerate = false;
+        if (freeze_degenerate)
+        {
+            std::vector<bool> is_degenerate_uv = mark_degenerate_uv(uv, F, 5);
+
+            // mark 
+            int N = is_degenerate_uv.size();
+            std::vector<bool> is_degenerate_var(newton.size(), false);
+            for (int k = 0; k < Q2.outerSize(); ++k) {
+                for (Eigen::SparseMatrix<double>::InnerIterator it(Q2, k); it; ++it) {
+                    if (is_degenerate_uv[it.row() % N]) is_degenerate_var[it.col()] = true;
+                }
+            }
+
+            int num_degen = 0;
+            for (int vi = 0; vi < is_degenerate_var.size(); ++vi)
+            {
+                if (is_degenerate_var[vi])
+                {
+                    newton[vi] = 0.;
+                    ++num_degen;
+                }
+            }
+            spdlog::info("{}/{} variables fixed", num_degen, is_degenerate_var.size());
+        }
+
         // int status{};
         // newton = -UMFPACK_solve(mat, rhs, status);
         newton = Q2 * newton;
@@ -587,6 +641,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
     return newton;
 }
 
+
 double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessian_log)
 {
     Eigen::MatrixXd uv;
@@ -613,6 +668,66 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     double time_solver = timer.getElapsedTime();
     double newton_decr = 0;
 
+    std::vector<bool> is_degenerate_face = mark_degenerate_faces(uv, F, 1e5);
+    if (m_params.degenerate_weight > 0.)
+    {
+        std::vector<Eigen::Triplet<double>> length_trips;
+
+        int num_faces = F.rows();
+        int N = uv.rows();
+        int count = 0;
+        Eigen::VectorXd rhs = Eigen::VectorXd::Zero(num_faces * 6);
+        for (int f = 0; f < num_faces; ++f)
+        {
+            if (!is_degenerate_face[f]) continue;
+            for (int i = 0; i < 3; ++i)
+            {
+                int j = (i + 1) % 3;
+                int vi = F(f, i);
+                int vj = F(f, j);
+
+                length_trips.emplace_back(2 * count, vi, 1.);
+                length_trips.emplace_back(2 * count, vj, -1.);
+                length_trips.emplace_back(2 * count + 1, N + vi, 1.);
+                length_trips.emplace_back(2 * count + 1, N + vj, -1.);
+                rhs[2 * count] = uv(vi, 0) - uv(vj, 0);
+                rhs[2 * count + 1] = uv(vi, 1) - uv(vj, 1);
+                ++count;
+            }
+        }
+        spdlog::info("{}/{} edges fixed", count, 3 * num_faces);
+        Eigen::SparseMatrix<double> edge_lengths(6 * num_faces, 2 * N);
+        edge_lengths.setFromTriplets(length_trips.begin(), length_trips.end());
+        spdlog::info("degenerate weight: {}", m_params.degenerate_weight);
+
+        bool use_quartic = true;
+        if (use_quartic)
+        {
+            std::vector<Eigen::Triplet<double>> hess_trips;
+            Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+            Eigen::VectorXd lengths = edge_lengths * uv_flat;
+            for (int i = 0; i < 3 * num_faces; ++i)
+            {
+                double l1 = lengths[2 * i];
+                double l2 = lengths[2 * i + 1];
+                hess_trips.emplace_back(2 * i, 2 * i, 8 * l1 * l1);
+                hess_trips.emplace_back(2 * i, 2 * i + 1, 8 * l1 * l2);
+                hess_trips.emplace_back(2 * i + 1, 2 * i, 8 * l1 * l2);
+                hess_trips.emplace_back(2 * i + 1, 2 * i + 1, 8 * l2 * l2);
+            }
+            Eigen::SparseMatrix<double> length_hess(6 * num_faces, 6 * num_faces);
+            length_hess.setFromTriplets(hess_trips.begin(), hess_trips.end());
+            Eigen::SparseMatrix<double> degenerate_hessian = edge_lengths.transpose() * (length_hess * edge_lengths);
+            hessian = hessian + m_params.degenerate_weight * degenerate_hessian;
+        }
+        else
+        {
+            hessian = hessian + m_params.degenerate_weight * (edge_lengths.transpose() * edge_lengths);
+            grad = grad + m_params.degenerate_weight * (edge_lengths.transpose() * rhs);
+        }
+    }
+    
+
     // find newton direction
     if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
@@ -631,6 +746,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     // do lineserach
     newton_decr = newton.dot(grad);
     Eigen::MatrixXd search_dir = Eigen::Map<Eigen::MatrixXd>(newton.data(), V.rows(), 2);
+
     auto new_x = uv;
     double ls_step_size = 1.0;
     bool ls_good = false;
@@ -645,6 +761,15 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             double misalignment_energy = 0.5 * (Beq * uv_flat).squaredNorm();
             new_E += misalignment_weight * misalignment_energy;
         }
+
+        // add degenerate weight term
+        if (m_params.degenerate_weight > 0)
+        {
+            double degenerate_energy = compute_degenerate_quartic_energy(new_x, uv, F, is_degenerate_face);
+            new_E += m_params.degenerate_weight * degenerate_energy;
+            spdlog::info("degenerate energy is {}", degenerate_energy);
+        }
+
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             if (m_params.use_worst_n_energy_in_ls) {

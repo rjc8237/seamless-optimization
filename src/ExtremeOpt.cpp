@@ -1108,4 +1108,64 @@ void ExtremeOpt::check_cross_field_alignment()
         }
     }
 }
+
+double compute_triangle_quality(double lij, double ljk, double lki)
+{
+    double numer = 2 * lij * ljk * lki;
+    double denom = ((-lij + ljk + lki) * (lij - ljk + lki) * (lij + ljk - lki));
+    return ((denom != 0.)) ? numer / denom : 1e10;
+}
+
+std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn, double threshold)
+{
+    // check for degenerate triangles
+    std::vector<bool> is_degenerate(Fn.rows(), false);
+    int num_degen = 0;
+    for (int i = 0; i < Fn.rows(); i++) {
+        int vi = Fn(i, 0);
+        int vj = Fn(i, 1);
+        int vk = Fn(i, 2);
+
+        // get triangle lengths
+        Eigen::Matrix<double, 1, 2> a_db(uv(vi, 0), uv(vi, 1));
+        Eigen::Matrix<double, 1, 2> b_db(uv(vj, 0), uv(vj, 1));
+        Eigen::Matrix<double, 1, 2> c_db(uv(vk, 0), uv(vk, 1));
+        double lij = (a_db - b_db).norm();
+        double ljk = (b_db - c_db).norm();
+        double lki = (c_db - a_db).norm();
+
+        // check if triangle degenerate
+        if (compute_triangle_quality(lij, ljk, lki) > threshold)
+        {
+            is_degenerate[i] = true;
+            num_degen++;
+        }
+    }
+    spdlog::info("{} faces are degenerate", num_degen);
+
+    return is_degenerate;
+}
+
+
+std::vector<bool> mark_degenerate_uv(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn, double threshold)
+{
+    // check for degenerate triangles
+    std::vector<bool> is_degenerate_face = mark_degenerate_faces(uv, Fn, threshold);
+    std::vector<bool> is_degenerate(uv.rows(), false);
+    int num_degen = 0;
+    for (int i = 0; i < Fn.rows(); i++) {
+        if (!is_degenerate_face[i]) continue;
+
+        int vi = Fn(i, 0);
+        int vj = Fn(i, 1);
+        int vk = Fn(i, 2);
+        for (int v : {vi, vj, vk})
+        {
+            is_degenerate[v] = true;
+        }
+    }
+
+    return is_degenerate;
+}
+
 } // namespace SymDir
