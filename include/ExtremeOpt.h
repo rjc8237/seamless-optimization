@@ -383,6 +383,8 @@ public:
     std::vector<int> v_map;
     Eigen::VectorXi C;
     int num_components;
+    double correction, residual;
+    int iter_solver;
 
     std::vector<std::vector<VertexAttributes>> e_worst_v_attrs; // vertex_attrs for E_worst computations
     std::vector<int> e_worst_v_attrs_ind; // index into iter_v_attrs for each E_worst computation
@@ -443,6 +445,31 @@ public:
         }
 
     };
+
+    Eigen::VectorXd misaligned_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
+    Eigen::VectorXd kkt_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
+    Eigen::VectorXd gs_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
+    Eigen::VectorXd reduced_newton_direction(
+        Eigen::MatrixXd& uv,
+        double& energy,
+        Eigen::VectorXd& grad,
+        Eigen::SparseMatrix<double>& hessian
+    );
 
     double get_hessian(Eigen::SparseMatrix<double>& hessian);
     double smooth_global(bool& failed, std::vector<HessianStats>& hessian_log);

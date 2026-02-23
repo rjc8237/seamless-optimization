@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(SymmetricDirichlet)
 # --- FORCE OPENBLAS ---
-set(BLA_VENDOR "OpenBLAS")
+#set(BLA_VENDOR "OpenBLAS")
 
 # Tell CMake where Homebrew installed OpenBLAS
 list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/openblas")

@@ -482,11 +482,9 @@ void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Matr
         auto mv = V.row(i) = v_attrs_input[i].pos_3d;
         auto muv = uv.row(i) = v_attrs_input[i].pos;
         if (!mv.array().isFinite().all()) {
-            spdlog::warn("mv {} is not finite: {}", i, fmt::join(mv, ","));
             ;
         }
         if (!muv.array().isFinite().all()) {
-            spdlog::warn("muv {} is not finite: {}", i, fmt::join(muv, ","));
             ;
         }
     }
@@ -509,7 +507,6 @@ void ExtremeOpt::export_uv(Eigen::MatrixXd& uv)
         auto muv = uv.row(i) = vertex_attrs[i].pos;
 
         if (!muv.array().isFinite().all()) {
-            spdlog::warn("muv {} is not finite: {}", i, fmt::join(muv, ","));
             ;
         }
     }
