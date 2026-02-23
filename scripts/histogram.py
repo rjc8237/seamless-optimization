@@ -76,7 +76,6 @@ if __name__ == "__main__":
         uv_path = args['uv_path']
         v3d, uv, _, f, fuv, _ = igl.readOBJ(args['uv_path'])
     except:
-        print("FUCK")
         exit()
 
     # Get histogram color
