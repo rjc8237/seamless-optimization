@@ -7,7 +7,6 @@
 /py_codes/venv*
 /py_codes/output*
 /py_codes/*.ipynb
-/py_codes/my_meshes*
 /venv/
 /.vscode/
 /data/closed_myles/
