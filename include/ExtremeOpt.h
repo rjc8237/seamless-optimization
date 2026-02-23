@@ -384,24 +384,32 @@ public:
     Eigen::VectorXi C;
     int num_components;
 
+    std::vector<std::vector<VertexAttributes>> e_worst_v_attrs; // vertex_attrs for E_worst computations
+    std::vector<int> e_worst_v_attrs_ind; // index into iter_v_attrs for each E_worst computation
+    std::vector<int> e_worst_iters;
+
+    std::vector<std::vector<VertexAttributes>> iter_v_attrs; // vertex_attrs for each iteration
+    int last_iter = 0;
+
     // Optimization
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
-    void make_screenshot(int iter);
+    void make_screenshot(int iter, double percentage=0);
     void do_optimization(json& opt_log);
     double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
-    double compute_worst_n_energy(const Eigen::MatrixXd& aaa);
+    std::vector<double> compute_worst_n_energy(const Eigen::MatrixXd& aaa);
     double compute_threshold_energy(const Eigen::MatrixXd& aaa);
 
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
     void export_FE(Eigen::MatrixXi& FE);
     void export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv);
+    void export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv, std::vector<VertexAttributes> v_attrs_input);
 
     double get_quality();
     double get_quality_max();
     double get_quality_avg_for_smooth_only(double Lp = 0);
-    double get_quality_avg_worst_for_smooth_only();
+    std::vector<double> get_quality_avg_worst_for_smooth_only();
     double get_threshold_energy();
 
     

@@ -60,11 +60,11 @@ Scalar compute_energy_from_jacobian(
     double norm_p, bool soft_max = false, double t = 1.0, double E_min = 1.0,
     bool uniform = false);
 template <typename Scalar> 
-Scalar compute_worst_n_energy_from_jacobian(
+std::vector<Scalar> compute_worst_n_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, -1>& J,
     const Eigen::Matrix<Scalar, -1, 1>& area,
     int norm_p,
-    double percent, bool soft_max = false, double t = 1.0, double E_min = 1.0);
+    std::vector<double> percentages, bool soft_max = false, double t = 1.0, double E_min = 1.0);
 template <typename Scalar>
 Scalar compute_threshold_energy_from_jacobian(
     const Eigen::Matrix<Scalar, -1, -1>& J,

@@ -11,6 +11,7 @@
 #include <CLI/CLI.hpp>
 #include "main_helper.h"
 #include <filesystem>
+#include <algorithm>
 
 #include <stdlib.h>  // for setenv
 
@@ -37,6 +38,58 @@ static std::string sci_short(double x)
     std::ostringstream out;
     out << m << "e" << exp; // exp already has sign if negative
     return out.str();
+}
+
+void export_obj_mesh(
+    ExtremeOpt extremeopt,
+    Parameters param,
+    Eigen::MatrixXd V,
+    Eigen::MatrixXi F,
+    Eigen::MatrixXd uv,
+    std::vector<VertexAttributes> v_attrs_input,
+    Eigen::MatrixXd V_init,
+    Eigen::MatrixXi F_init,
+    Eigen::MatrixXi FE_init,
+    Eigen::MatrixXd N,
+    Eigen::MatrixXi FN,
+    Eigen::MatrixXi EE,
+    Eigen::MatrixXi FE,
+    std::string output_dir,
+    std::string model,
+    std::string obj_name)
+{
+    extremeopt.export_mesh(V, F, uv, v_attrs_input);
+
+    double cons_residual = check_constraints(EE, FE, uv, F);
+    spdlog::info("Final constraints error {}", cons_residual);
+    if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
+
+    igl::writeOBJ(obj_name, V_init, F_init, N, FN, uv, F);
+
+    std::ofstream output_file(obj_name, std::ios::out | std::ios::app);
+    for (int eij = 0; eij < FE_init.rows(); ++eij)
+    {
+        int vi = FE_init(eij, 0);
+        int vj = FE_init(eij, 1);
+        output_file << "l " << vi + 1 << " " << vj + 1 << std::endl;
+    }
+    output_file.close();
+    if (extremeopt.m_params.with_cons)
+    {
+        std::ofstream EE_out(output_dir + "/EE/" + model + "_EE.txt");
+        EE_out << EE.rows() << std::endl;
+        EE_out << EE << std::endl;
+        EE_out.close();
+
+        if (extremeopt.m_params.do_feature_alignment)
+        {
+        std::ofstream FE_out(output_dir + "/FE/" + model + "_FE.txt");
+        FE_out << FE.rows() << std::endl;
+        FE_out << FE << std::endl;
+        FE_out.close();
+        }
+    }
+
 }
 
 int main(int argc, char** argv)
@@ -105,32 +158,37 @@ int main(int argc, char** argv)
     param.Lp = config["Lp"];
     param.save_meshes = config["save_meshes"];
     param.model_name = model;
+    param.output_dir = output_dir;
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
     param.symdir_weight = config["symdir_weight"];
     param.alignment_weight = config["alignment_weight"];
     param.fix_misaligned = config["fix_misaligned"];
     param.use_rref = config["use_rref"];
     // param.solver_type = config["solver_type"];
-    param.percent = config["percent"];
+    param.cg_rel_err = config["cg_rel_err"];
+    param.percentages = config["percentages"].get<std::vector<double>>();
+    param.percentage_target = config["percentage_target"];
+
     param.E_abs_err = config["E_abs_err"];
     param.E_rel_err = config["E_rel_err"];
     param.diff_err = config["diff_err"];
     param.grad_abs_err = config["grad_abs_err"];
     param.grad_rel_err = config["grad_rel_err"];
-    param.cg_rel_err = config["cg_rel_err"];
+    
     param.precompute_seamless = config["precompute_seamless"];
     param.projected_newton = config["projected_newton"];
     param.soft_max = config["soft_max"];
     param.t = config["t"];
     param.precompute_seamless = config["precompute_seamless"];
-    param.E_worst_2_target = config["E_worst_2_target"];
-    param.E_worst_2_target_converge = config["E_worst_2_target_converge"];
+    
+    param.percentage_target_converge = config["percentage_target_converge"];
     param.max_grad_abs_converge = config["max_grad_abs_converge"];
     param.max_grad_rel_converge = config["max_grad_rel_converge"];
     param.energy_diff_converge = config["energy_diff_converge"];
     param.use_worst_n_energy_in_ls = config["use_worst_n_energy_in_ls"];
     param.E_abs_converge = config["E_abs_converge"];
     param.E_rel_converge = config["E_rel_converge"];
+
     param.last_screenshot_after_optimization = config["last_screenshot_after_optimization"];
     param.screenshot_interval = config["screenshot_interval"];
     param.output_dir_for_screenshots = config["output_dir_for_screenshots"];
@@ -242,52 +300,50 @@ int main(int argc, char** argv)
         }
     }
 
-    extremeopt.export_mesh(V, F, uv);
-
-    cons_residual = check_constraints(EE, FE, uv, F);
-    spdlog::info("Final constraints error {}", cons_residual);
-    opt_log["total_time"] = timer.getElapsedTime();
-    if (extremeopt.m_params.with_cons) extremeopt.export_EE(EE);
-
-    std::string obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
+    // export intermediate meshes for worst n energy stopping condition
+    std::string obj_name;
+    for (int i = 0; i < extremeopt.e_worst_v_attrs_ind.size(); i++)
+    {
+        if (extremeopt.e_worst_v_attrs_ind[i] == -1)
+        {
+            continue;
+        }
+        obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
+        if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
+            // append cg_rel_err for CG runs
+            obj_name += "_" + sci_short(param.cg_rel_err);
+        }
+        obj_name += "_Lp=" + std::to_string(param.Lp);
+        obj_name += "_perc=" + fmt::format("{:.2f}", param.percentages[i]);
+        obj_name += "_Lp-worst=" + std::to_string(1.0);
+        obj_name += "_" + std::to_string(num_threads);
+        obj_name += ".obj";
+        export_obj_mesh(extremeopt, param, V, F, uv, extremeopt.e_worst_v_attrs[extremeopt.e_worst_v_attrs_ind[i]], V_init, F_init, FE_init, N, FN, EE, FE, output_dir, model, obj_name);
+    }
+    for (int i = 0; i < extremeopt.iter_v_attrs.size(); i++)
+    {
+        obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
+        if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
+            // append cg_rel_err for CG runs
+            obj_name += "_" + sci_short(param.cg_rel_err);
+        }
+        obj_name += "_Lp=" + std::to_string(param.Lp);
+        obj_name += "_iter=" + fmt::format("{}", std::min(i * 10, extremeopt.last_iter));
+        obj_name += "_" + std::to_string(num_threads);
+        obj_name += ".obj";
+        export_obj_mesh(extremeopt, param, V, F, uv, extremeopt.iter_v_attrs[i], V_init, F_init, FE_init, N, FN, EE, FE, output_dir, model, obj_name);
+    }
+    
+    // export final mesh
+    obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
     if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
         // append cg_rel_err for CG runs
         obj_name += "_" + sci_short(param.cg_rel_err);
     }
+    obj_name += "_Lp=" + std::to_string(param.Lp);
     obj_name += "_" + std::to_string(num_threads);
     obj_name += ".obj";
-    igl::writeOBJ(obj_name, V_init, F_init, N, FN, uv, F);
-
-    // open output file
-    std::string output_filename = obj_name;
-    std::ofstream output_file(output_filename, std::ios::out | std::ios::app);
-
-    // write all feature edge vertices
-    for (int eij = 0; eij < FE_init.rows(); ++eij)
-    {
-        int vi = FE_init(eij, 0);
-        int vj = FE_init(eij, 1);
-        output_file << "l " << vi + 1 << " " << vj + 1 << std::endl;
-    }
-
-    // close output file
-    output_file.close();
-    
-    if (extremeopt.m_params.with_cons)
-    {
-        std::ofstream EE_out(output_dir + "/EE/" + model + "_EE.txt");
-        EE_out << EE.rows() << std::endl;
-        EE_out << EE << std::endl;
-        EE_out.close();
-
-        if (extremeopt.m_params.do_feature_alignment)
-        {
-        std::ofstream FE_out(output_dir + "/FE/" + model + "_FE.txt");
-        FE_out << FE.rows() << std::endl;
-        FE_out << FE << std::endl;
-        FE_out.close();
-        }
-    }
+    export_obj_mesh(extremeopt, param, V, F, uv, extremeopt.vertex_attrs, V_init, F_init, FE_init, N, FN, EE, FE, output_dir, model, obj_name);
 
     js_out << std::setw(4) << opt_log << std::endl;
     return 0;

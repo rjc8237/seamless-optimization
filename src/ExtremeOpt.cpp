@@ -467,7 +467,11 @@ void ExtremeOpt::update_constraints_EE_v(const Eigen::MatrixXi& EE)
 }
 */
 
-void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv)
+void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv) {
+    export_mesh(V, F, uv, vertex_attrs);
+}
+
+void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::MatrixXd& uv, std::vector<VertexAttributes> v_attrs_input)
 {
     // consolidate_mesh();
     //consolidate_mesh_cons(); // use the one with constraints
@@ -475,9 +479,8 @@ void ExtremeOpt::export_mesh(Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::Matr
     uv = Eigen::MatrixXd::Zero(vert_capacity(), 2);
     for (auto& t : get_vertices()) {
         auto i = t.vid(*this);
-        auto mv = V.row(i) = vertex_attrs[i].pos_3d;
-        auto muv = uv.row(i) = vertex_attrs[i].pos;
-
+        auto mv = V.row(i) = v_attrs_input[i].pos_3d;
+        auto muv = uv.row(i) = v_attrs_input[i].pos;
         if (!mv.array().isFinite().all()) {
             spdlog::warn("mv {} is not finite: {}", i, fmt::join(mv, ","));
             ;
@@ -617,7 +620,7 @@ double ExtremeOpt::get_quality_avg_for_smooth_only(double Lp)
     return compute_energy(uv, Lp);
 }
 
-double ExtremeOpt::get_quality_avg_worst_for_smooth_only()
+std::vector<double> ExtremeOpt::get_quality_avg_worst_for_smooth_only()
 {
     Eigen::MatrixXi F;
     Eigen::MatrixXd V, uv;

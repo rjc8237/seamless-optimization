@@ -5,6 +5,7 @@ namespace SymDir {
 struct Parameters
 {
     std::string model_name;
+    std::string output_dir;
     bool save_meshes = false;
 
     bool do_feature_alignment = true;
@@ -29,7 +30,8 @@ struct Parameters
     bool use_rref = true;
 
     // for worst n% triangles energies
-    double percent = 5.0;
+    std::vector<double> percentages = {5.0};
+    double percentage_target = 5.0;
     std::string solver_type = "LDLT"; // solver type
     double E_rel_err = 1e-6; //tolerance for E_worst convergence
     double E_abs_err = 1e-6; // absolute tolerance for E_worst convergence
@@ -47,7 +49,6 @@ struct Parameters
     double t = 1.0; // temperature for soft max
     
     double E_min = 1.0;
-    double E_worst_2_target = 1.0; // Choose the target for E_worst_2
 
     bool last_screenshot_after_optimization = false;
     int screenshot_interval = 5;
@@ -56,7 +57,7 @@ struct Parameters
     double angle_to_rotate_model_for_screenshots = 0.0; // Rotate the model for a better view
     bool screenshot_during_optimization = false;
 
-    bool E_worst_2_target_converge = true;
+    bool percentage_target_converge = true;
     bool max_grad_abs_converge = true;
     bool max_grad_rel_converge = true;
     bool energy_diff_converge = true;

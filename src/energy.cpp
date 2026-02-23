@@ -58,7 +58,7 @@ namespace SymDir{
     }
     
     template <typename Scalar>
-    Scalar compute_worst_n_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, int norm_p, double percent, bool soft_max, double t, double E_min)
+    std::vector<Scalar> compute_worst_n_energy_from_jacobian(const Eigen::Matrix<Scalar, -1, -1>& J,  const Eigen::Matrix<Scalar, -1, 1>& area, int norm_p, std::vector<double> percentages, bool soft_max, double t, double E_min)
     {
         // Compute per-triangle energy vector
         Eigen::VectorXd energy_per_tri = symmetric_dirichlet_energy(J.col(0), J.col(1), J.col(2), J.col(3), norm_p, soft_max, t, E_min).array();
@@ -70,19 +70,26 @@ namespace SymDir{
                 [&](int i1, int i2) { return energy_per_tri[i1] > energy_per_tri[i2]; });
 
         // Calculate how many triangles to include
-        int num_tris = static_cast<int>(std::ceil(percent / 100.0 * indices.size()));
+        int num_tris = static_cast<int>(std::ceil(percentages[percentages.size() - 1] / 100.0 * indices.size()));
         // Compute p-norm of the N% largest energies
         Scalar p_norm_sum = 0;
         Scalar area_sum = 0;
         for (int i = 0; i < indices.size(); i++) {
             area_sum += area[indices[i]];
         }
+        int index = 0;
+        std::vector<Scalar> energies;
         for (int i = 0; i < num_tris; i++) {
+            if (i >= std::ceil(percentages[index] / 100.0 * indices.size())) {
+                energies.push_back(p_norm_sum / area_sum);
+                index++;
+            }
             p_norm_sum += energy_per_tri[indices[i]] * area[indices[i]];
             // p_norm_sum += energy_per_tri[indices[i]];
         }
         // Return average of worst N% triangles
-        return p_norm_sum / area_sum;
+        energies.push_back(p_norm_sum / area_sum);
+        return energies;
         // return p_norm_sum / Scalar(num_tris);
     }
     template <typename Scalar>
@@ -219,11 +226,11 @@ namespace SymDir{
                                              bool,
                                              double, bool, bool, double, double);
     template double compute_energy_from_jacobian<double>(const Eigen::Matrix<double, -1, -1> &, const Eigen::Matrix<double, -1, 1> &, double, bool, double, double, bool);
-    template double compute_worst_n_energy_from_jacobian<double>(
+    template std::vector<double> compute_worst_n_energy_from_jacobian<double>(
         const Eigen::Matrix<double, -1, -1>&,
         const Eigen::Matrix<double, -1, 1>&, 
         int,
-        double, bool, double, double);
+        std::vector<double>, bool, double, double);
     template double compute_threshold_energy_from_jacobian<double>(        
         const Eigen::Matrix<double, -1, -1>&,
         const Eigen::Matrix<double, -1, 1>&, 

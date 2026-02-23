@@ -191,10 +191,10 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double Lp) {
     // return compute_worst_n_energy(Ji, area, m_params.Lp, m_params.percent, m_params.p_energy);
 }
 
-double ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa) {
+std::vector<double> ExtremeOpt::compute_worst_n_energy(const Eigen::MatrixXd& aaa) {
     Eigen::MatrixXd Ji;
     SymDir::jacobian_from_uv(G, aaa, Ji);
-    return compute_worst_n_energy_from_jacobian(Ji, area, 1.0, m_params.percent, m_params.soft_max, m_params.t, m_params.E_min);
+    return compute_worst_n_energy_from_jacobian(Ji, area, 1.0, m_params.percentages, m_params.soft_max, m_params.t, m_params.E_min);
 }
 
 double ExtremeOpt::compute_threshold_energy(const Eigen::MatrixXd& aaa) {
@@ -604,7 +604,10 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     auto new_x = uv;
     double ls_step_size = 1.0;
     bool ls_good = false;
-    double E_worst_0 = compute_worst_n_energy(uv);
+    std::vector<double> E_worst_0;
+    if (m_params.use_worst_n_energy_in_ls) {
+        E_worst_0 = compute_worst_n_energy(uv);
+    }
     int count_e = 0, count_f = 0;
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
@@ -618,13 +621,13 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         if (new_E < energy_0 && check_flip(new_x, F) == 0) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             if (m_params.use_worst_n_energy_in_ls) {
-                double new_E_worst = compute_worst_n_energy(new_x);
-                if (new_E_worst < E_worst_0) {
-                    std::cout << "E_worst_2 from " << E_worst_0 << " to " << new_E_worst << std::endl;
+                std::vector<double> new_E_worst = compute_worst_n_energy(new_x);
+                if (new_E_worst[new_E_worst.size() - 1] < E_worst_0[E_worst_0.size() - 1]) {
+                    std::cout << "E_worst_2 from " << E_worst_0[E_worst_0.size() - 1] << " to " << new_E_worst[new_E_worst.size() - 1] << std::endl;
                     ls_good = true;
                     break;
                 }
-                std::cout << "E_worst_2 did not improve: " << new_E_worst << std::endl;
+                std::cout << "E_worst_2 did not improve: " << new_E_worst[new_E_worst.size() - 1] << std::endl;
             } else {
                 ls_good = true;
                 break;

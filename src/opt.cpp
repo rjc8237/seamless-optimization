@@ -1077,7 +1077,7 @@ void buildBeq(
     Beq.setFromTriplets(trips.begin(), trips.end());
 }
 
-void ExtremeOpt::make_screenshot(int iter) {
+void ExtremeOpt::make_screenshot(int iter, double percentage) {
     // screenshot every N iterations (adjust interval as needed)
     polyscope::init();
     // Rotate mesh for visualization
@@ -1095,7 +1095,7 @@ void ExtremeOpt::make_screenshot(int iter) {
     param_qty->setEnabled(true);
     
     // Save screenshot
-    std::string screenshot_path = fmt::format("{}/iter_{:05d}.png", m_params.output_dir_for_screenshots, iter);
+    std::string screenshot_path = fmt::format("{}/iter_{:05d}_percentage={}.png", m_params.output_dir_for_screenshots, iter, percentage);
     polyscope::screenshot(screenshot_path);
     spdlog::info("Saved screenshot to {}", screenshot_path);
     
@@ -1181,19 +1181,22 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     total_timer.start();
     double E = get_quality_avg_for_smooth_only();
-    double E_worst_2 = get_quality_avg_worst_for_smooth_only();
+    std::vector<double> E_worst_2 = get_quality_avg_worst_for_smooth_only();
     double E_2 = get_quality_avg_for_smooth_only(1.0);
 
-    spdlog::info("Initial E = {}, E_worst_2 = {}", E, E_worst_2, m_params.E_min);
+    spdlog::info("Initial E = {}, E_worst_2 = {}", E, fmt::join(E_worst_2, ", "));
 
     opt_log["opt_log"].push_back(
         {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
 
     std::vector<double> residuals;
     double E_0 = E;
-    bool reached_one = false;
     int count = 0;
     double avr_step = 0;
+
+    std::vector<double> e_worst_times(m_params.percentages.size(), -1.0);
+    e_worst_iters.resize(m_params.percentages.size(), -1);
+    e_worst_v_attrs_ind.resize(m_params.percentages.size(), -1);
     for (int i = 1; i <= m_params.max_iters; i++) {
         double E_old = E;
         double E_old_2 = E_2;
@@ -1215,8 +1218,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
             // E = get_quality();
 
             E = get_quality_avg_for_smooth_only();
-            E_worst_2 = get_quality_avg_worst_for_smooth_only();
             E_2 = get_quality_avg_for_smooth_only(1.0);
+            E_worst_2 = get_quality_avg_worst_for_smooth_only();
             //E_max = get_quality_max();
 
             // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
@@ -1230,33 +1233,50 @@ void ExtremeOpt::do_optimization(json& opt_log)
         opt_log["opt_log"].push_back(
             {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
         
-        iters = i;
-
+        // we store mesh for each iteration
+        last_iter = i;
+        if (i % 10 == 1) {
+            iter_v_attrs.push_back(vertex_attrs);
+        }
         // TODO: terminate criteria
         // 1. gradient stopping condition
-        if (max_grad < m_params.grad_abs_err && m_params.max_grad_abs_converge) {
-            std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
-            spdlog::info(reason);
-            opt_log["converge_reason"] = reason;
-            break;
+        if (m_params.max_grad_abs_converge){
+            if (max_grad < m_params.grad_abs_err) {
+                std::string reason = fmt::format("Reach target gradient({}) with abs err {}, optimization succeed!", m_params.grad_abs_err, m_params.grad_abs_err);
+                spdlog::info(reason);
+                opt_log["converge_reason"] = reason;
+                break;
+            }        
         }
-        if (max_grad < max_grad_0 * m_params.grad_rel_err && m_params.max_grad_rel_converge) {
-            std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
-            spdlog::info(reason);
-            opt_log["converge_reason"] = reason;
-            break;
+        if (m_params.max_grad_rel_converge){
+            if (max_grad < max_grad_0 * m_params.grad_rel_err) {
+                std::string reason = fmt::format("Reach target gradient({}) with rel err {}, optimization succeed!", max_grad_0 * m_params.grad_rel_err, m_params.grad_rel_err);
+                spdlog::info(reason);
+                opt_log["converge_reason"] = reason;
+                break;
+            }
         }
         // 2. energy stopping condition
-        if (E_worst_2 < m_params.E_worst_2_target + 1e-8 && m_params.E_worst_2_target_converge) {
-            std::string reason = fmt::format("Energy reached {}", m_params.E_worst_2_target);
-            spdlog::info("Energy reached {}, optimization converge!", m_params.E_worst_2_target);
-            opt_log["converge_reason"] = reason;
-            break;        
-
+        for (int ei = 0; ei < m_params.percentages.size(); ei++) {
+            if (E_worst_2[ei] <= 1.0 && e_worst_iters[ei] == -1) {
+                e_worst_v_attrs.push_back(vertex_attrs);
+                if (m_params.last_screenshot_after_optimization) {
+                    make_screenshot(i, m_params.percentages[ei]);
+                }
+                if (fabs(m_params.percentage_target - m_params.percentages[ei]) < 1e-6 && m_params.percentage_target_converge) {
+                    std::string reason = fmt::format("Target percentage = {} reached", m_params.percentage_target);
+                    opt_log["converge_reason"] = reason;
+                    break;
+                }
+                e_worst_times[ei] = total_timer.getElapsedTime();
+                e_worst_v_attrs_ind[ei] = e_worst_v_attrs.size() - 1;
+                e_worst_iters[ei] = i;
+            }
         }
+        // 3. energy change stopping condition
         avr_step += fabs(E - E_old) / E_old;
         count += 1;
-        if (count % 3) {
+        if (count % 3 == 0) {
             if (avr_step / 3.0 < m_params.diff_err && m_params.energy_diff_converge) {
                 std::string reason = fmt::format("Energy change too small ({}) in {} steps", avr_step / 3.0, count);
                 spdlog::info("Energy change too small ({}) in {} steps, optimization succeed!", avr_step / 3.0, count);
@@ -1292,10 +1312,21 @@ void ExtremeOpt::do_optimization(json& opt_log)
             break;
         }
     }
+
+    if (last_iter % 10 != 1) {
+        iter_v_attrs.push_back(vertex_attrs);
+    }
+
     if (m_params.last_screenshot_after_optimization) {
         make_screenshot(iters);
     }
-
+    
+    for (int ei = 0; ei < m_params.percentages.size(); ei++) {
+        if (e_worst_iters[ei] == -1) {
+            e_worst_times[ei] = total_timer.getElapsedTime();
+        }
+    }
+    opt_log["total_time"] = total_timer.getElapsedTime();
     std::string reason = "Reached max iteration.";
     spdlog::info(reason);
     if (!opt_log.contains("converge_reason"))
@@ -1303,6 +1334,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
+    opt_log["e_worst_times"] = e_worst_times;
+    opt_log["e_worst_iters"] = e_worst_iters;
     opt_log["iters"] = iters;
     opt_log["hessian_log"] = hessian_log;
 
