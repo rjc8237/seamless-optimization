@@ -27,7 +27,7 @@ def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, p=None, err=No
     solvers_config = {"CG": cg_lp, "Ch_LLT": llt_lp}
     data = []
     
-    output_dir = output_dir / "test13_s"
+    output_dir = output_dir / "test9"
 
     # Get mesh folders from CG solver
     cg_base_path = output_dir / ("Lp_" + str(cg_lp) + "_" + str(p) + "_" + str(err)) / "CG"
@@ -45,8 +45,7 @@ def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, p=None, err=No
         row_data = {"Mesh": mesh_name}
         metrics_by_solver = {}
         faces_value = None
-        thresholds = np.linspace(0.25, 2.5, 10)
-
+        thresholds = np.round(np.linspace(1, 10, 10), 1)  # 10 points from 0.1 to 1.0, rounded to 1 decimal
         for solver, lp in solvers_config.items():
             metrics = {}
             try:
@@ -65,16 +64,16 @@ def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, p=None, err=No
                             faces_value = json_data["opt_log"][0].get("F_size", "N/A")
                             X = json_data.get("energy", [])
                             for threshold in thresholds:
-                                key = f"E>={threshold}"
+                                key = f"E>={threshold:.1f}"  # Format with 1 decimal place
                                 count, _ = num_triangles_with_energy(X, threshold)
-                                metrics[key] = count / faces_value * 100.0
+                                metrics[key] = count
 
             except Exception as e:
                 print(f"Error getting data for {mesh_name} - {solver} - Lp{lp}: {e}")
             
             metrics_by_solver[solver] = metrics
 
-        metrics_list = ["total_time", "E_worst", "E_avg", "converge_reason"] + [f"E>={thresh}" for thresh in thresholds]
+        metrics_list = ["total_time", "E_worst", "E_avg", "converge_reason"] + [f"E>={thresh:.1f}" for thresh in thresholds]
         for metric_name in metrics_list:
             for solver in ["CG", "Ch_LLT"]:
                 col_key = f"{metric_name}_{solver}"
@@ -105,7 +104,6 @@ def create_solver_comparison_table(output_dir, cg_lp=2, llt_lp=1, p=None, err=No
     output_file = output_dir / "statistics" / "tables" / out_fn
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w", newline="") as f:
-        f.write(title + "\n\n")
         df.to_csv(f, index=False)
     
     print(f"Table saved to {output_file}")
@@ -397,8 +395,8 @@ def main():
     args = parser.parse_args()
 
     output_dir = OUTPUT_DIR
-    ps = [1, 3, 5, 8, 10]
-    errs = [0.001]
+    ps = [10]
+    errs = [0.0001]
     for p in ps:
         for err in errs:
             create_solver_comparison_table(output_dir, 2, 1, p, err)
