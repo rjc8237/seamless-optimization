@@ -27,6 +27,7 @@ struct Parameters
     int Lp = 4;
     double symdir_weight = 0.001;
     double alignment_weight = 1.0;
+    double degenerate_weight = 1.0;
     bool use_rref = true;
 
     // for worst n% triangles energies

@@ -162,6 +162,7 @@ int main(int argc, char** argv)
     param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
     param.symdir_weight = config["symdir_weight"];
     param.alignment_weight = config["alignment_weight"];
+    param.degenerate_weight = config["degenerate_weight"];
     param.fix_misaligned = config["fix_misaligned"];
     param.use_rref = config["use_rref"];
     // param.solver_type = config["solver_type"];
