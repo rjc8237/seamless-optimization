@@ -21,6 +21,7 @@ option(USE_SUITESPARSE "Use suitesparse for QR factorization" ON)
 option(USE_COMISO "Use Comiso for field generation" ON)
 set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr;umfpack" )
 option ( SUITESPARSE_USE_CUDA OFF )
+option(USE_OMP "Use OMP library" OFF)
 
 
 if(USE_SUITESPARSE)
@@ -49,7 +50,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
 
 find_package(Boost REQUIRED)
-if(APPLE)
+if(USE_OMP)
     # 1. flags to tell Clang to use OpenMP
     set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
     set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
@@ -65,10 +66,14 @@ if(APPLE)
     
     # 4. Help find_package locate the config files
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/libomp")
+    find_package(OpenMP REQUIRED)
+    find_package(BLAS REQUIRED)
+    set (OMP_LIBS
+        OpenMP::OpenMP_CXX
+    )
+    add_compile_definitions(USE_OMP)
 endif()
 
-find_package(OpenMP REQUIRED)
-find_package(BLAS REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -91,9 +96,9 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     Eigen3::Eigen
     spdlog::spdlog
     polyscope
-    OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}
     ${BLAS_LIBRARIES}
+    ${OMP_LIBS}
 )
 
 add_executable(symmetric_dirichlet
