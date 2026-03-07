@@ -96,6 +96,82 @@ private:
     Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> cholmod_super_llt_;
     Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> bicgstab;
 };
+
+template <typename Scalar>
+class DegenerateVerticesPreconditioner {
+    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
+    typedef Eigen::SparseMatrix<Scalar> SparseMat;
+
+    // Components of the preconditioner
+    Vector inv_diag_A;                                // B^-1 (Jacobi)
+    Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> ss_solver;       // A_ss^-1
+    int g_size;                                       // Offset for ss block
+    SparseMat A_copy;                           // Copy of full A
+    int iter = 0;
+
+public:
+    typedef int StorageIndex; // <--- This tells Eigen how to index your matrices
+    enum {
+            ColsAtCompileTime = Eigen::Dynamic,
+            MaxColsAtCompileTime = Eigen::Dynamic
+    };
+    
+    DegenerateVerticesPreconditioner() : A_copy(SparseMat(0,0)), g_size(0) {}
+
+    Eigen::Index rows() const { return A_copy.rows(); }
+    Eigen::Index cols() const { return A_copy.cols(); }
+
+    // Initialize the solvers and diagonal
+    DegenerateVerticesPreconditioner& compute(const SparseMat& A) {
+        A_copy = A;
+
+        // 1. Build B^-1 (Jacobi)
+        inv_diag_A = A.diagonal().cwiseInverse();
+
+        // 2. Extract and Factorize A_ss
+        // Assumes you've already permuted A so that ss is the bottom-right block
+        int total_size = A.rows();
+        int s_size = total_size - g_size; 
+        SparseMat Ass = A_copy.bottomRightCorner(s_size, s_size);
+        ss_solver.compute(Ass);
+
+        return *this;
+    }
+
+    // Set the partition boundary (must be set before compute)
+    void set_g_size(int size) { g_size = size; }
+
+    // This implements: z_i = M^-1 * r
+    template<typename Rhs, typename Dest>
+    void _solve_impl(const Rhs& r, Dest& z) const {
+        int n = r.size();
+        int s_size = n - g_size;
+
+        Vector r_vec = r;
+
+        // Stage 1: z_i1 = B^-1 * r
+        Vector z_i1 = inv_diag_A.cwiseProduct(r);
+
+        // Stage 2: z_i2 = z_i1 + [0 ; Ass^-1] * (r - A*z_i1)
+        Vector res1 = r_vec - A_copy * z_i1;
+        Vector z_i2 = z_i1;
+        // The correction only applies to the 's' indices (bottom part)
+        z_i2.tail(s_size) += ss_solver.solve(res1.tail(s_size));
+
+        // Stage 3: z_i = z_i2 + B^-1 * (r - A*z_i2)
+        Vector res2 = r - A_copy * z_i2;
+        z = z_i2 + inv_diag_A.cwiseProduct(res2);
+    }
+
+    template<typename Rhs>
+    inline const Eigen::Solve<DegenerateVerticesPreconditioner, Rhs>
+    solve(const Eigen::MatrixBase<Rhs>& b) const {
+        // Return the lazy evaluation blueprint, passing b's exact type
+        return Eigen::Solve<DegenerateVerticesPreconditioner, Rhs>(*this, b.derived());
+    }
+
+    Eigen::ComputationInfo info() const { return ss_solver.info(); }
+};
 template<typename Scalar>
 void projected_local_hessian(Eigen::Matrix<Scalar, 4, 4> &local_hessian);
 

@@ -19,6 +19,8 @@ def read_meshes_from_single_lp_folder(folder, num_meshes = 100):
     
     # Iterate through solver subfolders
     for solver_folder in folder.iterdir():
+        if not solver_folder.name.startswith("CG_1"):
+            continue
         mesh_count = 0
         if not solver_folder.is_dir():
             continue

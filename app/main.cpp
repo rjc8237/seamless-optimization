@@ -97,7 +97,7 @@ int main(int argc, char** argv)
     CLI::App app{argv[0]};
     std::string input_dir = "../data";
     std::string output_dir = "./";
-    std::string input_json = "../app/example.json";
+    std::string input_json = "../../app/example.json";
     std::string model = "";
     std::string ffield = "";
     std::string feature_edges_filename = "";
@@ -111,7 +111,6 @@ int main(int argc, char** argv)
     app.add_option("-s,--solver", param.solver_type, "Solver type");
     int num_threads = 1;
     app.add_option("-t, --threads", num_threads, "Number of threads");
-
     CLI11_PARSE(app, argc, argv);
     num_threads = std::max(1, num_threads);
     omp_set_dynamic(0);
@@ -169,6 +168,7 @@ int main(int argc, char** argv)
     param.cg_rel_err = config["cg_rel_err"];
     param.percentages = config["percentages"].get<std::vector<double>>();
     param.percentage_target = config["percentage_target"];
+    param.save_percentages_meshes = config["save_percentages_meshes"];
 
     param.E_abs_err = config["E_abs_err"];
     param.E_rel_err = config["E_rel_err"];
@@ -197,6 +197,10 @@ int main(int argc, char** argv)
     param.angle_to_rotate_model_for_screenshots = config["angle_to_rotate_model_for_screenshots"];
     param.screenshot_during_optimization = config["screenshot_during_optimization"];
     param.output_dir_for_screenshots = param.output_dir_for_screenshots + "/" + model;
+
+    param.degenerate_vertices_preconditioner = config["degenerate_vertices_preconditioner"];
+    param.precond_dim = config["precond_dim"];
+    param.triangle_threshold = config["triangle_threshold"];
     // Create output directory if it doesn't exist
     std::filesystem::create_directories(param.output_dir_for_screenshots);
 
@@ -303,36 +307,25 @@ int main(int argc, char** argv)
 
     // export intermediate meshes for worst n energy stopping condition
     std::string obj_name;
-    for (int i = 0; i < extremeopt.e_worst_v_attrs_ind.size(); i++)
-    {
-        if (extremeopt.e_worst_v_attrs_ind[i] == -1)
+    if (param.save_percentages_meshes) {
+        for (int i = 0; i < extremeopt.e_worst_v_attrs_ind.size(); i++)
         {
-            continue;
+            if (extremeopt.e_worst_v_attrs_ind[i] == -1)
+            {
+                continue;
+            }
+            obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
+            if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
+                // append cg_rel_err for CG runs
+                obj_name += "_" + sci_short(param.cg_rel_err);
+            }
+            obj_name += "_Lp=" + std::to_string(param.Lp);
+            obj_name += "_perc=" + fmt::format("{:.2f}", param.percentages[i]);
+            obj_name += "_Lp-worst=" + std::to_string(1.0);
+            obj_name += "_" + std::to_string(num_threads);
+            obj_name += ".obj";
+            export_obj_mesh(extremeopt, param, V, F, uv, extremeopt.e_worst_v_attrs[extremeopt.e_worst_v_attrs_ind[i]], V_init, F_init, FE_init, N, FN, EE, FE, output_dir, model, obj_name);
         }
-        obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
-        if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
-            // append cg_rel_err for CG runs
-            obj_name += "_" + sci_short(param.cg_rel_err);
-        }
-        obj_name += "_Lp=" + std::to_string(param.Lp);
-        obj_name += "_perc=" + fmt::format("{:.2f}", param.percentages[i]);
-        obj_name += "_Lp-worst=" + std::to_string(1.0);
-        obj_name += "_" + std::to_string(num_threads);
-        obj_name += ".obj";
-        export_obj_mesh(extremeopt, param, V, F, uv, extremeopt.e_worst_v_attrs[extremeopt.e_worst_v_attrs_ind[i]], V_init, F_init, FE_init, N, FN, EE, FE, output_dir, model, obj_name);
-    }
-    for (int i = 0; i < extremeopt.iter_v_attrs.size(); i++)
-    {
-        obj_name = output_dir + "/" + model + "_out_" + param.solver_type;
-        if (param.solver_type == "CG" || param.solver_type == "CG_LLT" || param.solver_type == "CG_GS" || param.solver_type == "Parallel_CG") {
-            // append cg_rel_err for CG runs
-            obj_name += "_" + sci_short(param.cg_rel_err);
-        }
-        obj_name += "_Lp=" + std::to_string(param.Lp);
-        obj_name += "_iter=" + fmt::format("{}", std::min(i * 10, extremeopt.last_iter));
-        obj_name += "_" + std::to_string(num_threads);
-        obj_name += ".obj";
-        export_obj_mesh(extremeopt, param, V, F, uv, extremeopt.iter_v_attrs[i], V_init, F_init, FE_init, N, FN, EE, FE, output_dir, model, obj_name);
     }
     
     // export final mesh

@@ -17,11 +17,11 @@
 
 #include <igl/facet_components.h>
 
-#ifdef ENABLE_VISUALIZATION
+// #ifdef ENABLE_VISUALIZATION
 #include "polyscope/curve_network.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
-#endif
+// #endif
 
 namespace SymDir{
 
@@ -1183,13 +1183,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
     double max_grad = max_grad_0;
 
     double E = get_quality_avg_for_smooth_only();
+    double E_max = get_quality_max();
     std::vector<double> E_worst_2 = get_quality_avg_worst_for_smooth_only();
     double E_2 = get_quality_avg_for_smooth_only(1.0);
 
     spdlog::info("Initial E = {}, E_worst_2 = {}", E, fmt::join(E_worst_2, ", "));
 
     opt_log["opt_log"].push_back(
-        {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
+        {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_max", E_max}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
 
     std::vector<double> residuals;
     double E_0 = E;
@@ -1210,7 +1211,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
 
 
-        double E_max;
         failed = false;
         
         if (this->m_params.global_smooth) {
@@ -1222,7 +1222,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
             E = get_quality_avg_for_smooth_only();
             E_2 = get_quality_avg_for_smooth_only(1.0);
             E_worst_2 = get_quality_avg_worst_for_smooth_only();
-            //E_max = get_quality_max();
+            E_max = get_quality_max();
 
             // spdlog::info("After GLOBAL smoothing {}, E = {}", i, E);
             // spdlog::info("E_max = {}", E_max);
@@ -1233,11 +1233,11 @@ void ExtremeOpt::do_optimization(json& opt_log)
         // opt_log["opt_log"].push_back(
         //     {{"F_size", F_size}, {"V_size", V_size}, {"E_max", E_max}, {"E_avg", E}, {"E_worst", E_worst}, {"max_grad", max_grad}});
         opt_log["opt_log"].push_back(
-            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
+            {{"F_size", F_size}, {"V_size", V_size}, {"E_avg", E}, {"E_max", E_max}, {"E_worst", E_worst_2}, {"max_grad", max_grad}, {"elapsed_time", total_timer.getElapsedTime()}});
         
         // we store mesh for each iteration
         last_iter = i;
-        if (i % 10 == 1) {
+        if (i % 10 == 1 && false) { // create flag for iterations or remove it entirely
             iter_v_attrs.push_back(vertex_attrs);
         }
         // TODO: terminate criteria
@@ -1259,22 +1259,22 @@ void ExtremeOpt::do_optimization(json& opt_log)
             }
         }
         // 2. energy stopping condition
-        for (int ei = 0; ei < m_params.percentages.size(); ei++) {
-            if (E_worst_2[ei] <= 1.0 && e_worst_iters[ei] == -1) {
-                e_worst_v_attrs.push_back(vertex_attrs);
-                if (m_params.last_screenshot_after_optimization) {
-                    make_screenshot(i, m_params.percentages[ei]);
+        if (m_params.save_percentages_meshes) {
+            for (int ei = 0; ei < m_params.percentages.size(); ei++) {
+                if (E_worst_2[ei] <= 1.0 && e_worst_iters[ei] == -1) {
+                    e_worst_v_attrs.push_back(vertex_attrs);
+                    if (fabs(m_params.percentage_target - m_params.percentages[ei]) < 1e-6 && m_params.percentage_target_converge) {
+                        std::string reason = fmt::format("Target percentage = {} reached", m_params.percentage_target);
+                        opt_log["converge_reason"] = reason;
+                        break;
+                    }
+                    e_worst_times[ei] = total_timer.getElapsedTime();
+                    e_worst_v_attrs_ind[ei] = e_worst_v_attrs.size() - 1;
+                    e_worst_iters[ei] = i;
                 }
-                if (fabs(m_params.percentage_target - m_params.percentages[ei]) < 1e-6 && m_params.percentage_target_converge) {
-                    std::string reason = fmt::format("Target percentage = {} reached", m_params.percentage_target);
-                    opt_log["converge_reason"] = reason;
-                    break;
-                }
-                e_worst_times[ei] = total_timer.getElapsedTime();
-                e_worst_v_attrs_ind[ei] = e_worst_v_attrs.size() - 1;
-                e_worst_iters[ei] = i;
             }
         }
+        
         // 3. energy change stopping condition
         avr_step += fabs(E - E_old) / E_old;
         count += 1;
@@ -1315,7 +1315,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
     }
 
-    if (last_iter % 10 != 1) {
+    if (last_iter % 10 != 1 && false) { // create flag for iterations or remove it entirely
         iter_v_attrs.push_back(vertex_attrs);
     }
 
@@ -1323,11 +1323,16 @@ void ExtremeOpt::do_optimization(json& opt_log)
         make_screenshot(iters);
     }
     
-    for (int ei = 0; ei < m_params.percentages.size(); ei++) {
-        if (e_worst_iters[ei] == -1) {
-            e_worst_times[ei] = total_timer.getElapsedTime();
+    if (m_params.save_percentages_meshes) {
+        for (int ei = 0; ei < m_params.percentages.size(); ei++) {
+            if (e_worst_iters[ei] == -1) {
+                e_worst_times[ei] = total_timer.getElapsedTime();
+            }
         }
+        opt_log["e_worst_times"] = e_worst_times;
+        opt_log["e_worst_iters"] = e_worst_iters;
     }
+
     opt_log["total_time"] = total_timer.getElapsedTime();
     std::string reason = "Reached max iteration.";
     spdlog::info(reason);
@@ -1336,8 +1341,6 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
-    opt_log["e_worst_times"] = e_worst_times;
-    opt_log["e_worst_iters"] = e_worst_iters;
     opt_log["iters"] = iters;
     opt_log["hessian_log"] = hessian_log;
 

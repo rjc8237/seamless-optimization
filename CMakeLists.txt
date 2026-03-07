@@ -19,6 +19,7 @@ add_compile_options(-O3)  # Enable optimizations
 
 option(USE_SUITESPARSE "Use suitesparse for QR factorization" ON)
 option(USE_COMISO "Use Comiso for field generation" ON)
+option(ENABLE_VISUALIZATION "Enable visualization with polyscope" OFF)
 set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr;umfpack" )
 option ( SUITESPARSE_USE_CUDA OFF )
 

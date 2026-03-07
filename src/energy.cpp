@@ -74,17 +74,18 @@ namespace SymDir{
         // Compute p-norm of the N% largest energies
         Scalar p_norm_sum = 0;
         Scalar area_sum = 0;
-        for (int i = 0; i < indices.size(); i++) {
-            area_sum += area[indices[i]];
-        }
+        // for (int i = 0; i < indices.size(); i++) {
+        //     area_sum += area[indices[i]];
+        // }
         int index = 0;
         std::vector<Scalar> energies;
         for (int i = 0; i < num_tris; i++) {
-            if (i >= std::ceil(percentages[index] / 100.0 * indices.size())) {
+            if (i >= std::ceil(percentages[index] / 100.0 * indices.size()) && index < percentages.size() - 1) {
                 energies.push_back(p_norm_sum / area_sum);
                 index++;
             }
             p_norm_sum += energy_per_tri[indices[i]] * area[indices[i]];
+            area_sum += area[indices[i]];
             // p_norm_sum += energy_per_tri[indices[i]];
         }
         // Return average of worst N% triangles

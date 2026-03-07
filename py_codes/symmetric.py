@@ -40,7 +40,7 @@ def get_mesh_folders():
 
 def run_solver():
     solver = {"CG": 1}
-    lps = [3]
+    lps = [1]
     cgerrs = [1e-4]
     for s in solver:
         for lp in lps:

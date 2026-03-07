@@ -23,15 +23,19 @@
     "Lp": 2.0,
     "symdir_weight": 1.0,
     "alignment_weight": 0.0,
+    "degenerate_weight": 0.0,
     "use_rref": true,
-    "percentages": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0],
+    
+    "percentages": [10.0, 50.0, 100.0],
     "percentage_target": 0.0,
+    "save_percentages_meshes": false,
+
     "precompute_seamless": true,
     "E_rel_err": 0,
     "E_abs_err": 0,
     "grad_abs_err": 0,
     "grad_rel_err": 0,
-    "cg_rel_err": 1e-7,
+    "cg_rel_err": 1e-4,
     "diff_err": 1e-4, 
     "soft_max": false,
     "t": 5.0,
@@ -42,10 +46,14 @@
     "max_grad_rel_converge": false,
     "E_abs_converge": false,
     "E_rel_converge": false,
-    "last_screenshot_after_optimization": false,
+    "last_screenshot_after_optimization": true,
     "screenshot_interval": 5,
-    "output_dir_for_screenshots": "../output/screenshots/",
-    "uv_scale_for_screenshots": 0.001, 
+    "output_dir_for_screenshots": "../../output/screenshots/",
+    "uv_scale_for_screenshots": 5, 
     "angle_to_rotate_model_for_screenshots": 180,
-    "screenshot_during_optimization": false
+    "screenshot_during_optimization": false,
+
+    "degenerate_vertices_preconditioner": false,
+    "precond_dim": 2,
+    "triangle_threshold": 5
 }

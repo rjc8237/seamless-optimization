@@ -1119,7 +1119,7 @@ double compute_triangle_quality(double lij, double ljk, double lki)
     return ((denom != 0.)) ? numer / denom : 1e10;
 }
 
-std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn, double threshold)
+std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& V, const Eigen::MatrixXi& Fn, const Eigen::MatrixXd& uv, const std::vector<int>& v_map, int dim, double threshold)
 {
     // check for degenerate triangles
     std::vector<bool> is_degenerate(Fn.rows(), false);
@@ -1129,13 +1129,24 @@ std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& uv, const Eigen::
         int vj = Fn(i, 1);
         int vk = Fn(i, 2);
 
+        double lij, ljk, lki;
         // get triangle lengths
-        Eigen::Matrix<double, 1, 2> a_db(uv(vi, 0), uv(vi, 1));
-        Eigen::Matrix<double, 1, 2> b_db(uv(vj, 0), uv(vj, 1));
-        Eigen::Matrix<double, 1, 2> c_db(uv(vk, 0), uv(vk, 1));
-        double lij = (a_db - b_db).norm();
-        double ljk = (b_db - c_db).norm();
-        double lki = (c_db - a_db).norm();
+        if (dim == 2) {
+            Eigen::Matrix<double, 1, 2> a_db(uv(vi, 0), uv(vi, 1));
+            Eigen::Matrix<double, 1, 2> b_db(uv(vj, 0), uv(vj, 1));
+            Eigen::Matrix<double, 1, 2> c_db(uv(vk, 0), uv(vk, 1));
+            lij = (a_db - b_db).norm();
+            ljk = (b_db - c_db).norm();
+            lki = (c_db - a_db).norm();
+
+        } else {
+            Eigen::Matrix<double, 1, 3> a_db(V(v_map[vi], 0), V(v_map[vi], 1), V(v_map[vi], 2));
+            Eigen::Matrix<double, 1, 3> b_db(V(v_map[vj], 0), V(v_map[vj], 1), V(v_map[vj], 2));
+            Eigen::Matrix<double, 1, 3> c_db(V(v_map[vk], 0), V(v_map[vk], 1), V(v_map[vk], 2));
+            lij = (a_db - b_db).norm();
+            ljk = (b_db - c_db).norm();
+            lki = (c_db - a_db).norm();
+        }
 
         // check if triangle degenerate
         if (compute_triangle_quality(lij, ljk, lki) > threshold)
@@ -1149,13 +1160,13 @@ std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& uv, const Eigen::
     return is_degenerate;
 }
 
-
-std::vector<bool> mark_degenerate_uv(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn, double threshold)
+// dim = 2 for uv triangles, dim = 3 for 3d triangles
+std::vector<bool> mark_degenerate_vertices(const Eigen::MatrixXd& V, const Eigen::MatrixXi& Fn, const Eigen::MatrixXd& uv, const std::vector<int>& v_map, int dim, double threshold)
 {
     // check for degenerate triangles
-    std::vector<bool> is_degenerate_face = mark_degenerate_faces(uv, Fn, threshold);
+    std::vector<bool> is_degenerate_face = mark_degenerate_faces(V, Fn, uv, v_map, dim, threshold);
     std::vector<bool> is_degenerate(uv.rows(), false);
-    int num_degen = 0;
+    
     for (int i = 0; i < Fn.rows(); i++) {
         if (!is_degenerate_face[i]) continue;
 

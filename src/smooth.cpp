@@ -532,14 +532,16 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
 )
 {
     Eigen::VectorXd rhs = Q2T * grad;
+    // Eigen::VectorXd rhs = grad;
     Eigen::VectorXd newton;
-
     // Compute corrected descent direction
     double a = 0;
     spdlog::debug("{}x{} constraint matrix", Aeq.rows(), Aeq.cols());
     spdlog::debug("{}x{} reduced matrix", Q2.rows(), Q2.cols());
     while (true){
         Eigen::SparseMatrix<double> mat;
+        newton.setZero(rhs.size());  // reduced space size
+
         if (a == 0)
         {
             // mat = hessian; // Use newton step
@@ -557,83 +559,162 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
             // mat = (hessian + a*id);
         }
         mat.makeCompressed();
-        // Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
 
-        Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
-        CgResult result;
-        if (m_params.solver_type == "Parallel_CG") {
-            result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
-            newton = -newton;
-        } else {
-            solver.compute(mat);
-            newton = -solver.solve(rhs);
-        }
-
-        residual = (mat * newton + rhs).norm();                    
-
-        bool freeze_degenerate = false;
-        if (freeze_degenerate)
-        {
-            std::vector<bool> is_degenerate_uv = mark_degenerate_uv(uv, F, 5);
-
-            // mark 
+        if (m_params.degenerate_vertices_preconditioner) {
+            std::vector<bool> is_degenerate_uv = mark_degenerate_vertices(V, F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
             int N = is_degenerate_uv.size();
-            std::vector<bool> is_degenerate_var(newton.size(), false);
-            for (int k = 0; k < Q2.outerSize(); ++k) {
-                for (Eigen::SparseMatrix<double>::InnerIterator it(Q2, k); it; ++it) {
-                    if (is_degenerate_uv[it.row() % N]) is_degenerate_var[it.col()] = true;
+            // mark variables corresponding to degenerate uv as degenerate
+            std::vector<bool> is_degenerate_var(rhs.size(), false);
+            is_degenerate_var = is_degenerate_uv;
+            // for (int k = 0; k < Q2.outerSize(); ++k) {
+            //     for (Eigen::SparseMatrix<double>::InnerIterator it(Q2, k); it; ++it) {
+            //         if (is_degenerate_uv[it.row() % N]) {
+            //             is_degenerate_var[it.col()] = true;
+            //         }
+            //     }
+            // }
+
+            int gg_size = std::count(is_degenerate_var.begin(), is_degenerate_var.end(), false);
+            spdlog::info("Preconditioning with {:.2f} degenerate variables", (double)(is_degenerate_var.size() - gg_size) / (double)is_degenerate_var.size() * 100);
+            Eigen::VectorXi perm_indices(is_degenerate_var.size() * 2);
+            int curr = 0;
+            // Fill G indices first
+            for(int v_i = 0; v_i < is_degenerate_var.size(); v_i++) {
+                if (!is_degenerate_var[v_i]) {
+                    // perm_indices[curr++] = v_i;
+                    perm_indices[curr++] = 2 * v_i;
+                    perm_indices[curr++] = 2 * v_i + 1;
+                }
+            }
+            // Fill S indices second
+            for(int v_i = 0; v_i < is_degenerate_var.size(); v_i++) {
+                if (is_degenerate_var[v_i]) {
+                    // perm_indices[curr++] = v_i;
+                    perm_indices[curr++] = 2 * v_i;
+                    perm_indices[curr++] = 2 * v_i + 1;
+
                 }
             }
 
-            int num_degen = 0;
-            for (int vi = 0; vi < is_degenerate_var.size(); ++vi)
-            {
-                if (is_degenerate_var[vi])
-                {
-                    newton[vi] = 0.;
-                    ++num_degen;
-                }
-            }
-            spdlog::info("{}/{} variables fixed", num_degen, is_degenerate_var.size());
-        }
+            Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, int> perm(perm_indices);
+            mat = perm.transpose() * mat * perm;
+            rhs = perm.transpose() * rhs;
 
-        // int status{};
-        // newton = -UMFPACK_solve(mat, rhs, status);
-        newton = Q2 * newton;
+            spdlog::trace("Solving {}x{} system with {} rhs", mat.rows(), mat.cols(), rhs.size());
 
-        double newton_decr = newton.dot(grad);
-        
-        std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
-        std::cout << "newton norm is " << newton.dot(newton) << std::endl;
-        std::cout << "projected gradient is " << newton_decr << std::endl;
-        // if (status == UMFPACK_OK && newton_decr < 0)
-        // {
-        //     break;
-        // }
-        if (m_params.solver_type == "Parallel_CG") {
-            if (result.converged && newton_decr < 0)
+            Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, DegenerateVerticesPreconditioner<double>> cg_dv;
+            cg_dv.setMaxIterations(10000);
+            cg_dv.setTolerance(m_params.cg_rel_err);
+            cg_dv.preconditioner().set_g_size(2 * gg_size);
+            cg_dv.compute(mat);        // This triggers the internal .compute()
+
+            // 4. Solve the system
+            newton = cg_dv.solve(rhs);
+            newton = perm * newton;
+            newton = -newton;
+
+            residual = (mat * newton + rhs).norm();
+            // newton = Q2 * newton;
+
+            double newton_decr = newton.dot(grad);
+            
+            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+            std::cout << "projected gradient is " << newton_decr << std::endl;
+            // if (status == UMFPACK_OK && newton_decr < 0)
+            // {
+            //     break;
+            // }
+            if (cg_dv.info() == Eigen::Success && newton_decr < 0)
             {
-                iter_solver = result.iterations;
-                std::cout << "CG converged in " << result.iterations << " iterations with rel res " << result.rel_residual << std::endl;
                 break;
             }
-        }
-        if (solver.info() == Eigen::Success && newton_decr < 0)
-        {
-            // cond_num = get_cond_num_from_hessian(hessian);
-            if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
-                iter_solver = solver.iterations();
+            else if (a == 0)
+            {
+                a = 1; // We did not try the correction yet, start from arbitrary value 1
+                spdlog::info("Starting correction.");
             }
-            break;
-        }
-        else if (a == 0)
-        {
-            a = 1; // We did not try the correction yet, start from arbitrary value 1
-            spdlog::info("Starting correction.");
-        }
-        else
-        {
-            a *= 2; // Correction was not enough, increase weight of id
+            else
+            {
+                a *= 2; // Correction was not enough, increase weight of id
+            }
+        } else {
+            Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+            CgResult result;
+
+            if (m_params.solver_type == "Parallel_CG") {
+                result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
+                newton = -newton;
+            } else {
+                solver.compute(mat);
+                newton = -solver.solve(rhs);
+            }
+            residual = (mat * newton + rhs).norm();                    
+
+            bool freeze_degenerate = false;
+            if (freeze_degenerate)
+            {
+                std::vector<bool> is_degenerate_uv = mark_degenerate_vertices(V, F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
+
+                // mark 
+                int N = is_degenerate_uv.size();
+                std::vector<bool> is_degenerate_var(newton.size(), false);
+                for (int k = 0; k < Q2.outerSize(); ++k) {
+                    for (Eigen::SparseMatrix<double>::InnerIterator it(Q2, k); it; ++it) {
+                        if (is_degenerate_uv[it.row() % N]) is_degenerate_var[it.col()] = true;
+                    }
+                }
+
+                int num_degen = 0;
+                for (int vi = 0; vi < is_degenerate_var.size(); ++vi)
+                {
+                    if (is_degenerate_var[vi])
+                    {
+                        newton[vi] = 0.;
+                        ++num_degen;
+                    }
+                }
+                spdlog::info("{}/{} variables fixed", num_degen, is_degenerate_var.size());
+            }
+
+            // int status{};
+            // newton = -UMFPACK_solve(mat, rhs, status);
+            newton = Q2 * newton;
+
+            double newton_decr = newton.dot(grad);
+            
+            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+            std::cout << "projected gradient is " << newton_decr << std::endl;
+            // if (status == UMFPACK_OK && newton_decr < 0)
+            // {
+            //     break;
+            // }
+            if (m_params.solver_type == "Parallel_CG") {
+                if (result.converged && newton_decr < 0)
+                {
+                    iter_solver = result.iterations;
+                    std::cout << "CG converged in " << result.iterations << " iterations with rel res " << result.rel_residual << std::endl;
+                    break;
+                }
+            }
+            if (solver.info() == Eigen::Success && newton_decr < 0)
+            {
+                // cond_num = get_cond_num_from_hessian(hessian);
+                if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
+                    iter_solver = solver.iterations();
+                }
+                break;
+            }
+            else if (a == 0)
+            {
+                a = 1; // We did not try the correction yet, start from arbitrary value 1
+                spdlog::info("Starting correction.");
+            }
+            else
+            {
+                a *= 2; // Correction was not enough, increase weight of id
+            }
         }
     }                
     correction = a;
@@ -668,7 +749,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     double time_solver = timer.getElapsedTime();
     double newton_decr = 0;
 
-    std::vector<bool> is_degenerate_face = mark_degenerate_faces(uv, F, 1e5);
+    std::vector<bool> is_degenerate_face = mark_degenerate_faces(input_V, input_F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
     if (m_params.degenerate_weight > 0.)
     {
         std::vector<Eigen::Triplet<double>> length_trips;

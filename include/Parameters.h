@@ -33,6 +33,8 @@ struct Parameters
     // for worst n% triangles energies
     std::vector<double> percentages = {5.0};
     double percentage_target = 5.0;
+    bool save_percentages_meshes = false;
+    
     std::string solver_type = "LDLT"; // solver type
     double E_rel_err = 1e-6; //tolerance for E_worst convergence
     double E_abs_err = 1e-6; // absolute tolerance for E_worst convergence
@@ -66,6 +68,9 @@ struct Parameters
     bool E_abs_converge = true;
     bool E_rel_converge = true;
 
+    bool degenerate_vertices_preconditioner = false;
+    int precond_dim = 2; // dim = 2 - for degenerate uv triangles, dim = 3 - for degenerate 3d triangles
+    double triangle_threshold = 25.0; // threshold for marking degenerate triangles for preconditioner and line search
     /* data */
 };
 

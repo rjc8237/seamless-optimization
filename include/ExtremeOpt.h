@@ -42,8 +42,8 @@ Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixXd& uv,
     double norm_p);
 
-std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn, double threshold=1e5);
-std::vector<bool> mark_degenerate_uv(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn, double threshold=1e5);
+std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv, const std::vector<int>& v_map, int dim=2, double threshold=1e5);
+std::vector<bool> mark_degenerate_vertices(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv, const std::vector<int>& v_map, int dim=2, double threshold=1e5);
 
 class VertexAttributes
 {
