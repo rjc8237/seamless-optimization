@@ -113,6 +113,7 @@ int main(int argc, char** argv)
     app.add_option("-t, --threads", num_threads, "Number of threads");
     CLI11_PARSE(app, argc, argv);
     num_threads = std::max(1, num_threads);
+#ifdef USE_OMP
     omp_set_dynamic(0);
     omp_set_num_threads(num_threads);
     Eigen::setNbThreads(num_threads);
@@ -126,6 +127,7 @@ int main(int argc, char** argv)
 
     std::cout << "Max Threads available: " << omp_get_max_threads() << " Set number of threads: " << num_threads << std::endl;
     std::cout << "========================================" << std::endl;
+#endif
 
     // Ensure base output directory exists
     std::error_code ec;

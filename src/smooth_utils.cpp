@@ -236,7 +236,9 @@ namespace SymDir {
     }
 
     CgResult conjugate_gradient(const RowMat& a, const Vec& b, Vec& x, int max_iter, double tol) {
+#ifdef USE_OMP
         spdlog::info("CG solver starting with {} OpenMP threads", omp_get_max_threads());
+#endif
         const Eigen::Index n = b.size();
 
         x.setZero(n);
