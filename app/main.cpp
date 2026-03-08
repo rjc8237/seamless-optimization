@@ -97,7 +97,7 @@ int main(int argc, char** argv)
     CLI::App app{argv[0]};
     std::string input_dir = "../data";
     std::string output_dir = "./";
-    std::string input_json = "../app/example.json";
+    std::string input_json = "../../app/example.json";
     std::string model = "";
     std::string ffield = "";
     std::string feature_edges_filename = "";
