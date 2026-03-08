@@ -560,6 +560,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         }
         mat.makeCompressed();
 
+        Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, int> perm;
         if (m_params.degenerate_vertices_preconditioner) {
             std::vector<bool> is_degenerate_uv = mark_degenerate_vertices(V, F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
             int N = is_degenerate_uv.size();
@@ -596,126 +597,94 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
                 }
             }
 
-            Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, int> perm(perm_indices);
+            perm.resize(perm_indices.size());
+            perm.indices() = perm_indices;
+
             mat = perm.transpose() * mat * perm;
             rhs = perm.transpose() * rhs;
+        }
+        Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+        CgResult result;
 
-            spdlog::trace("Solving {}x{} system with {} rhs", mat.rows(), mat.cols(), rhs.size());
-
-            Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, DegenerateVerticesPreconditioner<double>> cg_dv;
-            cg_dv.setMaxIterations(10000);
-            cg_dv.setTolerance(m_params.cg_rel_err);
-            cg_dv.preconditioner().set_g_size(2 * gg_size);
-            cg_dv.compute(mat);        // This triggers the internal .compute()
-
-            // 4. Solve the system
-            newton = cg_dv.solve(rhs);
-            newton = perm * newton;
+        if (m_params.solver_type == "Parallel_CG") {
+            result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
             newton = -newton;
-
-            residual = (mat * newton + rhs).norm();
-            // newton = Q2 * newton;
-
-            double newton_decr = newton.dot(grad);
-            
-            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
-            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
-            std::cout << "projected gradient is " << newton_decr << std::endl;
-            // if (status == UMFPACK_OK && newton_decr < 0)
-            // {
-            //     break;
-            // }
-            if (cg_dv.info() == Eigen::Success && newton_decr < 0)
-            {
-                break;
-            }
-            else if (a == 0)
-            {
-                a = 1; // We did not try the correction yet, start from arbitrary value 1
-                spdlog::info("Starting correction.");
-            }
-            else
-            {
-                a *= 2; // Correction was not enough, increase weight of id
-            }
         } else {
-            Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
-            CgResult result;
-
-            if (m_params.solver_type == "Parallel_CG") {
-                result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
-                newton = -newton;
-            } else {
-                solver.compute(mat);
-                newton = -solver.solve(rhs);
-            }
-            residual = (mat * newton + rhs).norm();                    
-
-            bool freeze_degenerate = false;
-            if (freeze_degenerate)
-            {
-                std::vector<bool> is_degenerate_uv = mark_degenerate_vertices(V, F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
-
-                // mark 
-                int N = is_degenerate_uv.size();
-                std::vector<bool> is_degenerate_var(newton.size(), false);
-                for (int k = 0; k < Q2.outerSize(); ++k) {
-                    for (Eigen::SparseMatrix<double>::InnerIterator it(Q2, k); it; ++it) {
-                        if (is_degenerate_uv[it.row() % N]) is_degenerate_var[it.col()] = true;
-                    }
-                }
-
-                int num_degen = 0;
-                for (int vi = 0; vi < is_degenerate_var.size(); ++vi)
-                {
-                    if (is_degenerate_var[vi])
-                    {
-                        newton[vi] = 0.;
-                        ++num_degen;
-                    }
-                }
-                spdlog::info("{}/{} variables fixed", num_degen, is_degenerate_var.size());
-            }
-
-            // int status{};
-            // newton = -UMFPACK_solve(mat, rhs, status);
-            newton = Q2 * newton;
-
-            double newton_decr = newton.dot(grad);
-            
-            std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
-            std::cout << "newton norm is " << newton.dot(newton) << std::endl;
-            std::cout << "projected gradient is " << newton_decr << std::endl;
-            // if (status == UMFPACK_OK && newton_decr < 0)
-            // {
-            //     break;
-            // }
-            if (m_params.solver_type == "Parallel_CG") {
-                if (result.converged && newton_decr < 0)
-                {
-                    iter_solver = result.iterations;
-                    std::cout << "CG converged in " << result.iterations << " iterations with rel res " << result.rel_residual << std::endl;
-                    break;
-                }
-            }
-            if (solver.info() == Eigen::Success && newton_decr < 0)
-            {
-                // cond_num = get_cond_num_from_hessian(hessian);
-                if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
-                    iter_solver = solver.iterations();
-                }
-                break;
-            }
-            else if (a == 0)
-            {
-                a = 1; // We did not try the correction yet, start from arbitrary value 1
-                spdlog::info("Starting correction.");
-            }
-            else
-            {
-                a *= 2; // Correction was not enough, increase weight of id
+            solver.compute(mat);
+            newton = -solver.solve(rhs);
+            if (m_params.degenerate_vertices_preconditioner) {
+                // unpermute the solution
+                Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, int> perm_inv = perm.inverse();
+                newton = perm_inv.transpose() * newton;
             }
         }
+        residual = (mat * newton + rhs).norm();                    
+
+        bool freeze_degenerate = false;
+        if (freeze_degenerate)
+        {
+            std::vector<bool> is_degenerate_uv = mark_degenerate_vertices(V, F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
+
+            // mark 
+            int N = is_degenerate_uv.size();
+            std::vector<bool> is_degenerate_var(newton.size(), false);
+            for (int k = 0; k < Q2.outerSize(); ++k) {
+                for (Eigen::SparseMatrix<double>::InnerIterator it(Q2, k); it; ++it) {
+                    if (is_degenerate_uv[it.row() % N]) is_degenerate_var[it.col()] = true;
+                }
+            }
+
+            int num_degen = 0;
+            for (int vi = 0; vi < is_degenerate_var.size(); ++vi)
+            {
+                if (is_degenerate_var[vi])
+                {
+                    newton[vi] = 0.;
+                    ++num_degen;
+                }
+            }
+            spdlog::info("{}/{} variables fixed", num_degen, is_degenerate_var.size());
+        }
+
+        // int status{};
+        // newton = -UMFPACK_solve(mat, rhs, status);
+        newton = Q2 * newton;
+
+        double newton_decr = newton.dot(grad);
+        
+        std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
+        std::cout << "newton norm is " << newton.dot(newton) << std::endl;
+        std::cout << "projected gradient is " << newton_decr << std::endl;
+        // if (status == UMFPACK_OK && newton_decr < 0)
+        // {
+        //     break;
+        // }
+        if (m_params.solver_type == "Parallel_CG") {
+            if (result.converged && newton_decr < 0)
+            {
+                iter_solver = result.iterations;
+                std::cout << "CG converged in " << result.iterations << " iterations with rel res " << result.rel_residual << std::endl;
+                break;
+            }
+        }
+        if (solver.info() == Eigen::Success && newton_decr < 0)
+        {
+            // cond_num = get_cond_num_from_hessian(hessian);
+            if (m_params.solver_type == "CG" || m_params.solver_type == "CG_LLT" || m_params.solver_type == "CG_GS") {
+                iter_solver = solver.iterations();
+            }
+            break;
+        }
+        else if (a == 0)
+        {
+            a = 1; // We did not try the correction yet, start from arbitrary value 1
+            spdlog::info("Starting correction.");
+        }
+        else
+        {
+            a *= 2; // Correction was not enough, increase weight of id
+        }
+
     }                
     correction = a;
 

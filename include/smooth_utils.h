@@ -75,65 +75,43 @@ public:
     Eigen::ComputationInfo info() { return Eigen::Success; }
 };
 
-class Solver {
-public:
-    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err=0);
-
-    void compute(const Eigen::SparseMatrix<double>& A);
-    Eigen::VectorXd solve(const Eigen::VectorXd& b);
-    Eigen::ComputationInfo info() const;
-    int iterations() const;
-
-private:
-    std::string solver_name_;
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg_;
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, Eigen::IncompleteCholesky<double>> cg_llt;
-    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, 
-    SymmetricGaussSeidelPreconditioner<Eigen::SparseMatrix<double>>> cg_gs;
-    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Upper> ldlt_;
-    Eigen::LDLT<Eigen::MatrixXd, Eigen::RowMajor> ldlt_matrix_;
-    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> llt_;
-    Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> cholmod_super_llt_;
-    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> bicgstab;
-};
-
 template <typename Scalar>
 class DegenerateVerticesPreconditioner {
     typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
     typedef Eigen::SparseMatrix<Scalar> SparseMat;
 
     // Components of the preconditioner
-    Vector inv_diag_A;                                // B^-1 (Jacobi)
-    Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> ss_solver;       // A_ss^-1
-    int g_size;                                       // Offset for ss block
-    SparseMat A_copy;                           // Copy of full A
+    SparseMat mat; //
+    Vector inv_diag_mat; // B^-1 (Jacobi)
+    Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> stiff_solver; // A_stiff^-1
+    int g_size; // size of good block
     int iter = 0;
 
 public:
-    typedef int StorageIndex; // <--- This tells Eigen how to index your matrices
+    typedef int StorageIndex; // for Eigen to index the matrix
     enum {
             ColsAtCompileTime = Eigen::Dynamic,
             MaxColsAtCompileTime = Eigen::Dynamic
-    };
+    }; // also for Eigen
     
-    DegenerateVerticesPreconditioner() : A_copy(SparseMat(0,0)), g_size(0) {}
+    DegenerateVerticesPreconditioner() : mat(SparseMat(0,0)), g_size(0) {}
 
-    Eigen::Index rows() const { return A_copy.rows(); }
-    Eigen::Index cols() const { return A_copy.cols(); }
+    Eigen::Index rows() const { return mat.rows(); }
+    Eigen::Index cols() const { return mat.cols(); }
 
     // Initialize the solvers and diagonal
     DegenerateVerticesPreconditioner& compute(const SparseMat& A) {
-        A_copy = A;
+        mat = A;
 
         // 1. Build B^-1 (Jacobi)
-        inv_diag_A = A.diagonal().cwiseInverse();
+        inv_diag_mat = A.diagonal().cwiseInverse();
 
         // 2. Extract and Factorize A_ss
         // Assumes you've already permuted A so that ss is the bottom-right block
         int total_size = A.rows();
         int s_size = total_size - g_size; 
-        SparseMat Ass = A_copy.bottomRightCorner(s_size, s_size);
-        ss_solver.compute(Ass);
+        SparseMat mat_ss = mat.bottomRightCorner(s_size, s_size);
+        stiff_solver.compute(mat_ss);
 
         return *this;
     }
@@ -150,28 +128,54 @@ public:
         Vector r_vec = r;
 
         // Stage 1: z_i1 = B^-1 * r
-        Vector z_i1 = inv_diag_A.cwiseProduct(r);
+        Vector z_i1 = inv_diag_mat.cwiseProduct(r);
 
-        // Stage 2: z_i2 = z_i1 + [0 ; Ass^-1] * (r - A*z_i1)
-        Vector res1 = r_vec - A_copy * z_i1;
+        // Stage 2: z_i2 = z_i1 + [0 ; mat_ss^-1] * (r - mat*z_i1)
+        Vector res1 = r_vec - mat * z_i1;
         Vector z_i2 = z_i1;
-        // The correction only applies to the 's' indices (bottom part)
-        z_i2.tail(s_size) += ss_solver.solve(res1.tail(s_size));
+        // computation for mat_ss block
+        z_i2.tail(s_size) += stiff_solver.solve(res1.tail(s_size));
 
-        // Stage 3: z_i = z_i2 + B^-1 * (r - A*z_i2)
-        Vector res2 = r - A_copy * z_i2;
-        z = z_i2 + inv_diag_A.cwiseProduct(res2);
+        // Stage 3: z_i = z_i2 + B^-1 * (r - mat*z_i2)
+        Vector res2 = r - mat * z_i2;
+        z = z_i2 + inv_diag_mat.cwiseProduct(res2);
     }
 
     template<typename Rhs>
     inline const Eigen::Solve<DegenerateVerticesPreconditioner, Rhs>
     solve(const Eigen::MatrixBase<Rhs>& b) const {
-        // Return the lazy evaluation blueprint, passing b's exact type
+        // return for Eigen style solver to call _solve_impl
         return Eigen::Solve<DegenerateVerticesPreconditioner, Rhs>(*this, b.derived());
     }
 
-    Eigen::ComputationInfo info() const { return ss_solver.info(); }
+    Eigen::ComputationInfo info() const { return stiff_solver.info(); }
 };
+
+
+class Solver {
+public:
+    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err=0);
+
+    void compute(const Eigen::SparseMatrix<double>& A, const int gg_size = 0);
+    Eigen::VectorXd solve(const Eigen::VectorXd& b);
+    Eigen::ComputationInfo info() const;
+    int iterations() const;
+
+private:
+    std::string solver_name_;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg_;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, Eigen::IncompleteCholesky<double>> cg_llt;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, 
+    SymmetricGaussSeidelPreconditioner<Eigen::SparseMatrix<double>>> cg_gs;
+    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Upper> ldlt_;
+    Eigen::LDLT<Eigen::MatrixXd, Eigen::RowMajor> ldlt_matrix_;
+    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> llt_;
+    Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> cholmod_super_llt_;
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> bicgstab;
+    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper, DegenerateVerticesPreconditioner<double>> cg_dv;
+
+};
+
 template<typename Scalar>
 void projected_local_hessian(Eigen::Matrix<Scalar, 4, 4> &local_hessian);
 

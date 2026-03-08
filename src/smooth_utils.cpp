@@ -26,9 +26,13 @@ namespace SymDir {
             cg_llt.setTolerance(cg_rel_err);
             cg_llt.setMaxIterations(4000);
         }
+        if (solver_name == "CG_precond_deg_vert") {
+            cg_dv.setTolerance(cg_rel_err);
+            cg_dv.setMaxIterations(10000);
+        }
     }
 
-    void Solver::compute(const Eigen::SparseMatrix<double>& A) {
+    void Solver::compute(const Eigen::SparseMatrix<double>& A, const int gg_size) {
         if (solver_name_ == "CG") {
             Eigen::SparseMatrix<double, Eigen::RowMajor> A_rowmajor(A);
             cg_.compute(A_rowmajor);
@@ -44,6 +48,9 @@ namespace SymDir {
             cg_gs.compute(A);
         } else if (solver_name_ == "CG_LLT") {
             cg_llt.compute(A);
+        } else if (solver_name_ == "CG_precond_deg_vert") {
+            cg_dv.preconditioner().set_g_size(2 * gg_size);
+            cg_dv.compute(A);
         } else {
             throw std::invalid_argument("Unknown solver name: " + solver_name_);
         }
@@ -57,6 +64,7 @@ namespace SymDir {
         else if (solver_name_ == "BiCGSTAB") return bicgstab.solve(b);
         else if (solver_name_ == "CG_GS") return cg_gs.solve(b);
         else if (solver_name_ == "CG_LLT") return cg_llt.solve(b);
+        else if (solver_name_ == "CG_precond_deg_vert") return cg_dv.solve(b);
         throw std::invalid_argument("Unknown solver: " + solver_name_);
     }
 
@@ -68,6 +76,7 @@ namespace SymDir {
         else if (solver_name_ == "BiCGSTAB") return bicgstab.info();
         else if (solver_name_ == "CG_GS") return cg_gs.info();
         else if (solver_name_ == "CG_LLT") return cg_llt.info();
+        else if (solver_name_ == "CG_precond_deg_vert") return cg_dv.info();
         return Eigen::InvalidInput;
     }
 
@@ -76,6 +85,7 @@ namespace SymDir {
         else if (solver_name_ == "BiCGSTAB") return bicgstab.iterations();
         else if (solver_name_ == "CG_GS") return cg_gs.iterations();
         else if (solver_name_ == "CG_LLT") return cg_llt.iterations();
+        else if (solver_name_ == "CG_precond_deg_vert") return cg_dv.iterations();
         throw std::invalid_argument("iterations is only available for iterative solvers");
     }
 
