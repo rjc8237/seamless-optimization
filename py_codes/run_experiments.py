@@ -34,26 +34,26 @@ def get_mesh_folders():
 
 def run_solver(args):
     """Wrapper function for multiprocessing"""
-    obj_name, s, cfg, cgerr, folder_test = args
+    obj_name, s, cfg, lp, cgerr, folder_test = args
     input_dir = DATA_ROOT
 
     if not input_dir.is_dir():
         print(f"[warn] Skipping {obj_name}: missing DATA_ROOT")
         return
 
-    output_dir = OUTPUT_DIR / folder_test / (s + f"_{cgerr:.1e}") / obj_name
+    output_dir = OUTPUT_DIR / folder_test / (s + f"p={lp}_tol={cgerr:.0e}") / obj_name
     (output_dir / "logs").mkdir(parents=True, exist_ok=True)
     
     unique_id = str(uuid.uuid4())[:8]
     if s in ["CG", "CG_GS", "CG_LLT"] and cgerr is not None:
-        tmp_json_path = os.path.join(tempfile.gettempdir(), f"cfg_{obj_name}_{s}_cg{cgerr:.0e}_{unique_id}.json")
+        tmp_json_path = os.path.join(tempfile.gettempdir(), f"cfg_{obj_name}_{s}_p{lp}_cg{cgerr:.0e}_{unique_id}.json")
     else:
-        tmp_json_path = os.path.join(tempfile.gettempdir(), f"cfg_{obj_name}_{s}_{unique_id}.json")
+        tmp_json_path = os.path.join(tempfile.gettempdir(), f"cfg_{obj_name}_{s}_p{lp}_{unique_id}.json")
 
     with open(tmp_json_path, "w") as jf:
         json.dump(cfg, jf)
 
-    tag = f"{obj_name}_{s}" if (s != "CG" and s != "CG_GS" and s != "CG_LLT") else f"{obj_name}_{s}_cg-{cgerr:.0e}"
+    tag = f"{obj_name}_{s}" if (s != "CG" and s != "CG_GS" and s != "CG_LLT") else f"{obj_name}_{s}_p-{lp}_cg-{cgerr:.0e}"
     log_path = output_dir / "logs" / f"{tag}.log"
 
     cmd = [
@@ -73,7 +73,7 @@ def run_solver(args):
     env_vars["VECLIB_MAXIMUM_THREADS"] = "8"
     env_vars["NUMEXPR_NUM_THREADS"] = "8"
     
-    print(f"Running model: {obj_name} with solver: {s}" + (f" and cg_rel_err: {cgerr}" if cgerr else ""))
+    print(f"Running model: {obj_name} with solver: {s}" + (f", p = {lp} and cg_rel_err: {cgerr}" if cgerr else ""))
     
     with open(log_path, "w") as lf:
         result = subprocess.run(cmd, stdout=lf, stderr=lf, cwd=build_dir, env=env_vars)
@@ -102,25 +102,26 @@ if __name__ == '__main__':
         
     # Solvers
     solvers = ["CG"]
-    cg_rel_errs = [1e-4, 1e-5, 1e-6]
-
+    cg_rel_errs = [1e-4]
+    lps = [1, 2]
     E_worst_2_target_converge = False
-    folder_test = "test16"
+    folder_test = "test19"
 
     tasks = []
     for s in solvers:
-        if s == "CG" or s == "CG_GS" or s == "CG_LLT":
-            for cgerr in cg_rel_errs:
+        for lp in lps:
+            if s == "CG" or s == "CG_GS" or s == "CG_LLT":
+                for cgerr in cg_rel_errs:
+                    for obj_name in mesh_names:
+                        cfg_copy = base_cfg.copy()
+                        cfg_copy["Lp"] = lp
+                        cfg_copy["cg_rel_err"] = cgerr
+                        tasks.append((obj_name, s, cfg_copy, lp, cgerr, folder_test))
+            else:
                 for obj_name in mesh_names:
                     cfg_copy = base_cfg.copy()
-                    cfg_copy["Lp"] = 2
-                    cfg_copy["cg_rel_err"] = cgerr
-                    tasks.append((obj_name, s, cfg_copy, cgerr, folder_test))
-        else:
-            for obj_name in mesh_names:
-                cfg_copy = base_cfg.copy()
-                cfg_copy["Lp"] = 1
-                tasks.append((obj_name, s, cfg_copy, None, folder_test))
+                    cfg_copy["Lp"] = lp
+                    tasks.append((obj_name, s, cfg_copy, lp, None, folder_test))
 
     print(f"\nTotal tasks: {len(tasks)}")
 
