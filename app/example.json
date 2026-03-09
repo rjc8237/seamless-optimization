@@ -27,7 +27,9 @@
     "use_rref": true,
     
     "percentages": [10.0, 50.0, 100.0],
-    "percentage_target": 0.0,
+    "percentage_target": 0,
+    "percentage_target_value": 1.0,
+    "percentage_target_converge": false,
     "save_percentages_meshes": false,
 
     "precompute_seamless": true,
@@ -40,7 +42,6 @@
     "soft_max": false,
     "t": 5.0,
     "use_worst_n_energy_in_ls": false,
-    "percentage_target_converge": false,
     "energy_diff_converge": true,
     "max_grad_abs_converge": false,
     "max_grad_rel_converge": false,

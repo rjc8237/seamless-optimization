@@ -33,6 +33,7 @@ struct Parameters
     // for worst n% triangles energies
     std::vector<double> percentages = {5.0};
     double percentage_target = 5.0;
+    double percentage_target_value = 1.0;
     bool save_percentages_meshes = false;
     
     std::string solver_type = "LDLT"; // solver type

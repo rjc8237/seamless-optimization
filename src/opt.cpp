@@ -1258,23 +1258,24 @@ void ExtremeOpt::do_optimization(json& opt_log)
                 break;
             }
         }
-        // 2. energy stopping condition
-        if (m_params.save_percentages_meshes) {
-            for (int ei = 0; ei < m_params.percentages.size(); ei++) {
-                if (E_worst_2[ei] <= 1.0 && e_worst_iters[ei] == -1) {
-                    e_worst_v_attrs.push_back(vertex_attrs);
-                    if (fabs(m_params.percentage_target - m_params.percentages[ei]) < 1e-6 && m_params.percentage_target_converge) {
-                        std::string reason = fmt::format("Target percentage = {} reached", m_params.percentage_target);
-                        opt_log["converge_reason"] = reason;
-                        break;
-                    }
-                    e_worst_times[ei] = total_timer.getElapsedTime();
-                    e_worst_v_attrs_ind[ei] = e_worst_v_attrs.size() - 1;
-                    e_worst_iters[ei] = i;
-                }
+        // storing information about energies for percentages
+        for (int ei = 0; ei < m_params.percentages.size(); ei++) {
+            if (E_worst_2[ei] <= m_params.percentage_target_value && e_worst_iters[ei] == -1) {
+                e_worst_v_attrs.push_back(vertex_attrs);
+                e_worst_times[ei] = total_timer.getElapsedTime();
+                e_worst_v_attrs_ind[ei] = e_worst_v_attrs.size() - 1;
+                e_worst_iters[ei] = i;
             }
         }
-        
+
+        // 2. energy stopping condition
+        if (m_params.percentage_target_converge &&E_worst_2[m_params.percentage_target] <= m_params.percentage_target_value) {
+            std::string reason = fmt::format("Target percentage({}%) reached {}", m_params.percentages[m_params.percentage_target], m_params.percentage_target_value);
+            spdlog::info(reason);
+            opt_log["converge_reason"] = reason;
+            break;
+        }
+
         // 3. energy change stopping condition
         avr_step += fabs(E - E_old) / E_old;
         count += 1;
@@ -1314,7 +1315,7 @@ void ExtremeOpt::do_optimization(json& opt_log)
             break;
         }
     }
-
+    
     if (last_iter % 10 != 1 && false) { // create flag for iterations or remove it entirely
         iter_v_attrs.push_back(vertex_attrs);
     }
@@ -1323,17 +1324,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
         make_screenshot(iters);
     }
     
-    if (m_params.save_percentages_meshes) {
-        for (int ei = 0; ei < m_params.percentages.size(); ei++) {
-            if (e_worst_iters[ei] == -1) {
-                e_worst_times[ei] = total_timer.getElapsedTime();
-            }
+    for (int ei = 0; ei < m_params.percentages.size(); ei++) {
+        if (e_worst_iters[ei] == -1) {
+            e_worst_times[ei] = total_timer.getElapsedTime();
         }
-        opt_log["e_worst_times"] = e_worst_times;
-        opt_log["e_worst_iters"] = e_worst_iters;
     }
+    opt_log["e_worst_times"] = e_worst_times;
+    opt_log["e_worst_iters"] = e_worst_iters;
 
-    opt_log["total_time"] = total_timer.getElapsedTime();
     std::string reason = "Reached max iteration.";
     spdlog::info(reason);
     if (!opt_log.contains("converge_reason"))
@@ -1341,7 +1339,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
 
     total_time = total_timer.getElapsedTime();
     spdlog::info("Total optimization time: {}s", total_time);
-    opt_log["iters"] = iters;
+    opt_log["total_time"] = total_timer.getElapsedTime();
+    opt_log["iters"] = last_iter;
+
     opt_log["hessian_log"] = hessian_log;
 
     double time_ls = 0.0;
