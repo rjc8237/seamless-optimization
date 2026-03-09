@@ -8,6 +8,7 @@
 /py_codes/output*
 /py_codes/*.ipynb
 /py_codes/*
+/py_codes*
 /venv/
 /.vscode/
 /.idea/
