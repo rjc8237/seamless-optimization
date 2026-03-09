@@ -7,9 +7,11 @@
 #include "Parameters.h"
 #include "json.hpp"
 #include "spdlog/spdlog.h"
+#ifdef ENABLE_VISUALIZATION
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
 #include "polyscope/curve_network.h"
+#endif
 #include "energy.h"
 
 using json = nlohmann::json;
@@ -493,12 +495,14 @@ public:
         Eigen::MatrixXd uv;
         export_mesh(V, F, uv);
 
+#ifdef ENABLE_VISUALIZATION
         polyscope::init();
         polyscope::registerPointCloud("vertices", V);
         polyscope::registerSurfaceMesh("mesh", V, F);
         polyscope::registerCurveNetwork("features", V, FE.leftCols(2))
         ->addEdgeScalarQuantity("alignment", FE.col(2));
         polyscope::show();
+#endif
     }
 
     std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N);

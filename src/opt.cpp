@@ -17,11 +17,11 @@
 
 #include <igl/facet_components.h>
 
-// #ifdef ENABLE_VISUALIZATION
+#ifdef ENABLE_VISUALIZATION
 #include "polyscope/curve_network.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
-// #endif
+#endif
 
 namespace SymDir{
 
@@ -1097,6 +1097,7 @@ void ExtremeOpt::make_screenshot(int iter, double percentage) {
     
     // Save screenshot
     std::string screenshot_path = fmt::format("{}/iter_{:05d}_percentage={}.png", m_params.output_dir_for_screenshots, iter, percentage);
+
     polyscope::screenshot(screenshot_path);
     spdlog::info("Saved screenshot to {}", screenshot_path);
     
