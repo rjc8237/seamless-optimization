@@ -24,6 +24,9 @@ set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr;umfpack" )
 option ( SUITESPARSE_USE_CUDA OFF )
 option(USE_OMP "Use OMP library" OFF)
 
+if(ENABLE_VISUALIZATION)
+  add_compile_definitions(ENABLE_VISUALIZATION)
+endif()
 
 if(USE_SUITESPARSE)
   add_compile_definitions(USE_SUITESPARSE)
@@ -44,11 +47,14 @@ include(nlohmann_json)
 include(libigl)
 include(eigen)
 include(spdlog)
-include(polyscope)
 include(suitesparse)
 include(pybind11)
 include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
+
+if (ENABLE_VISUALIZATION)
+include(polyscope)
+endif()
 
 find_package(Boost REQUIRED)
 if(USE_OMP)
@@ -96,11 +102,15 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
     spdlog::spdlog
-    polyscope
     ${Boost_LIBRARIES}
     ${BLAS_LIBRARIES}
     ${OMP_LIBS}
 )
+if (ENABLE_VISUALIZATION)
+target_link_libraries(SymmetricDirichletLib PUBLIC
+    polyscope
+)
+endif()
 
 add_executable(symmetric_dirichlet
     app/main.cpp
