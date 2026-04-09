@@ -524,6 +524,42 @@ Eigen::VectorXd ExtremeOpt::gs_newton_direction(
     return newton;
 }
 
+    Eigen::VectorXd conjugate_gradient(
+        const Eigen::SparseMatrix<double>& A,
+        const Eigen::VectorXd& b,
+        const Eigen::VectorXd& x0,
+        int max_iter,
+        double rel_thres,
+        double abs_thres)
+    {
+        // initialize with guess
+        Eigen::VectorXd x = x0;
+        spdlog::info("initial guess norm is {}", x.norm());
+
+        // build CG solver
+        int batch_size = 100;
+        Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg;
+        cg.setMaxIterations(batch_size);          // advance a few iterations at a time
+        cg.setTolerance(rel_thres);
+        cg.compute(A);
+        int num_batches = max_iter / batch_size;
+
+		for (int i = 0; i < num_batches; ++i)
+		{
+			x = cg.solveWithGuess(b, x); // one CG iteration from current x
+
+            // check for convergence
+			double abs_res = (A * x - b).norm();
+            spdlog::info("residual at batch {} is {}", i, abs_res);
+			if ((abs_res < abs_thres) || (abs_res < rel_thres * b.norm()))
+			{
+                break;
+			}
+		}
+
+        return x;
+    }
+
 Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
     Eigen::MatrixXd& uv,
     double& energy_0,
@@ -609,6 +645,14 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         if (m_params.solver_type == "Parallel_CG") {
             result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
             newton = -newton;
+        } else if (m_params.solver_type == "Guess_CG") {
+            if (prev_dir.size() != 0)
+            {
+                //newton = prev_dir;
+            }
+            newton = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err, 0.1 * m_params.cg_rel_err);
+            newton = -newton;
+            prev_dir = newton;
         } else {
             solver.compute(mat);
             newton = -solver.solve(rhs);
@@ -666,6 +710,9 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
                 std::cout << "CG converged in " << result.iterations << " iterations with rel res " << result.rel_residual << std::endl;
                 break;
             }
+        }
+        if (m_params.solver_type == "Guess_CG" && newton_decr < 0) {
+            break;
         }
         if (solver.info() == Eigen::Success && newton_decr < 0)
         {
