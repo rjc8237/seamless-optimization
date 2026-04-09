@@ -168,6 +168,7 @@ int main(int argc, char** argv)
     param.use_rref = config["use_rref"];
     // param.solver_type = config["solver_type"];
     param.cg_rel_err = config["cg_rel_err"];
+    param.cg_iters = config["cg_iters"];
     
     param.percentages = config["percentages"].get<std::vector<double>>();
     param.percentage_target = config["percentage_target"];

@@ -154,7 +154,7 @@ public:
 
 class Solver {
 public:
-    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err=0);
+    Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err=0, int cg_iter=10000);
 
     void compute(const Eigen::SparseMatrix<double>& A, const int gg_size = 0);
     Eigen::VectorXd solve(const Eigen::VectorXd& b);

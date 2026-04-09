@@ -435,6 +435,7 @@ public:
         int iter_solver;
         double ls_step_size;
         double newton_decr;
+        double grad_norm;
 
         // Custom JSON serialization
         friend void to_json(json& j, const HessianStats& s) {
@@ -448,7 +449,8 @@ public:
                 {"time_grad_hessian", s.time_grad_hessian},
                 {"iter_solver", s.iter_solver},
                 {"ls_step_size", s.ls_step_size},
-                {"newton_decr", s.newton_decr}
+                {"newton_decr", s.newton_decr},
+                {"grad_norm", s.grad_norm}
             };
         }
 

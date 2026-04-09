@@ -10,10 +10,10 @@
 
 
 namespace SymDir {
-    Solver::Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err): solver_name_(solver_name){
+    Solver::Solver(const Eigen::SparseMatrix<double>& A, const std::string& solver_name, const double cg_rel_err, int cg_iter): solver_name_(solver_name){
         if (solver_name_ == "CG") {
             cg_.setTolerance(cg_rel_err);
-            cg_.setMaxIterations(10000);
+            cg_.setMaxIterations(cg_iter);
         }
         if (solver_name_ == "CG_GS") {
             cg_gs.setTolerance(cg_rel_err);

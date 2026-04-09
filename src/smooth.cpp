@@ -639,18 +639,18 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
             mat = perm.transpose() * mat * perm;
             rhs = perm.transpose() * rhs;
         }
-        Solver solver(mat, m_params.solver_type, m_params.cg_rel_err);
+        Solver solver(mat, m_params.solver_type, m_params.cg_rel_err, m_params.cg_iters);
         CgResult result;
 
         if (m_params.solver_type == "Parallel_CG") {
-            result = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err);
+            result = conjugate_gradient(mat, rhs, newton, m_params.cg_iters, m_params.cg_rel_err);
             newton = -newton;
         } else if (m_params.solver_type == "Guess_CG") {
             if (prev_dir.size() != 0)
             {
                 //newton = prev_dir;
             }
-            newton = conjugate_gradient(mat, rhs, newton, 10000, m_params.cg_rel_err, 0.1 * m_params.cg_rel_err);
+            newton = conjugate_gradient(mat, rhs, newton, m_params.cg_iters, m_params.cg_rel_err, 0.1 * m_params.cg_rel_err);
             newton = -newton;
             prev_dir = newton;
         } else {
@@ -724,7 +724,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         }
         else if (a == 0)
         {
-            a = 1; // We did not try the correction yet, start from arbitrary value 1
+            a = grad.norm(); // We did not try the correction yet, start from gradient norm
             spdlog::info("Starting correction.");
         }
         else
@@ -836,6 +836,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     } else {
         newton = reduced_newton_direction(uv, energy_0, grad, hessian);
     }
+    residual = (hessian * newton + grad).norm();                    
 
     time_solver = timer.getElapsedTimeInSec() - time_solver;
     double time_ls = 0;
@@ -915,6 +916,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     time_ls = timer.getElapsedTimeInSec();
     // Store in log
 
+
     hessian_log.push_back({
         static_cast<int>(hessian_log.size()),
         cond_num,
@@ -926,6 +928,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         iter_solver,
         ls_step_size,
         fabs(newton_decr),
+        grad.norm(),
     });
 
     double grad_norm;
