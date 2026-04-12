@@ -1105,6 +1105,7 @@ void ExtremeOpt::make_screenshot(int iter, double percentage) {
 #endif
 }
 
+
 void ExtremeOpt::do_optimization(json& opt_log)
 {
     igl::Timer timer;
@@ -1171,6 +1172,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
             Q2.makeCompressed();
             Q2T = Q2.transpose();
             spdlog::info("reduced system matrix has {} nonzeros", Q2.nonZeros());
+        }
+
+        // optionally save constraint matrix to file
+        bool save_constraint_matrix = false;
+        if (save_constraint_matrix)
+        {
+            write_sparse_matrix(Aeq, "constraints.mat", "matlab");
+            write_sparse_matrix(Q2, "red2full.mat", "matlab");
         }
     }
     time = timer.getElapsedTime();

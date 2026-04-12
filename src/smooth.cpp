@@ -656,6 +656,8 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         } else {
             solver.compute(mat);
             newton = -solver.solve(rhs);
+            spdlog::info("rhs norm is {}", rhs.norm());
+            spdlog::info("residual of reduced system is {}", (mat * newton + rhs).norm());
             if (m_params.degenerate_vertices_preconditioner) {
                 // unpermute the solution
                 Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, int> perm_inv = perm.inverse();
@@ -699,6 +701,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         std::cout << "gradient norm is " << grad.dot(grad) << std::endl;
         std::cout << "newton norm is " << newton.dot(newton) << std::endl;
         std::cout << "projected gradient is " << newton_decr << std::endl;
+        spdlog::info("residual of full system is {}", (hessian * newton + grad).norm());
         // if (status == UMFPACK_OK && newton_decr < 0)
         // {
         //     break;
@@ -764,6 +767,8 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
 
     double time_solver = timer.getElapsedTime();
     double newton_decr = 0;
+    double grad_max = 0.;
+    double grad_norm = 0.;
 
     std::vector<bool> is_degenerate_face = mark_degenerate_faces(input_V, input_F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
     if (m_params.degenerate_weight > 0.)
@@ -835,8 +840,12 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         newton = gs_newton_direction(uv, energy_0, grad, hessian);
     } else {
         newton = reduced_newton_direction(uv, energy_0, grad, hessian);
+        residual = (Q2T * (hessian * newton + grad)).norm();                    
+        grad_norm = (Q2T * grad).norm();
+        grad_max = (Q2T * grad).cwiseAbs().maxCoeff();
     }
-    residual = (hessian * newton + grad).norm();                    
+    //int iter = static_cast<int>(hessian_log.size());
+    //write_sparse_matrix(hessian, "hessian_" + std::to_string(iter) + ".mat", "matlab");
 
     time_solver = timer.getElapsedTimeInSec() - time_solver;
     double time_ls = 0;
@@ -928,12 +937,10 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         iter_solver,
         ls_step_size,
         fabs(newton_decr),
-        grad.norm(),
+        grad_norm,
     });
 
-    double grad_norm;
-    grad_norm = grad.cwiseAbs().maxCoeff();
-    return grad_norm;
+    return grad_max;
 }
 
 } // namespace SymDir

@@ -20,6 +20,11 @@ using json = nlohmann::json;
 namespace SymDir {
 
 /**
+ * Write sparse matrix to file in csv or matlab format
+ */
+void write_sparse_matrix(const Eigen::SparseMatrix<double>& matrix, const std::string& filename, std::string format);
+
+/**
  * @brief Find edges per connected component as aligned with the positive u-axis as possible
  * 
  * @param uv: parameterization vertices

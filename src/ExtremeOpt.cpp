@@ -18,6 +18,38 @@
 
 namespace SymDir {
 
+void write_sparse_matrix(const Eigen::SparseMatrix<double>& matrix, const std::string& filename, std::string format)
+{
+    using MatrixX = Eigen::SparseMatrix<double>;
+
+    /// Open file
+    std::ofstream output_file;
+    output_file.open(filename);
+
+    // Iterate over nonzero entries
+    for (Eigen::Index k = 0; k < matrix.outerSize(); ++k) {
+        for (MatrixX::InnerIterator it(matrix, k); it; ++it) {
+            int i = it.row();
+            int j = it.col();
+            double v = it.value();
+
+            // CSV format has comma separated 0-indexed values
+            if (format == "csv") {
+                output_file << std::fixed << std::setprecision(17) << i << "," << j << "," << v
+                            << std::endl;
+            }
+            // MATLAB uses space separated 1-indexed values
+            else if (format == "matlab") {
+                output_file << std::fixed << std::setprecision(17) << (i + 1) << "  " << (j + 1)
+                            << "  " << v << std::endl;
+            }
+        }
+    }
+
+    // Close file
+    output_file.close();
+}
+
 Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
