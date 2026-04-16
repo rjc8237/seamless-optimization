@@ -297,7 +297,12 @@ int main(int argc, char** argv)
         //extremeopt.FE = FE;
     }
     //extremeopt.view();
-    if (ffield != "") extremeopt.comb_matchings(ffield_path);
+    if (ffield != "")
+    {
+        std::string ext = std::filesystem::path(ffield_path).extension().string();
+        if (ext == ".ffield") extremeopt.comb_matchings(ffield_path);
+        else if (ext == ".cfield") extremeopt.load_combed_field(ffield_path);
+    }
     extremeopt.do_optimization(opt_log);
 
     if (extremeopt.m_params.with_cons)

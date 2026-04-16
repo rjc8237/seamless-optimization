@@ -906,7 +906,8 @@ void buildAeq(
     const Eigen::MatrixXi& FE,
     const Eigen::MatrixXd& uv,
     const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double>& Aeq)
+    Eigen::SparseMatrix<double>& Aeq,
+    bool is_field_aligned)
 {
     int N = uv.rows();
     int c = 0;
@@ -919,13 +920,14 @@ void buildAeq(
     int num_components = min_v_diffs.size();
 
     int n_fix_dof;
-    if (fes > 0) 
+    bool fix_rotation = ((fes == 0) && (!is_field_aligned));
+    if (fix_rotation)
     {
-        n_fix_dof = 2 * num_components;
+        n_fix_dof = 3 * num_components;
     }
     else
     {
-        n_fix_dof = 3 * num_components;
+        n_fix_dof = 2 * num_components;
     }
 
     //std::set<std::pair<int, int>> added_e;
@@ -990,8 +992,9 @@ void buildAeq(
         trips.push_back(Trip(c + 1, min_v_diff_id + N, 1));
         c = c + 2;
     }
-    // fix rotation
-    if (fes == 0)
+
+    // fix rotation if no feature or field alignment
+    if (fix_rotation)
     {
         for (int ci = 0; ci < num_components; ++ci)
         {
@@ -1006,7 +1009,8 @@ void buildAeq(
             c = c + 1;
         }
     }
-    else {
+    // if features, add feature constraints
+    else if (fes > 0) {
         //std::set<std::pair<int, int>> added_fe;
 
         // feature edge constraints
@@ -1141,7 +1145,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
     spdlog::info("Building constraints");
     igl::doublearea(V, F, area);
     get_grad_op(V, F, G);
-    buildAeq(EE, FE, uv, F, Aeq);
+    bool is_field_aligned = (m_params.alignment_weight > 1e-12);
+    buildAeq(EE, FE, uv, F, Aeq, is_field_aligned);
     buildBeq(ME, uv, Beq);
     AeqT = Aeq.transpose();
 

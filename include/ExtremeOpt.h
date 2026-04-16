@@ -526,6 +526,8 @@ public:
     Eigen::VectorXd, 
     Eigen::MatrixXi> load_reference_field(const std::string& ffield_file);
 
+    void load_combed_field(const std::string& ffield_file);
+
     Eigen::VectorXd rotate_vector(
                     const Eigen::VectorXd& V,
                     double angle,

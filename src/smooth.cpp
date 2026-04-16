@@ -971,17 +971,19 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             spdlog::info("degenerate energy is {}", degenerate_energy);
         }
 
-        // check armijo and wolfe conditions
-        Eigen::VectorXd new_grad;
-        evaluate_linesearch_objective(new_x, new_E, new_grad);
+        // check armijo conditions
         double armijo_bound = energy_0 + armijo_c1 * ls_step_size * newton_decr;
-        double wolfe_decr = new_grad.dot(newton);
         bool armijo_ok = std::isfinite(new_E) && (new_E <= armijo_bound);
-        //bool armijo_ok = new_E < energy_0;
+
+        // check flip conditions
+        bool flip_ok = (check_flip(new_x, F) == 0);
+
+        // check wolfe conditions
+        //Eigen::VectorXd new_grad;
+        //evaluate_linesearch_objective(new_x, new_E, new_grad);
+        //double wolfe_decr = new_grad.dot(newton);
         //bool wolfe_ok = new_grad.allFinite() && (wolfe_decr >= wolfe_c2 * newton_decr);
         bool wolfe_ok = true;
-        bool flip_ok = (check_flip(new_x, F) == 0);
-        //bool flip_ok = true;
 
         //if (new_E < energy_0 && check_flip(new_x, F) == 0) {
         if (armijo_ok && wolfe_ok && flip_ok) {

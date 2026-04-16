@@ -1023,6 +1023,40 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_r
     return { reference_field, thetas, period_jumps };
 }
 
+void ExtremeOpt::load_combed_field(const std::string& ffield_file)
+{
+    std::ifstream inf(ffield_file);
+    if (!inf) {
+        spdlog::error("Failed to load frame field file\n");
+        exit(EXIT_FAILURE);
+    }
+    spdlog::info("aligning to frame field file\n");
+    PD1 = Eigen::MatrixXd(input_F.rows(), 3);
+    PD2 = Eigen::MatrixXd(input_F.rows(), 3);
+    
+    int i = 0;
+    int num_vectors;
+    inf >> num_vectors;
+    assert(num_vectors == input_F.rows());
+    inf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::string line{};
+    while (std::getline(inf, line)) {
+        std::istringstream iss(line);
+        double d1x;
+        double d1y;
+        double d1z;
+        double d2x;
+        double d2y;
+        double d2z;
+
+        iss >> d1x >> d1y >> d1z >> d2x >> d2y >> d2z;
+        PD1.row(i) << d1x, d1y, d1z;
+        PD2.row(i) << d2x, d2y, d2z;
+
+        ++i;
+    }
+}
+
 Eigen::VectorXd ExtremeOpt::rotate_vector(
                     const Eigen::VectorXd& vec,
                     double angle,
