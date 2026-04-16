@@ -537,7 +537,7 @@ Eigen::VectorXd ExtremeOpt::gs_newton_direction(
         spdlog::info("initial guess norm is {}", x.norm());
 
         // build CG solver
-        int batch_size = 100;
+        int batch_size = 1000;
         Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg;
         cg.setMaxIterations(batch_size);          // advance a few iterations at a time
         cg.setTolerance(rel_thres);
@@ -648,7 +648,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         } else if (m_params.solver_type == "Guess_CG") {
             if (prev_dir.size() != 0)
             {
-                //newton = prev_dir;
+                newton = prev_dir;
             }
             newton = conjugate_gradient(mat, rhs, newton, m_params.cg_iters, m_params.cg_rel_err, 0.1 * m_params.cg_rel_err);
             newton = -newton;
@@ -741,6 +741,44 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
     return newton;
 }
 
+Eigen::VectorXd compute_lbfgs_direction(
+    const std::deque<Eigen::VectorXd>& variables,
+    const std::deque<Eigen::VectorXd>& gradients,
+    const Eigen::VectorXd& gradient)
+{
+    int m = variables.size() - 1;
+    std::deque<Eigen::VectorXd> delta_variables;
+    std::deque<Eigen::VectorXd> delta_gradients;
+    for (int i = 0; i < m; ++i) {
+        delta_variables.push_back(variables[i + 1] - variables[i]);
+        delta_gradients.push_back(gradients[i + 1] - gradients[i]);
+    }
+
+    // Initialize descent direction with a forward pass
+    Eigen::VectorXd q = gradient;
+    std::vector<double> rho(m);
+    std::vector<double> alpha(m);
+    for (int i = 0; i < m; ++i) {
+        Eigen::VectorXd dx = delta_variables[i];
+        Eigen::VectorXd dg = delta_gradients[i];
+        rho[i] = 1.0 / dx.dot(dg);
+        alpha[i] = rho[i] * dx.dot(q);
+        q -= alpha[i] * dg;
+    }
+
+    // Scale descent direction
+    double gamma = delta_variables[0].dot(delta_gradients[0]) / delta_gradients[0].squaredNorm();
+    Eigen::VectorXd z = gamma * q;
+
+    // Finish computation of descent direction with a back pass
+    std::vector<double> beta(m);
+    for (int i = m - 1; i >= 0; --i) {
+        beta[i] = rho[i] * delta_gradients[i].dot(z);
+        z += (alpha[i] - beta[i]) * delta_variables[i];
+    }
+
+    return -z;
+}
 
 double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessian_log)
 {
@@ -769,6 +807,18 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     double newton_decr = 0;
     double grad_max = 0.;
     double grad_norm = 0.;
+
+    if (m_params.solver_type == "LBFGS")
+    {
+        Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+        Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+        solver.compute(Q2T * Q2);
+        Eigen::VectorXd x = solver.solve(Q2T * uv_flat);
+        variables.push_front(x);
+        gradients.push_front(Q2T * grad);
+        if (variables.size() > 20) variables.pop_back();
+        if (gradients.size() > 20) gradients.pop_back();
+    }
 
     std::vector<bool> is_degenerate_face = mark_degenerate_faces(input_V, input_F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
     if (m_params.degenerate_weight > 0.)
@@ -838,6 +888,27 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         newton = kkt_newton_direction(uv, energy_0, grad, hessian);
     } else if (m_params.solver_type == "GS") {
         newton = gs_newton_direction(uv, energy_0, grad, hessian);
+    } else if (m_params.solver_type == "LBFGS") {
+        // Check if the previous gradient and descent direction are trivial
+        if (variables.size() < 2) {
+            spdlog::info("using gradient for initial direction");
+            newton = -Q2 * (Q2T * grad);
+        } else {
+            //newton = Q2 * (Q2T * (compute_lbfgs_direction(variables, gradients, grad)));
+            newton = Q2 * compute_lbfgs_direction(variables, gradients, Q2T * grad);
+        }
+        if  (newton.dot(grad) >= 0)
+        {
+            newton = -Q2 * (Q2T * grad);
+            gradients.clear();
+            variables.clear();
+        }
+        grad_norm = (Q2T * grad).norm();
+        grad_max = (Q2T * grad).cwiseAbs().maxCoeff();
+    } else if (m_params.solver_type == "gradient") {
+        newton = -Q2 * (Q2T * grad);
+        grad_norm = (Q2T * grad).norm();
+        grad_max = (Q2T * grad).cwiseAbs().maxCoeff();
     } else {
         newton = reduced_newton_direction(uv, energy_0, grad, hessian);
         residual = (Q2T * (hessian * newton + grad)).norm();                    
@@ -853,6 +924,26 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     // do lineserach
     newton_decr = newton.dot(grad);
     Eigen::MatrixXd search_dir = Eigen::Map<Eigen::MatrixXd>(newton.data(), V.rows(), 2);
+
+        constexpr double armijo_c1 = 1e-4;
+    constexpr double wolfe_c2 = 0.9;
+    constexpr double ls_backtrack = 0.8;
+
+    auto evaluate_linesearch_objective =
+        [&](const Eigen::MatrixXd& sample_uv,
+            double& sample_energy,
+            Eigen::VectorXd& sample_grad) {
+            Eigen::MatrixXd sample_Guv = Grad * sample_uv;
+            Eigen::SparseMatrix<double> sample_hessian;
+            sample_energy = get_energy_grad_and_hessian(
+                input_V,
+                input_F,
+                sample_uv,
+                sample_Guv,
+                sample_grad,
+                sample_hessian,
+                false);
+        };
 
     auto new_x = uv;
     double ls_step_size = 1.0;
@@ -880,7 +971,20 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
             spdlog::info("degenerate energy is {}", degenerate_energy);
         }
 
-        if (new_E < energy_0 && check_flip(new_x, F) == 0) {
+        // check armijo and wolfe conditions
+        Eigen::VectorXd new_grad;
+        evaluate_linesearch_objective(new_x, new_E, new_grad);
+        double armijo_bound = energy_0 + armijo_c1 * ls_step_size * newton_decr;
+        double wolfe_decr = new_grad.dot(newton);
+        bool armijo_ok = std::isfinite(new_E) && (new_E <= armijo_bound);
+        //bool armijo_ok = new_E < energy_0;
+        //bool wolfe_ok = new_grad.allFinite() && (wolfe_decr >= wolfe_c2 * newton_decr);
+        bool wolfe_ok = true;
+        bool flip_ok = (check_flip(new_x, F) == 0);
+        //bool flip_ok = true;
+
+        //if (new_E < energy_0 && check_flip(new_x, F) == 0) {
+        if (armijo_ok && wolfe_ok && flip_ok) {
             std::cout << "energy from " << energy_0 << " to " << new_E << std::endl;
             if (m_params.use_worst_n_energy_in_ls) {
                 std::vector<double> new_E_worst = compute_worst_n_energy(new_x);
@@ -925,7 +1029,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     time_ls = timer.getElapsedTimeInSec();
     // Store in log
 
-
     hessian_log.push_back({
         static_cast<int>(hessian_log.size()),
         cond_num,
@@ -936,7 +1039,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         time_grad_hessian,
         iter_solver,
         ls_step_size,
-        fabs(newton_decr),
+        -newton_decr,
         grad_norm,
     });
 

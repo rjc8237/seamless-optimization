@@ -399,6 +399,10 @@ public:
     // previous direction for line search
     Eigen::VectorXd prev_dir;
 
+    // gradient and variable record for lbfgs
+    std::deque<Eigen::VectorXd> variables;
+    std::deque<Eigen::VectorXd> gradients;
+
     std::vector<std::vector<VertexAttributes>> e_worst_v_attrs; // vertex_attrs for E_worst computations
     std::vector<int> e_worst_v_attrs_ind; // index into iter_v_attrs for each E_worst computation
     std::vector<int> e_worst_iters;
