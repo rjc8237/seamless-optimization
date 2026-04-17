@@ -706,6 +706,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         // {
         //     break;
         // }
+
         if (m_params.solver_type == "Parallel_CG") {
             if (result.converged && newton_decr < 0)
             {
@@ -717,6 +718,14 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         if (m_params.solver_type == "Guess_CG" && newton_decr < 0) {
             break;
         }
+
+        // for CG, solver failure may just be iteration count
+        if (m_params.solver_type == "CG" && newton_decr < 0) {
+            iter_solver = solver.iterations();
+            spdlog::info("{} iterations of CG", iter_solver);
+            break;
+        }
+
         if (solver.info() == Eigen::Success && newton_decr < 0)
         {
             // cond_num = get_cond_num_from_hessian(hessian);
