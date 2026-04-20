@@ -7,6 +7,7 @@
 #include "Parameters.h"
 #include "json.hpp"
 #include "spdlog/spdlog.h"
+#include <fstream>
 #ifdef ENABLE_VISUALIZATION
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
@@ -18,6 +19,22 @@ using json = nlohmann::json;
 
 
 namespace SymDir {
+
+template <typename VectorType>
+void write_vector(
+    const VectorType& v,
+    const std::string& output_filename,
+    int precision = 17,
+    std::string sep = "\n")
+{
+    std::ofstream output_file(output_filename, std::ios::out | std::ios::trunc);
+    int n = v.size();
+    for (int i = 0; i < n; ++i) {
+        output_file << std::setprecision(precision) << v[i] << sep;
+    }
+    output_file.close();
+}
+
 
 /**
  * Write sparse matrix to file in csv or matlab format
