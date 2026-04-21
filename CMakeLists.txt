@@ -22,7 +22,7 @@ option(USE_COMISO "Use Comiso for field generation" ON)
 option(ENABLE_VISUALIZATION "Enable visualization with polyscope" OFF)
 set ( SUITESPARSE_ENABLE_PROJECTS "suitesparse_config;cholmod;spqr;umfpack" )
 option ( SUITESPARSE_USE_CUDA OFF )
-option(USE_OMP "Use OMP library" OFF)
+option(USE_OMP "Use OMP library" ON)
 
 if(ENABLE_VISUALIZATION)
   add_compile_definitions(ENABLE_VISUALIZATION)

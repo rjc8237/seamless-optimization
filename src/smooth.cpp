@@ -537,7 +537,7 @@ Eigen::VectorXd ExtremeOpt::gs_newton_direction(
         spdlog::info("initial guess norm is {}", x.norm());
 
         // build CG solver
-        int batch_size = 1000;
+        int batch_size = 500;
         Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower|Eigen::Upper> cg;
         cg.setMaxIterations(batch_size);          // advance a few iterations at a time
         cg.setTolerance(rel_thres);
@@ -648,7 +648,7 @@ Eigen::VectorXd ExtremeOpt::reduced_newton_direction(
         } else if (m_params.solver_type == "Guess_CG") {
             if (prev_dir.size() != 0)
             {
-                newton = prev_dir;
+                //newton = prev_dir;
             }
             newton = conjugate_gradient(mat, rhs, newton, m_params.cg_iters, m_params.cg_rel_err, 0.1 * m_params.cg_rel_err);
             newton = -newton;
@@ -924,8 +924,9 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         grad_norm = (Q2T * grad).norm();
         grad_max = (Q2T * grad).cwiseAbs().maxCoeff();
     }
-    //int iter = static_cast<int>(hessian_log.size());
+    int iter = static_cast<int>(hessian_log.size());
     //write_sparse_matrix(hessian, "hessian_" + std::to_string(iter) + ".mat", "matlab");
+    write_vector(newton, "newton_" + std::to_string(iter) + ".txt");
 
     time_solver = timer.getElapsedTimeInSec() - time_solver;
     double time_ls = 0;
@@ -962,9 +963,10 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         E_worst_0 = compute_worst_n_energy(uv);
     }
     int count_e = 0, count_f = 0;
+    double new_E;
     for (int i = 0; i < m_params.ls_iters; i++) {
         new_x = uv + ls_step_size * search_dir;
-        double new_E = compute_energy(new_x);
+        new_E = compute_energy(new_x);
         if (ME.rows() > 0) 
         {
             Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
