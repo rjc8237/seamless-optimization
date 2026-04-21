@@ -1248,4 +1248,69 @@ std::vector<bool> mark_degenerate_vertices(const Eigen::MatrixXd& V, const Eigen
     return is_degenerate;
 }
 
+Parameters read_parameters(json& config)
+{
+    Parameters param;
+    param.max_iters = config["max_iters"]; // iterations
+    param.max_time = config["max_time"]; // time in seconds
+    param.smooth_only_iters = config["smooth_only_iters"];
+    param.E_target = config["E_target"]; // Energy target
+    param.ls_iters = config["ls_iters"]; // param for linesearch in smoothing operation
+    param.do_newton = config["do_newton"]; // do newton/gd steps for smoothing operation
+    param.local_smooth = config["local_smooth"];
+    param.global_smooth = config["global_smooth"];
+    param.elen_alpha = config["elen_alpha"];
+    param.do_projection = config["do_projection"];
+    param.with_cons = config["with_cons"];
+    param.Lp = config["Lp"];
+    param.save_meshes = config["save_meshes"];
+    param.do_feature_alignment = config["do_feature_alignment"]; // align feature edges
+    param.symdir_weight = config["symdir_weight"];
+    param.alignment_weight = config["alignment_weight"];
+    param.degenerate_weight = config["degenerate_weight"];
+    param.fix_misaligned = config["fix_misaligned"];
+    param.use_rref = config["use_rref"];
+    // param.solver_type = config["solver_type"];
+    param.cg_rel_err = config["cg_rel_err"];
+    param.cg_iters = config["cg_iters"];
+    
+    param.percentages = config["percentages"].get<std::vector<double>>();
+    param.percentage_target = config["percentage_target"];
+    param.percentage_target_value = config["percentage_target_value"];
+    param.save_percentages_meshes = config["save_percentages_meshes"];
+
+    param.E_abs_err = config["E_abs_err"];
+    param.E_rel_err = config["E_rel_err"];
+    param.diff_err = config["diff_err"];
+    param.grad_abs_err = config["grad_abs_err"];
+    param.grad_rel_err = config["grad_rel_err"];
+    
+    param.precompute_seamless = config["precompute_seamless"];
+    param.projected_newton = config["projected_newton"];
+    param.soft_max = config["soft_max"];
+    param.t = config["t"];
+    param.precompute_seamless = config["precompute_seamless"];
+    
+    param.percentage_target_converge = config["percentage_target_converge"];
+    param.max_grad_abs_converge = config["max_grad_abs_converge"];
+    param.max_grad_rel_converge = config["max_grad_rel_converge"];
+    param.energy_diff_converge = config["energy_diff_converge"];
+    param.use_worst_n_energy_in_ls = config["use_worst_n_energy_in_ls"];
+    param.E_abs_converge = config["E_abs_converge"];
+    param.E_rel_converge = config["E_rel_converge"];
+
+    param.last_screenshot_after_optimization = config["last_screenshot_after_optimization"];
+    param.screenshot_interval = config["screenshot_interval"];
+    param.output_dir_for_screenshots = config["output_dir_for_screenshots"];
+    param.uv_scale_for_screenshots = config["uv_scale_for_screenshots"];
+    param.angle_to_rotate_model_for_screenshots = config["angle_to_rotate_model_for_screenshots"];
+    param.screenshot_during_optimization = config["screenshot_during_optimization"];
+
+    param.degenerate_vertices_preconditioner = config["degenerate_vertices_preconditioner"];
+    param.precond_dim = config["precond_dim"];
+    param.triangle_threshold = config["triangle_threshold"];
+
+    return param;
+}
+
 } // namespace SymDir

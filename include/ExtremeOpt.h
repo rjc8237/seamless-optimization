@@ -25,6 +25,11 @@ namespace SymDir {
 void write_sparse_matrix(const Eigen::SparseMatrix<double>& matrix, const std::string& filename, std::string format);
 
 /**
+ * Generate parameters from config file
+ */
+Parameters read_parameters(json& config);
+
+/**
  * @brief Find edges per connected component as aligned with the positive u-axis as possible
  * 
  * @param uv: parameterization vertices
