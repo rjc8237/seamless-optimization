@@ -58,21 +58,10 @@ endif()
 
 find_package(Boost REQUIRED)
 if(USE_OMP)
-    # 1. flags to tell Clang to use OpenMP
-    set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
-    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
-    set(OpenMP_C_LIB_NAMES "omp")
-    set(OpenMP_CXX_LIB_NAMES "omp")
-    set(OpenMP_omp_LIBRARY "omp")
-    
-    # 2. (CRITICAL) Tell CMake where 'omp.h' is hidden
-    include_directories("/opt/homebrew/opt/libomp/include")
-    
-    # 3. Tell CMake where the library binary is hidden
-    link_directories("/opt/homebrew/opt/libomp/lib")
-    
-    # 4. Help find_package locate the config files
-    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/libomp")
+    if (APPLE)
+        # Help CMake find the Homebrew libomp installation
+        list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/libomp")
+    endif()
     find_package(OpenMP REQUIRED)
     find_package(BLAS REQUIRED)
     set (OMP_LIBS
