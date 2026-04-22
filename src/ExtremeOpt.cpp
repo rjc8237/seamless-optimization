@@ -289,7 +289,7 @@ void view_sparse_matrix(const Eigen::SparseMatrix<double>& A)
     }
 }
 
-void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::SparseMatrix<double>& grad_op)
+void _get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::SparseMatrix<double>& grad_op)
 {
     Eigen::MatrixXd F1, F2, F3;
     igl::local_basis(V, F, F1, F2, F3);
@@ -312,6 +312,67 @@ void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::Spar
 
     Eigen::SparseMatrix<double> Dx = face_proj(F1) * G;
     Eigen::SparseMatrix<double> Dy = face_proj(F2) * G;
+
+    Eigen::SparseMatrix<double> hstack = igl::cat(1, Dx, Dy);
+    Eigen::SparseMatrix<double> empty(hstack.rows(), hstack.cols());
+
+    grad_op = igl::cat(1, igl::cat(2, hstack, empty), igl::cat(2, empty, hstack));
+}
+
+void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::SparseMatrix<double>& grad_op)
+{
+    Eigen::VectorXd dblarea;
+    igl::doublearea(V, F, dblarea);
+    double avg_area = dblarea.mean() / 2.;
+
+    int num_faces = F.rows();
+    Eigen::MatrixXd V_exp(3 * num_faces, 3);
+    Eigen::MatrixXi F_exp(num_faces, 3);
+    std::vector<Eigen::Triplet<double>> IJV;
+    for (int f = 0; f < num_faces; ++f)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            F_exp(f, i) = f + (i * num_faces);
+            V_exp.row(F_exp(f, i)) = V.row(F(f, i));
+            IJV.push_back(Eigen::Triplet<double>(F_exp(f, i), F(f, i), 1.));
+        }
+
+        // if area of face is too small, use scaled standard simplex
+        if (dblarea(f) < avg_area * 1e-5)
+        {
+            spdlog::debug("using standard simplex for face {} with area {}", f, dblarea[f]);
+            for (int i = 0; i < 3; ++i)
+            {
+                V_exp.row(F_exp(f, i)) *= 0.;
+                V_exp(F_exp(f, i), i) = avg_area * 1e-5;
+            }
+        }
+    }
+    Eigen::SparseMatrix<double> P(3 * num_faces, V.rows());
+    P.setFromTriplets(IJV.begin(), IJV.end());
+
+    Eigen::MatrixXd F1, F2, F3;
+    igl::local_basis(V_exp, F_exp, F1, F2, F3);
+
+    Eigen::SparseMatrix<double> G;
+    igl::grad(V_exp, F_exp, G, false);
+
+    auto face_proj = [](Eigen::MatrixXd& F) {
+        std::vector<Eigen::Triplet<double>> IJV;
+        int f_num = F.rows();
+        for (int i = 0; i < F.rows(); i++) {
+            IJV.push_back(Eigen::Triplet<double>(i, i, F(i, 0)));
+            IJV.push_back(Eigen::Triplet<double>(i, i + f_num, F(i, 1)));
+            IJV.push_back(Eigen::Triplet<double>(i, i + 2 * f_num, F(i, 2)));
+        }
+        Eigen::SparseMatrix<double> P(f_num, 3 * f_num);
+        P.setFromTriplets(IJV.begin(), IJV.end());
+        return P;
+    };
+
+    Eigen::SparseMatrix<double> Dx = face_proj(F1) * G * P;
+    Eigen::SparseMatrix<double> Dy = face_proj(F2) * G * P;
 
     Eigen::SparseMatrix<double> hstack = igl::cat(1, Dx, Dy);
     Eigen::SparseMatrix<double> empty(hstack.rows(), hstack.cols());

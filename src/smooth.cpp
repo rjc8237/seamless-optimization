@@ -926,7 +926,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     }
     int iter = static_cast<int>(hessian_log.size());
     //write_sparse_matrix(hessian, "hessian_" + std::to_string(iter) + ".mat", "matlab");
-    write_vector(newton, "newton_" + std::to_string(iter) + ".txt");
+    //write_vector(newton, "newton_" + std::to_string(iter) + ".txt");
 
     time_solver = timer.getElapsedTimeInSec() - time_solver;
     double time_ls = 0;
