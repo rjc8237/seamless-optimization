@@ -1109,6 +1109,11 @@ void ExtremeOpt::make_screenshot(int iter, double percentage) {
 #endif
 }
 
+void ExtremeOpt::do_optimization_without_log()
+{
+    json opt_log;
+    do_optimization(opt_log); 
+}
 
 void ExtremeOpt::do_optimization(json& opt_log)
 {

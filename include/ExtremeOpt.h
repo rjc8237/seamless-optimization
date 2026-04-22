@@ -436,6 +436,7 @@ public:
     int tri_capacity() const { return face_attrs.size(); }
     int vert_capacity() const { return vertex_attrs.size(); }
     void make_screenshot(int iter, double percentage=0);
+    void do_optimization_without_log();
     void do_optimization(json& opt_log);
     double compute_energy(const Eigen::MatrixXd& aaa, double Lp = 0);
     std::vector<double> compute_worst_n_energy(const Eigen::MatrixXd& aaa);
