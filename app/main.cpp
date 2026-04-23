@@ -13,6 +13,8 @@
 #include <filesystem>
 #include <algorithm>
 
+#include <H5Cpp.h>
+
 #include <stdlib.h>  // for setenv
 
 //#include "json.hpp"
@@ -92,6 +94,70 @@ void export_obj_mesh(
 
 }
 
+void read_hdf5_mesh_with_uv(const std::string& path,
+               Eigen::MatrixXd& V,
+               Eigen::MatrixXi& F,
+               Eigen::MatrixXd& uv,
+               Eigen::MatrixXi& FT)
+{
+    H5::H5File file(path, H5F_ACC_RDONLY);
+
+    // Vertices
+    H5::DataSet v_set = file.openDataSet("vertices");
+    H5::DataSpace v_space = v_set.getSpace();
+    hsize_t v_dims[2];
+    v_space.getSimpleExtentDims(v_dims);
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> V_row_major(v_dims[0], v_dims[1]);
+    v_set.read(V_row_major.data(), H5::PredType::NATIVE_DOUBLE);
+    V = V_row_major;
+
+    // Faces
+    H5::DataSet f_set = file.openDataSet("faces");
+    H5::DataSpace f_space = f_set.getSpace();
+    hsize_t f_dims[2];
+    f_space.getSimpleExtentDims(f_dims);
+
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> F_row_major(f_dims[0], f_dims[1]);
+    f_set.read(F_row_major.data(), H5::PredType::NATIVE_INT);
+    F = F_row_major;
+
+    // UV vertices
+    H5::DataSet uv_set = file.openDataSet("uv_vertices");
+    H5::DataSpace uv_space = uv_set.getSpace();
+    hsize_t uv_dims[2];
+    uv_space.getSimpleExtentDims(uv_dims);
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> uv_row_major(uv_dims[0], uv_dims[1]);
+    uv_set.read(uv_row_major.data(), H5::PredType::NATIVE_DOUBLE);
+    uv = uv_row_major;
+
+    // UV faces
+    H5::DataSet ft_set = file.openDataSet("uv_faces");
+    H5::DataSpace ft_space = ft_set.getSpace();
+    hsize_t ft_dims[2];
+    ft_space.getSimpleExtentDims(ft_dims);
+
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> FT_row_major(ft_dims[0], ft_dims[1]);
+    ft_set.read(FT_row_major.data(), H5::PredType::NATIVE_INT);
+    FT = FT_row_major;
+}
+
+Eigen::MatrixXd read_hdf5_vector_field(const std::string& path,
+                                   const std::string& name)
+{
+    H5::H5File file(path, H5F_ACC_RDONLY);
+
+    H5::DataSet dset = file.openDataSet("attributes/" + name);
+    hsize_t dims[2];
+    dset.getSpace().getSimpleExtentDims(dims);
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> vector_field_rm(dims[0], dims[1]);
+    dset.read(vector_field_rm.data(), H5::PredType::NATIVE_DOUBLE);
+
+    return vector_field_rm;
+}
+
 int main(int argc, char** argv)
 {
     CLI::App app{argv[0]};
@@ -133,12 +199,20 @@ int main(int argc, char** argv)
     std::error_code ec;
     std::filesystem::create_directories(output_dir, ec);
 
-    std::string input_file = input_dir + "/" + model + ".obj";
+    std::string extension = "h5";
+    std::string input_file = input_dir + "/" + model + "." + extension;
     std::string ffield_path = input_dir + "/" + ffield;
     // Loading the input mesh
 	Eigen::MatrixXd V_init, uv, N;
 	Eigen::MatrixXi F_init, F, FN;
-	igl::readOBJ(input_file, V_init, uv, N, F_init, F, FN);
+    if (extension == "obj")
+    {
+        igl::readOBJ(input_file, V_init, uv, N, F_init, F, FN);
+    }
+    else if (extension == "h5")
+    {
+        read_hdf5_mesh_with_uv(input_file, V_init, F_init, uv, F);
+    }
     spdlog::info("Input mesh F size {}, V size {}, uv size {}", F.rows(), V_init.rows(), uv.rows());
 
     std::ifstream js_in(input_json);
@@ -215,11 +289,6 @@ int main(int argc, char** argv)
     opt_log["num_threads"] = num_threads;
     opt_log["args"] = config;
 
-    if (ffield == "")
-    {
-        spdlog::info("no field provided: disabling alignment");
-        param.alignment_weight = 0.;
-    }
 
     igl::Timer timer;
     double time = 0;
@@ -231,7 +300,7 @@ int main(int argc, char** argv)
     Eigen::MatrixXi FE(0, 0);
     Eigen::MatrixXi ME(0, 0);
     time = timer.getElapsedTime();
-    if (param.do_feature_alignment)
+    if ((param.do_feature_alignment) && (extension == "obj"))
     {
         // Loading the feature edge constraints
         FE_init = meshcutter.load_feature_edges(input_file);
@@ -302,6 +371,16 @@ int main(int argc, char** argv)
         std::string ext = std::filesystem::path(ffield_path).extension().string();
         if (ext == ".ffield") extremeopt.comb_matchings(ffield_path);
         else if (ext == ".cfield") extremeopt.load_combed_field(ffield_path);
+        else if (ext == ".h5")
+        {
+            extremeopt.PD1 = read_hdf5_vector_field(ffield_path, "u_target_field");
+            extremeopt.PD2 = read_hdf5_vector_field(ffield_path, "v_target_field");
+        }
+    }
+    else
+    {
+        spdlog::info("no field provided: disabling alignment");
+        extremeopt.m_params.alignment_weight = 0.;
     }
     extremeopt.do_optimization(opt_log);
 

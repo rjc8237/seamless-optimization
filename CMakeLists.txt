@@ -51,6 +51,7 @@ include(suitesparse)
 include(pybind11)
 include_directories(${CMAKE_SOURCE_DIR}/external/spectra/include)
 igl_include(predicates)
+find_package(HDF5 REQUIRED COMPONENTS CXX)
 
 if (ENABLE_VISUALIZATION)
 include(polyscope)
@@ -91,6 +92,7 @@ target_link_libraries(SymmetricDirichletLib PUBLIC
     nlohmann_json::nlohmann_json
     Eigen3::Eigen
     spdlog::spdlog
+    HDF5::HDF5
     ${Boost_LIBRARIES}
     ${BLAS_LIBRARIES}
     ${OMP_LIBS}
