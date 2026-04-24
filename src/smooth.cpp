@@ -146,7 +146,7 @@ int check_flip(const Eigen::MatrixXd& uv, const Eigen::MatrixXi& Fn)
 }
 
 
-Eigen::SparseMatrix<double> ExtremeOpt::compute_area_weight_matrix()
+Eigen::SparseMatrix<double> compute_area_weight_matrix(const Eigen::VectorXd& area)
 {
     int num_faces = area.size();
     Eigen::SparseMatrix<double> weights(3 * num_faces, 3 * num_faces);
@@ -200,7 +200,7 @@ double ExtremeOpt::compute_energy(const Eigen::MatrixXd& aaa, double Lp) {
     double energy = 0.;
     if (m_params.alignment_weight > 0.)
     {
-        Eigen::SparseMatrix<double> weights = compute_area_weight_matrix();
+        Eigen::SparseMatrix<double> weights = compute_area_weight_matrix(area);
         Eigen::MatrixXd Guv = Grad * aaa;
 
         Eigen::MatrixXd uT_vT(3*input_F.rows(), 2);
@@ -230,6 +230,52 @@ double ExtremeOpt::compute_threshold_energy(const Eigen::MatrixXd& aaa) {
     SymDir::jacobian_from_uv(G, aaa, Ji);
     return SymDir::compute_threshold_energy_from_jacobian(Ji, area, m_params.Lp, 5.0, m_params.soft_max, m_params.t);
 }
+double get_alignment_grad_and_hessian(
+    const Eigen::MatrixXi& F,
+    const Eigen::MatrixXd& uv,
+    const Eigen::VectorXd& area,
+    const Eigen::SparseMatrix<double>& Grad,
+    const Eigen::MatrixXd& PD1,
+    const Eigen::MatrixXd& PD2,
+    Eigen::VectorXd& grad,
+    Eigen::SparseMatrix<double>& hessian,
+    bool get_hessian)
+{
+    Eigen::SparseMatrix<double> weights = compute_area_weight_matrix(area);
+
+    Eigen::MatrixXd uT_vT(3*F.rows(), 2);
+    uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
+    uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
+
+    Eigen::MatrixXd Guv = Grad * uv;
+    Eigen::MatrixXd R = Guv - uT_vT;
+    double energy = (R.transpose() * (weights * R)).trace();
+
+    Eigen::MatrixXd grad_E = 2 * Grad.transpose() * (weights * R);
+    grad = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
+
+    Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * (weights * Grad);
+    int n = gradSquared.rows();
+
+    if (get_hessian)
+    {
+        hessian.resize(2*n, 2*n);
+        std::vector<Eigen::Triplet<double>> triplets;
+        triplets.reserve(2 * gradSquared.nonZeros());
+        for (int k = 0; k < gradSquared.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(gradSquared, k); it; ++it) {
+                // Top-left block
+                triplets.emplace_back(it.row(), it.col(), it.value());
+                // Bottom-right block
+                triplets.emplace_back(it.row() + n, it.col() + n, it.value());
+            }
+        }
+
+        hessian.setFromTriplets(triplets.begin(), triplets.end());
+    }
+
+    return energy;
+}
 
 double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
@@ -239,13 +285,14 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     Eigen::SparseMatrix<double>& hessian,
     bool get_hessian)
 {
-    Eigen::SparseMatrix<double> weights = compute_area_weight_matrix();
-    double energy = m_params.symdir_weight * SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian, m_params.Lp, m_params.projected_newton, m_params.soft_max, m_params.t, m_params.E_min);
+    double symdir_energy = SymDir::get_grad_and_hessian(G, area, uv, grad, hessian, get_hessian, m_params.Lp, m_params.projected_newton, m_params.soft_max, m_params.t, m_params.E_min);
+    double energy = m_params.symdir_weight * symdir_energy;
     grad *= m_params.symdir_weight;
     hessian *= m_params.symdir_weight;
 
-    if (m_params.alignment_weight > 0.)
+    if (false)
     {
+        Eigen::SparseMatrix<double> weights = compute_area_weight_matrix(area);
         Eigen::MatrixXd uT_vT(3*F.rows(), 2);
 
         uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
@@ -282,16 +329,29 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
         hessian += m_params.alignment_weight*hessian_E;
     }
 
-    /*
-    std::cout << Grad.rows() << ", " << Grad.cols() << '\n';
-    std::cout << grad.rows() << ", " << grad.cols() << '\n';
-    std::cout << uv.rows() << ", " << uv.cols() << '\n';
-    std::cout << Guv.rows() << ", " << Guv.cols() << '\n';
-    std::cout << R.rows() << ", " << R.cols() << '\n';
-    std::cout << grad_E.rows() << ", " << grad_E.cols() << '\n';
-    std::cout << grad_E_vec.rows() << ", " << grad_E_vec.cols() << '\n';
-    std::cout << hessian.rows() << ", " << hessian.cols() << '\n';
-    */
+    if (m_params.alignment_weight > 0.)
+    {
+        Eigen::VectorXd grad_E;
+        Eigen::SparseMatrix<double> hessian_E;
+        double alignment_energy = get_alignment_grad_and_hessian(
+            F,
+            uv,
+            area,
+            Grad,
+            PD1,
+            PD2,
+            grad_E,
+            hessian_E,
+            get_hessian
+        );
+        spdlog::info("sym Dirichlet energy: {}", symdir_energy);
+        spdlog::info("alignment energy: {}", alignment_energy);
+
+        energy += m_params.alignment_weight * alignment_energy;
+        grad += m_params.alignment_weight * grad_E;
+        hessian += m_params.alignment_weight * hessian_E;
+    }
+
     return energy;
 }
 
@@ -789,6 +849,66 @@ Eigen::VectorXd compute_lbfgs_direction(
     return -z;
 }
 
+// TODO Make function
+    // if (m_params.degenerate_weight > 0.)
+    // {
+    //     std::vector<Eigen::Triplet<double>> length_trips;
+
+    //     int num_faces = F.rows();
+    //     int N = uv.rows();
+    //     int count = 0;
+    //     Eigen::VectorXd rhs = Eigen::VectorXd::Zero(num_faces * 6);
+    //     for (int f = 0; f < num_faces; ++f)
+    //     {
+    //         if (!is_degenerate_face[f]) continue;
+    //         for (int i = 0; i < 3; ++i)
+    //         {
+    //             int j = (i + 1) % 3;
+    //             int vi = F(f, i);
+    //             int vj = F(f, j);
+
+    //             length_trips.emplace_back(2 * count, vi, 1.);
+    //             length_trips.emplace_back(2 * count, vj, -1.);
+    //             length_trips.emplace_back(2 * count + 1, N + vi, 1.);
+    //             length_trips.emplace_back(2 * count + 1, N + vj, -1.);
+    //             rhs[2 * count] = uv(vi, 0) - uv(vj, 0);
+    //             rhs[2 * count + 1] = uv(vi, 1) - uv(vj, 1);
+    //             ++count;
+    //         }
+    //     }
+    //     spdlog::info("{}/{} edges fixed", count, 3 * num_faces);
+    //     Eigen::SparseMatrix<double> edge_lengths(6 * num_faces, 2 * N);
+    //     edge_lengths.setFromTriplets(length_trips.begin(), length_trips.end());
+    //     spdlog::info("degenerate weight: {}", m_params.degenerate_weight);
+
+    //     bool use_quartic = true;
+    //     if (use_quartic)
+    //     {
+    //         std::vector<Eigen::Triplet<double>> hess_trips;
+    //         Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
+    //         Eigen::VectorXd lengths = edge_lengths * uv_flat;
+    //         for (int i = 0; i < 3 * num_faces; ++i)
+    //         {
+    //             double l1 = lengths[2 * i];
+    //             double l2 = lengths[2 * i + 1];
+    //             hess_trips.emplace_back(2 * i, 2 * i, 8 * l1 * l1);
+    //             hess_trips.emplace_back(2 * i, 2 * i + 1, 8 * l1 * l2);
+    //             hess_trips.emplace_back(2 * i + 1, 2 * i, 8 * l1 * l2);
+    //             hess_trips.emplace_back(2 * i + 1, 2 * i + 1, 8 * l2 * l2);
+    //         }
+    //         Eigen::SparseMatrix<double> length_hess(6 * num_faces, 6 * num_faces);
+    //         length_hess.setFromTriplets(hess_trips.begin(), hess_trips.end());
+    //         Eigen::SparseMatrix<double> degenerate_hessian = edge_lengths.transpose() * (length_hess * edge_lengths);
+    //         hessian = hessian + m_params.degenerate_weight * degenerate_hessian;
+    //     }
+    //    else
+    //     {
+    //         hessian = hessian + m_params.degenerate_weight * (edge_lengths.transpose() * edge_lengths);
+    //         grad = grad + m_params.degenerate_weight * (edge_lengths.transpose() * rhs);
+    //     }
+    // }
+    
+
 double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessian_log)
 {
     Eigen::MatrixXd uv;
@@ -829,65 +949,6 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         if (gradients.size() > 20) gradients.pop_back();
     }
 
-    std::vector<bool> is_degenerate_face = mark_degenerate_faces(input_V, input_F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
-    if (m_params.degenerate_weight > 0.)
-    {
-        std::vector<Eigen::Triplet<double>> length_trips;
-
-        int num_faces = F.rows();
-        int N = uv.rows();
-        int count = 0;
-        Eigen::VectorXd rhs = Eigen::VectorXd::Zero(num_faces * 6);
-        for (int f = 0; f < num_faces; ++f)
-        {
-            if (!is_degenerate_face[f]) continue;
-            for (int i = 0; i < 3; ++i)
-            {
-                int j = (i + 1) % 3;
-                int vi = F(f, i);
-                int vj = F(f, j);
-
-                length_trips.emplace_back(2 * count, vi, 1.);
-                length_trips.emplace_back(2 * count, vj, -1.);
-                length_trips.emplace_back(2 * count + 1, N + vi, 1.);
-                length_trips.emplace_back(2 * count + 1, N + vj, -1.);
-                rhs[2 * count] = uv(vi, 0) - uv(vj, 0);
-                rhs[2 * count + 1] = uv(vi, 1) - uv(vj, 1);
-                ++count;
-            }
-        }
-        spdlog::info("{}/{} edges fixed", count, 3 * num_faces);
-        Eigen::SparseMatrix<double> edge_lengths(6 * num_faces, 2 * N);
-        edge_lengths.setFromTriplets(length_trips.begin(), length_trips.end());
-        spdlog::info("degenerate weight: {}", m_params.degenerate_weight);
-
-        bool use_quartic = true;
-        if (use_quartic)
-        {
-            std::vector<Eigen::Triplet<double>> hess_trips;
-            Eigen::VectorXd uv_flat = Eigen::Map<Eigen::VectorXd>(uv.data(), 2*V.rows());
-            Eigen::VectorXd lengths = edge_lengths * uv_flat;
-            for (int i = 0; i < 3 * num_faces; ++i)
-            {
-                double l1 = lengths[2 * i];
-                double l2 = lengths[2 * i + 1];
-                hess_trips.emplace_back(2 * i, 2 * i, 8 * l1 * l1);
-                hess_trips.emplace_back(2 * i, 2 * i + 1, 8 * l1 * l2);
-                hess_trips.emplace_back(2 * i + 1, 2 * i, 8 * l1 * l2);
-                hess_trips.emplace_back(2 * i + 1, 2 * i + 1, 8 * l2 * l2);
-            }
-            Eigen::SparseMatrix<double> length_hess(6 * num_faces, 6 * num_faces);
-            length_hess.setFromTriplets(hess_trips.begin(), hess_trips.end());
-            Eigen::SparseMatrix<double> degenerate_hessian = edge_lengths.transpose() * (length_hess * edge_lengths);
-            hessian = hessian + m_params.degenerate_weight * degenerate_hessian;
-        }
-        else
-        {
-            hessian = hessian + m_params.degenerate_weight * (edge_lengths.transpose() * edge_lengths);
-            grad = grad + m_params.degenerate_weight * (edge_lengths.transpose() * rhs);
-        }
-    }
-    
 
     // find newton direction
     if (ME.rows() > 0) {
@@ -977,6 +1038,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
         // add degenerate weight term
         if (m_params.degenerate_weight > 0)
         {
+            std::vector<bool> is_degenerate_face = mark_degenerate_faces(input_V, input_F, uv, v_map, m_params.precond_dim, m_params.triangle_threshold);
             double degenerate_energy = compute_degenerate_quartic_energy(new_x, uv, F, is_degenerate_face);
             new_E += m_params.degenerate_weight * degenerate_energy;
             spdlog::info("degenerate energy is {}", degenerate_energy);

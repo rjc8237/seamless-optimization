@@ -71,6 +71,8 @@ Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixXd& uv,
     double norm_p);
 
+Eigen::SparseMatrix<double> compute_area_weight_matrix(const Eigen::VectorXd& area);
+
 std::vector<bool> mark_degenerate_faces(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv, const std::vector<int>& v_map, int dim=2, double threshold=1e5);
 std::vector<bool> mark_degenerate_vertices(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& uv, const std::vector<int>& v_map, int dim=2, double threshold=1e5);
 
@@ -573,7 +575,6 @@ public:
     Eigen::VectorXd& grad,
     Eigen::SparseMatrix<double>& hessian,
     bool get_hessian);
-    Eigen::SparseMatrix<double> compute_area_weight_matrix();
     
     /*
     // Energy Assigned to undefined energy
