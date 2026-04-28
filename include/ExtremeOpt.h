@@ -70,13 +70,15 @@ find_u_aligned_edges(
 void get_grad_op(
     const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
-    Eigen::SparseMatrix<double>& grad_op);
+    Eigen::SparseMatrix<double>& grad_op,
+    double min_rel_area=0.);
 
 Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXd& uv,
-    double norm_p);
+    double norm_p,
+    double min_rel_area=0.);
 
 Eigen::SparseMatrix<double> compute_area_weight_matrix(const Eigen::VectorXd& area);
 
@@ -399,6 +401,7 @@ public:
 
     double elen_threshold;
     double elen_threshold_3d;
+    double min_rel_area = 1e-5;
     Parameters m_params;
     igl::AABB<Eigen::MatrixXd, 3> tree; // for closest point queries
 

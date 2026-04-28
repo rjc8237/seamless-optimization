@@ -131,10 +131,11 @@ Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXd& uv,
-    double norm_p)
+    double norm_p,
+    double min_rel_area)
 {
     Eigen::SparseMatrix<double> G;
-    get_grad_op(V, F, G);
+    get_grad_op(V, F, G, min_rel_area);
 
     Eigen::MatrixXd J;
     jacobian_from_uv(G, uv, J);
@@ -396,11 +397,12 @@ void _get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::Spa
     grad_op = igl::cat(1, igl::cat(2, hstack, empty), igl::cat(2, empty, hstack));
 }
 
-void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::SparseMatrix<double>& grad_op)
+void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::SparseMatrix<double>& grad_op, double min_rel_area)
 {
     Eigen::VectorXd dblarea;
     igl::doublearea(V, F, dblarea);
     double avg_area = dblarea.mean() / 2.;
+    double target_edge_length = std::sqrt(4 * avg_area / std::sqrt(3));
 
     int num_faces = F.rows();
     Eigen::MatrixXd V_exp(3 * num_faces, 3);
@@ -416,13 +418,14 @@ void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::Spar
         }
 
         // if area of face is too small, use scaled standard simplex
-        if (dblarea(f) < avg_area * 1e-5)
+        if (dblarea(f) < avg_area * min_rel_area)
         {
             spdlog::debug("using standard simplex for face {} with area {}", f, dblarea[f]);
             for (int i = 0; i < 3; ++i)
             {
                 V_exp.row(F_exp(f, i)) *= 0.;
-                V_exp(F_exp(f, i), i) = avg_area * 1e-5;
+                V_exp(F_exp(f, i), i) = target_edge_length * std::sqrt(min_rel_area);
+                //V_exp(F_exp(f, i), i) = target_edge_length;
             }
         }
     }
@@ -510,7 +513,7 @@ void ExtremeOpt::create_mesh(
     double avg_area = dblarea.mean() / 2.;
 
     // compute gradient operator, setting gradient to 0 for very small faces
-    grad(V, F, Grad, 1e-5 * avg_area);
+    grad(V, F, Grad, min_rel_area * avg_area);
 
     // Convert from eigen to internal representation (TODO: move to utils and remove it from all
     // app)
