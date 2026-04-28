@@ -35,6 +35,13 @@ void write_vector(
     output_file.close();
 }
 
+// igl implementation of gradient, made more numerically stable
+void grad(
+  const Eigen::MatrixXd& V,
+  const Eigen::MatrixXi& F,
+  Eigen::SparseMatrix<double>&G,
+  double min_area=0.);
+
 
 /**
  * Write sparse matrix to file in csv or matlab format

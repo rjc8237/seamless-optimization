@@ -12,8 +12,13 @@ void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::Spar
     Eigen::MatrixXd F1, F2, F3;
     igl::local_basis(V, F, F1, F2, F3);
 
+    Eigen::VectorXd dblarea;
+    igl::doublearea(V, F, dblarea);
+    double avg_area = dblarea.mean() / 2.;
+
+    // compute stable gradient
     Eigen::SparseMatrix<double> G;
-    igl::grad(V, F, G, false);
+    grad(V, F, G, 1e-5 * avg_area);
 
     auto face_proj = [](Eigen::MatrixXd& F) {
         std::vector<Eigen::Triplet<double>> IJV;

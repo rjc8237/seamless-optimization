@@ -250,6 +250,9 @@ double get_alignment_grad_and_hessian(
     Eigen::MatrixXd Guv = Grad * uv;
     Eigen::MatrixXd R = Guv - uT_vT;
     double energy = (R.transpose() * (weights * R)).trace();
+    spdlog::info("uv norm: {}", uv.norm());
+    spdlog::info("Guv norm: {}", Guv.norm());
+    spdlog::info("uTvT norm: {}", uT_vT.norm());
 
     Eigen::MatrixXd grad_E = 2 * Grad.transpose() * (weights * R);
     grad = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
@@ -289,45 +292,6 @@ double ExtremeOpt::get_energy_grad_and_hessian(const Eigen::MatrixXd& V,
     double energy = m_params.symdir_weight * symdir_energy;
     grad *= m_params.symdir_weight;
     hessian *= m_params.symdir_weight;
-
-    if (false)
-    {
-        Eigen::SparseMatrix<double> weights = compute_area_weight_matrix(area);
-        Eigen::MatrixXd uT_vT(3*F.rows(), 2);
-
-        uT_vT.col(0) = Eigen::Map<const Eigen::VectorXd>(PD1.data(), 3 * F.rows());
-        uT_vT.col(1) = Eigen::Map<const Eigen::VectorXd>(PD2.data(), 3 * F.rows());
-
-        Eigen::MatrixXd R = Guv - uT_vT;
-        double alignment_energy = m_params.alignment_weight * (R.transpose() * (weights * R)).trace();
-        spdlog::info("sym Dirichlet energy: {}", energy);
-        spdlog::info("alignment energy: {}", alignment_energy);
-        energy += alignment_energy;
-    
-        Eigen::MatrixXd grad_E = m_params.alignment_weight * 2 * Grad.transpose() * (weights * R);
-        Eigen::VectorXd grad_E_vec = Eigen::Map<const Eigen::VectorXd>(grad_E.data(), 2*uv.rows());
-        grad += grad_E_vec;
-
-        Eigen::SparseMatrix<double> gradSquared = 2 * Grad.transpose() * (weights * Grad);
-        int n = gradSquared.rows();
-
-        Eigen::SparseMatrix<double> hessian_E(2*n, 2*n);
-        std::vector<Eigen::Triplet<double>> triplets;
-        triplets.reserve(2 * gradSquared.nonZeros());
-
-        for (int k = 0; k < gradSquared.outerSize(); ++k) {
-            for (Eigen::SparseMatrix<double>::InnerIterator it(gradSquared, k); it; ++it) {
-                // Top-left block
-                triplets.emplace_back(it.row(), it.col(), it.value());
-                // Bottom-right block
-                triplets.emplace_back(it.row() + n, it.col() + n, it.value());
-            }
-        }
-
-        hessian_E.setFromTriplets(triplets.begin(), triplets.end());
-    
-        hessian += m_params.alignment_weight*hessian_E;
-    }
 
     if (m_params.alignment_weight > 0.)
     {

@@ -50,6 +50,83 @@ void write_sparse_matrix(const Eigen::SparseMatrix<double>& matrix, const std::s
     output_file.close();
 }
 
+void grad(
+  const Eigen::MatrixXd& V,
+  const Eigen::MatrixXi& F,
+  Eigen::SparseMatrix<double>&G,
+  double min_area)
+{
+  // Number of faces
+  const int m = F.rows();
+  // Number of vertices
+  const int nv = V.rows();
+  // Number of dimensions
+  const int dims = V.cols();
+  Eigen::Matrix<double,Eigen::Dynamic,3>
+    eperp21(m,3), eperp13(m,3);
+
+  for (int i=0;i<m;++i)
+  {
+    // renaming indices of vertices of triangles for convenience
+    int i1 = F(i,0);
+    int i2 = F(i,1);
+    int i3 = F(i,2);
+
+    // #F x 3 matrices of triangle edge vectors, named after opposite vertices
+    typedef Eigen::Matrix<double, 1, 3> RowVector3S;
+    RowVector3S v32 = RowVector3S::Zero(1,3);
+    RowVector3S v13 = RowVector3S::Zero(1,3);
+    RowVector3S v21 = RowVector3S::Zero(1,3);
+    v32.head(V.cols()) = V.row(i3) - V.row(i2);
+    v13.head(V.cols()) = V.row(i1) - V.row(i3);
+    v21.head(V.cols()) = V.row(i2) - V.row(i1);
+    RowVector3S n = v32.cross(v13);
+    // area of parallelogram is twice area of triangle
+    // area of parallelogram is || v1 x v2 ||
+    // This does correct l2 norm of rows, so that it contains #F list of twice
+    // triangle areas
+    double dblA = std::sqrt(n.dot(n));
+    Eigen::Matrix<double, 1, 3> u(0,0,1);
+
+    // rotate each vector 90 degrees around normal
+	if (dblA > 2. * min_area)
+	{
+		// now normalize normals to get unit normals
+		u = n / dblA;
+		double norm21 = std::sqrt(v21.dot(v21));
+		double norm13 = std::sqrt(v13.dot(v13));
+		eperp21.row(i) = u.cross(v21);
+		eperp21.row(i) = eperp21.row(i).stableNormalized();
+		eperp21.row(i) *= norm21 / dblA;
+		eperp13.row(i) = u.cross(v13);
+		eperp13.row(i) = eperp13.row(i).stableNormalized();
+		eperp13.row(i) *= norm13 / dblA;
+    }
+	else
+	{
+		eperp21.row(i).setZero();
+		eperp13.row(i).setZero();
+	}
+  }
+
+  // create sparse gradient operator matrix
+  G.resize(dims*m,nv);
+  std::vector<Eigen::Triplet<double> > Gijv;
+  Gijv.reserve(4*dims*m);
+  for(int f = 0;f<F.rows();f++)
+  {
+    for(int d = 0;d<dims;d++)
+    {
+      Gijv.emplace_back(f+d*m,F(f,1), eperp13(f,d));
+      Gijv.emplace_back(f+d*m,F(f,0),-eperp13(f,d));
+      Gijv.emplace_back(f+d*m,F(f,2), eperp21(f,d));
+      Gijv.emplace_back(f+d*m,F(f,0),-eperp21(f,d));
+    }
+  }
+  G.setFromTriplets(Gijv.begin(), Gijv.end());
+}
+
+
 Eigen::VectorXd symmetric_dirichlet_energy(
     const Eigen::MatrixXd& V,
     const Eigen::MatrixXi& F,
@@ -295,7 +372,7 @@ void _get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::Spa
     igl::local_basis(V, F, F1, F2, F3);
 
     Eigen::SparseMatrix<double> G;
-    igl::grad(V, F, G, false);
+    grad(V, F, G);
 
     auto face_proj = [](Eigen::MatrixXd& F) {
         std::vector<Eigen::Triplet<double>> IJV;
@@ -356,7 +433,7 @@ void get_grad_op(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::Spar
     igl::local_basis(V_exp, F_exp, F1, F2, F3);
 
     Eigen::SparseMatrix<double> G;
-    igl::grad(V_exp, F_exp, G, false);
+    grad(V_exp, F_exp, G);
 
     auto face_proj = [](Eigen::MatrixXd& F) {
         std::vector<Eigen::Triplet<double>> IJV;
@@ -430,8 +507,11 @@ void ExtremeOpt::create_mesh(
 
     Eigen::VectorXd dblarea;
     igl::doublearea(V, F, dblarea);
+    double avg_area = dblarea.mean() / 2.;
 
-    igl::grad(V, F, Grad);
+    // compute gradient operator, setting gradient to 0 for very small faces
+    grad(V, F, Grad, 1e-5 * avg_area);
+
     // Convert from eigen to internal representation (TODO: move to utils and remove it from all
     // app)
     std::vector<std::array<size_t, 3>> tri(F.rows());
