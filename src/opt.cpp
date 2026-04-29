@@ -1149,7 +1149,14 @@ void ExtremeOpt::do_optimization(json& opt_log)
     // get input operators
     spdlog::info("Building constraints");
     igl::doublearea(V, F, area);
+
+    // clamp minimum area to threshold
+    double avg_area = area.mean();
+    area = area.cwiseMax(min_rel_area * avg_area);
+
+    // compute gradient operator, using regularized triangles if area is below threshold
     get_grad_op(V, F, G, min_rel_area);
+
     bool is_field_aligned = (m_params.alignment_weight > 1e-12);
     buildAeq(EE, FE, uv, F, Aeq, is_field_aligned);
     buildBeq(ME, uv, Beq);
