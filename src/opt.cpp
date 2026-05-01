@@ -1109,6 +1109,28 @@ void ExtremeOpt::make_screenshot(int iter, double percentage) {
 #endif
 }
 
+template <size_t N>
+double compute_max_difference(
+    std::array<double, N> E_prev,
+    int count)
+{
+    spdlog::info("{}, {}, {}, {}", E_prev[0], E_prev[1], E_prev[2], E_prev[3]);
+    double max_diff = 0.;
+    for (int i = count + 1; i < count + N; ++i)
+    {
+        // check if array fully initialized, with -1 indicating not
+        if (E_prev[i % N] < 0.) return 1e10;
+
+        // compute max of current and previous difference
+        double E = E_prev[(i + 1) % N];
+        double E_old = E_prev[i % N];
+        double diff = (E_old - E) / E_old;
+        max_diff = std::max(max_diff, diff);
+    }
+
+    return max_diff;
+}
+
 void ExtremeOpt::do_optimization_without_log()
 {
     json opt_log;
@@ -1224,6 +1246,9 @@ void ExtremeOpt::do_optimization(json& opt_log)
     int count = 0;
     double avr_step = 0;
 
+    std::array<double, 4> E_prev = {-1., -1., -1., -1.}; // periodic array of past 4 energies
+    E_prev[0] = E;
+
     std::vector<double> e_worst_times(m_params.percentages.size(), -1.0);
     e_worst_iters.resize(m_params.percentages.size(), -1);
     e_worst_v_attrs_ind.resize(m_params.percentages.size(), -1);
@@ -1304,16 +1329,15 @@ void ExtremeOpt::do_optimization(json& opt_log)
         }
 
         // 3. energy change stopping condition
-        avr_step += fabs(E - E_old) / E_old;
-        count += 1;
-        if (count % 3 == 0) {
-            if (avr_step / 3.0 < m_params.diff_err && m_params.energy_diff_converge) {
-                std::string reason = fmt::format("Energy change too small ({}) in {} steps", avr_step / 3.0, count);
-                spdlog::info("Energy change too small ({}) in {} steps, optimization succeed!", avr_step / 3.0, count);
-                opt_log["converge_reason"] = reason;
-                break;        
-            }
-            avr_step = 0;
+        ++count;
+        E_prev[count % E_prev.size()] = E;
+        double max_diff = compute_max_difference(E_prev, count);
+        spdlog::info("max difference is {}", max_diff);
+        if (m_params.energy_diff_converge && (max_diff < m_params.diff_err)) {
+            std::string reason = fmt::format("Energy change too small ({}) in {} steps", max_diff, count);
+            spdlog::info("Energy change too small ({}) in {} steps, optimization succeed!", max_diff, count);
+            opt_log["converge_reason"] = reason;
+            break;        
         }
 
         if (fabs(E) < m_params.E_abs_err && m_params.E_abs_converge) {
