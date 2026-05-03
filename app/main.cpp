@@ -167,12 +167,14 @@ int main(int argc, char** argv)
     std::string model = "";
     std::string ffield = "";
     std::string feature_edges_filename = "";
+    std::string extension = "h5";
     Parameters param;
     app.add_option("-i,--input", input_dir, "Input mesh dir.");
     app.add_option("-m,--model", model, "Input model name.");
     app.add_option("-f,--field", ffield, "Input frame field");
     app.add_option("-j,--json", input_json, "Input arguments.");
     app.add_option("-o,--output", output_dir, "Output dir.");
+    app.add_option("--extension", extension, "file type.");
 
     app.add_option("-s,--solver", param.solver_type, "Solver type");
     int num_threads = 1;
@@ -199,7 +201,6 @@ int main(int argc, char** argv)
     std::error_code ec;
     std::filesystem::create_directories(output_dir, ec);
 
-    std::string extension = "h5";
     std::string input_file = input_dir + "/" + model + "." + extension;
     std::string ffield_path = input_dir + "/" + ffield;
     // Loading the input mesh

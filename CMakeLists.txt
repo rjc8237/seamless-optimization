@@ -78,6 +78,7 @@ add_library(SymmetricDirichletLib
     src/energy.cpp
     src/ExtremeOpt.cpp
     src/opt.cpp
+    src/main_helper.cpp
     src/rref.cpp
     src/smooth.cpp
     src/smooth_utils.cpp
