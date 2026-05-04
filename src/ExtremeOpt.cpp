@@ -1392,7 +1392,7 @@ std::vector<bool> mark_degenerate_vertices(const Eigen::MatrixXd& V, const Eigen
     return is_degenerate;
 }
 
-Parameters read_parameters(json& config)
+Parameters read_parameters(nlohmann::json& config)
 {
     Parameters param;
     param.max_iters = config["max_iters"]; // iterations

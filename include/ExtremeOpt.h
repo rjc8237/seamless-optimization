@@ -15,10 +15,10 @@
 #endif
 #include "energy.h"
 
-using json = nlohmann::json;
 
 
 namespace SymDir {
+using json = nlohmann::json;
 
 template <typename VectorType>
 void write_vector(
