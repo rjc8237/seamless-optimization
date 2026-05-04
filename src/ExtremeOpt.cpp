@@ -563,6 +563,13 @@ void ExtremeOpt::create_mesh(
     std::tie(min_v_diffs, min_v_diff_ids, min_v_diff_next_ids) = find_u_aligned_edges(uv, F);
 }
 
+void ExtremeOpt::import_uv(const Eigen::MatrixXd& uv)
+{
+    for (unsigned i = 0; i < uv.rows(); ++i) {
+        vertex_attrs[i].pos = uv.row(i).transpose();
+    }
+}
+
 void ExtremeOpt::set_v_map(
     const Eigen::MatrixXi& F,
     const Eigen::MatrixXi& FT

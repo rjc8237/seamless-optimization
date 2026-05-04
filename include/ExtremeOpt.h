@@ -454,6 +454,7 @@ public:
     std::vector<double> compute_worst_n_energy(const Eigen::MatrixXd& aaa);
     double compute_threshold_energy(const Eigen::MatrixXd& aaa);
 
+    void import_uv(const Eigen::MatrixXd& uv);
     void export_uv(Eigen::MatrixXd& uv);
     void export_EE(Eigen::MatrixXi& EE);
     void export_FE(Eigen::MatrixXi& FE);
