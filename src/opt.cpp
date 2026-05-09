@@ -125,6 +125,7 @@ int get_leaf_vertex(const Eigen::MatrixXi& EE)
     while ((EE(e_start, 0) != EE(e_start, 3)) && (EE(e_start, 1) != EE(e_start, 2)))
     {
         e_start++;
+        if (e_start >= EE.rows()) return -1;
     }
 
     return (EE(e_start, 0) == EE(e_start, 3)) ? EE(e_start, 0) : EE(e_start, 2);
@@ -310,6 +311,11 @@ Eigen::SparseMatrix<double> run(
     int v_curr = v_start;
     do
     {
+        if (v_curr < 0)
+        {
+            spdlog::warn("no leaf vertex");
+            break;
+        }
         int e = out[v_curr];
 
         // get next vertex
