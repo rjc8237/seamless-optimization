@@ -70,6 +70,8 @@ struct Parameters
     bool E_abs_converge = true;
     bool E_rel_converge = true;
 
+    bool fix_boundary = false; // fix all boundary edges instead of using seamless constraints
+
     bool degenerate_vertices_preconditioner = false;
     int precond_dim = 2; // dim = 2 - for degenerate uv triangles, dim = 3 - for degenerate 3d triangles
     double triangle_threshold = 25.0; // threshold for marking degenerate triangles for preconditioner and line search

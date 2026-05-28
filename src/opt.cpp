@@ -1054,6 +1054,47 @@ void buildAeq(
     Aeq.setFromTriplets(trips.begin(), trips.end());
 }
 
+void build_fixed_boundary_constraints(
+    const Eigen::MatrixXi& EE,
+    const Eigen::MatrixXi& FE,
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F,
+    Eigen::SparseMatrix<double>& Aeq,
+    std::vector<double>& rhs)
+{
+    int N = uv.rows();
+    //int m = EE.rows() / 2;
+    int m = EE.rows();
+    int fes = FE.rows();
+    rhs.clear();
+
+    //std::set<std::pair<int, int>> added_e;
+    typedef Eigen::Triplet<double> Trip;
+    std::vector<Trip> trips;
+    trips.reserve(12 * EE.rows());
+
+    std::vector<bool> is_vertex_fixed(N, false);
+    for (int i = 0; i < EE.rows(); i++) {
+        for (int j = 0; j < EE.cols(); ++j) {
+            int v = EE(i, j);
+            is_vertex_fixed[v] = true;
+        }
+    }
+
+    int c = 0;
+    for (int i = 0; i < N; ++i) {
+        if (!is_vertex_fixed[i]) continue;
+        trips.push_back(Trip(c, i, 1));
+        trips.push_back(Trip(c + 1, i + N, 1));
+        rhs.push_back(uv(i, 0));
+        rhs.push_back(uv(i, 1));
+        c = c + 2;
+    }
+    Aeq.resize(c, uv.rows() * 2);
+    Aeq.setFromTriplets(trips.begin(), trips.end());
+}
+
+
 void buildBeq(
     const Eigen::MatrixXi& ME,
     const Eigen::MatrixXd& uv,
@@ -1186,7 +1227,15 @@ void ExtremeOpt::do_optimization(json& opt_log)
     get_grad_op(V, F, G, min_rel_area);
 
     bool is_field_aligned = (m_params.alignment_weight > 1e-12);
-    buildAeq(EE, FE, uv, F, Aeq, is_field_aligned);
+    std::vector<double> rhs;
+    if (m_params.fix_boundary)
+    {
+        build_fixed_boundary_constraints(EE, FE, uv, F, Aeq, rhs);
+    }
+    else
+    {
+        buildAeq(EE, FE, uv, F, Aeq, is_field_aligned);
+    }
     buildBeq(ME, uv, Beq);
     AeqT = Aeq.transpose();
 
