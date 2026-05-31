@@ -1054,6 +1054,136 @@ void buildAeq(
     Aeq.setFromTriplets(trips.begin(), trips.end());
 }
 
+void build_free_cone_Aeq(
+    const Eigen::MatrixXi& EE,
+    const Eigen::MatrixXi& FE,
+    const Eigen::MatrixXd& uv,
+    const Eigen::MatrixXi& F,
+    Eigen::SparseMatrix<double>& Aeq,
+    bool is_field_aligned)
+{
+    int N = uv.rows();
+    int c = 0;
+    //int m = EE.rows() / 2;
+    int m = EE.rows();
+    int fes = FE.rows();
+
+    // get u aligned edges for each component
+    auto [min_v_diffs, min_v_diff_ids, min_v_diff_next_ids] = find_u_aligned_edges(uv, F);
+    int num_components = min_v_diffs.size();
+
+    int n_fix_dof;
+    bool fix_rotation = ((fes == 0) && (!is_field_aligned));
+    if (fix_rotation)
+    {
+        n_fix_dof = 3 * num_components;
+    }
+    else
+    {
+        n_fix_dof = 2 * num_components;
+    }
+
+    //std::set<std::pair<int, int>> added_e;
+    typedef Eigen::Triplet<double> Trip;
+    std::vector<Trip> trips;
+    trips.reserve(12 * EE.rows());
+
+    // helper to get perpendicular vector
+    auto perp = [](const Eigen::Vector2d& v) -> Eigen::Vector2d {
+        return Eigen::Vector2d(-v.y(), v.x());
+    };
+
+    int A2, B2, C2, D2;
+    for (int i = 0; i < EE.rows(); i++) {
+        int A2 = EE(i, 0);
+        int B2 = EE(i, 1);
+        int C2 = EE(i, 2);
+        int D2 = EE(i, 3);
+        //auto e0 = std::make_pair(A2, B2);
+        //auto e1 = std::make_pair(C2, D2);
+        //if (added_e.find(e0) != added_e.end() || added_e.find(e1) != added_e.end()) continue;
+        //added_e.insert(e0);
+        //added_e.insert(e1);
+
+        Eigen::Matrix<double, 2, 1> e_ab = uv.row(B2) - uv.row(A2);
+        Eigen::Matrix<double, 2, 1> e_dc = uv.row(C2) - uv.row(D2);
+        Eigen::Matrix2d R1, R2;
+        R1.col(0) = e_ab;
+        R1.col(1) = perp(e_ab);
+        R2.col(0) = e_dc;
+        R2.col(1) = perp(e_dc);
+        Eigen::Matrix2d r_mat = R1 * R2.inverse();
+
+        trips.push_back(Trip(c, A2, 1));
+        trips.push_back(Trip(c, B2, -1));
+        trips.push_back(Trip(c + 1, A2 + N, 1));
+        trips.push_back(Trip(c + 1, B2 + N, -1));
+
+        trips.push_back(Trip(c, C2, r_mat(0, 0)));
+        trips.push_back(Trip(c, D2, -r_mat(0, 0)));
+        trips.push_back(Trip(c, C2 + N, r_mat(0, 1)));
+        trips.push_back(Trip(c, D2 + N, -r_mat(0, 1)));
+        trips.push_back(Trip(c + 1, C2, r_mat(1, 0)));
+        trips.push_back(Trip(c + 1, D2, -r_mat(1, 0)));
+        trips.push_back(Trip(c + 1, C2 + N, r_mat(1, 1)));
+        trips.push_back(Trip(c + 1, D2 + N, -r_mat(1, 1)));
+        c = c + 2;
+    }
+
+    for (int ci = 0; ci < num_components; ++ci)
+    {
+        int min_v_diff_id = min_v_diff_ids[ci];
+        if (min_v_diff_id == -1)
+        {
+            spdlog::warn("for component {}, skipping edge fix", ci);
+            n_fix_dof -= 2;
+            continue;
+        }
+        spdlog::debug("for component {}, fixing {}", ci, min_v_diff_id);
+        trips.push_back(Trip(c, min_v_diff_id, 1));
+        trips.push_back(Trip(c + 1, min_v_diff_id + N, 1));
+        c = c + 2;
+    }
+
+    // fix rotation if no feature or field alignment
+    if (fix_rotation)
+    {
+        for (int ci = 0; ci < num_components; ++ci)
+        {
+            int min_v_diff_id = min_v_diff_ids[ci];
+            if (min_v_diff_id == -1)
+            {
+                n_fix_dof -= 1;
+                continue;
+            }
+            spdlog::info("for component {}, fixing rotation {}", ci, min_v_diff_next_ids[ci]);
+            trips.push_back(Trip(c, min_v_diff_next_ids[ci], 1));
+            c = c + 1;
+        }
+    }
+    // if features, add feature constraints
+    else if (fes > 0) {
+        //std::set<std::pair<int, int>> added_fe;
+
+        // feature edge constraints
+        for (int i = 0; i < fes; ++i) {
+            int v1 = FE(i, 0);
+            int v2 = FE(i, 1);
+            auto e0 = std::make_pair(v1, v2);
+            Eigen::Vector2d e_ab = uv.row(v2) - uv.row(v1);
+            Eigen::Vector2d e_ab_perp = perp(e_ab);
+
+            trips.push_back(Trip(c, v1, -e_ab_perp[0]));
+            trips.push_back(Trip(c, v2, e_ab_perp[0]));
+            trips.push_back(Trip(c, v1 + N, -e_ab_perp[1]));
+            trips.push_back(Trip(c, v2 + N, e_ab_perp[1]));
+            c += 1;
+        }
+    }
+    Aeq.resize(2 * m + n_fix_dof + fes, uv.rows() * 2);
+    Aeq.setFromTriplets(trips.begin(), trips.end());
+}
+
 void build_fixed_boundary_constraints(
     const Eigen::MatrixXi& EE,
     const Eigen::MatrixXi& FE,
@@ -1230,7 +1360,8 @@ void ExtremeOpt::do_optimization(json& opt_log)
     std::vector<double> rhs;
     if (m_params.fix_boundary)
     {
-        build_fixed_boundary_constraints(EE, FE, uv, F, Aeq, rhs);
+        //build_fixed_boundary_constraints(EE, FE, uv, F, Aeq, rhs);
+        build_free_cone_Aeq(EE, FE, uv, F, Aeq, is_field_aligned);
     }
     else
     {
