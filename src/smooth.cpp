@@ -918,6 +918,7 @@ double ExtremeOpt::smooth_global(bool& failed, std::vector<HessianStats>& hessia
     if (ME.rows() > 0) {
         spdlog::info("Fixing misalignment");
         newton = misaligned_newton_direction(uv, energy_0, grad, hessian);
+        grad_max = (Q2T * grad).cwiseAbs().maxCoeff();
     } else if (!use_rref) {
         newton = kkt_newton_direction(uv, energy_0, grad, hessian);
     } else if (m_params.solver_type == "GS") {
