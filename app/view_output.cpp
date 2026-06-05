@@ -119,7 +119,11 @@ int main(int argc, char** argv)
         extremeopt.EE = EE;
         extremeopt.FE = FE;
         extremeopt.m_params.do_feature_alignment = true;
-        if (ffield != "") extremeopt.comb_matchings(ffield);
+        if (ffield != "") 
+        {
+            auto [ reference_field, thetas, period_jumps ] = load_reference_field(ffield);
+            extremeopt.comb_matchings(reference_field, thetas, period_jumps);
+        }
         extremeopt.m_params.Lp = 2;
         extremeopts.push_back(extremeopt);
         spdlog::warn("PD1 = {}, PD2 = {} expected {}", extremeopt.PD1.size(), extremeopt.PD2.size(), 3 * F.rows());

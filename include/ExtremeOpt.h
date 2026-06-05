@@ -384,6 +384,11 @@ public:
     
 };
 
+std::tuple<
+Eigen::MatrixXd, 
+Eigen::VectorXd, 
+Eigen::MatrixXi> load_reference_field(const std::string& ffield_file);
+
 class ExtremeOpt : public Mesh
 {
 public:
@@ -557,10 +562,6 @@ public:
 
     std::vector<int> propagate_component_labels(const Eigen::MatrixXi& F, const Eigen::VectorXi& C, int N);
 
-    std::tuple<
-    Eigen::MatrixXd, 
-    Eigen::VectorXd, 
-    Eigen::MatrixXi> load_reference_field(const std::string& ffield_file);
 
     void load_combed_field(const std::string& ffield_file);
 
@@ -575,7 +576,10 @@ public:
     const Eigen::MatrixXd B1,
     const Eigen::MatrixXd B2);
     
-    void comb_matchings(const std::string& ffield_file);
+    void comb_matchings(
+        const Eigen::MatrixXd& reference_field,
+        const Eigen::VectorXd& thetas,
+        const Eigen::MatrixXi& period_jumps);
     
     void check_cross_field_alignment();
 

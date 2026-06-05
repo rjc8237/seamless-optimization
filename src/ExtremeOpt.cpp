@@ -1132,7 +1132,7 @@ bool ExtremeOpt::check_constraints(double eps)
     // return true;
 }
 
-std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_reference_field(const std::string& ffield_file)
+std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> load_reference_field(const std::string& ffield_file)
 {
     std::ifstream inf(ffield_file);
     if (!inf) {
@@ -1140,14 +1140,13 @@ std::tuple<Eigen::MatrixXd, Eigen::VectorXd, Eigen::MatrixXi> ExtremeOpt::load_r
         exit(EXIT_FAILURE);
     }
     spdlog::info("aligning to frame field file\n");
-    Eigen::MatrixXd reference_field(input_F.rows(), 3);
-    Eigen::VectorXd thetas(input_F.rows());
-    Eigen::MatrixXi period_jumps(input_F.rows(), 3);
     
     int i = 0;
     int num_vectors;
     inf >> num_vectors;
-    assert(num_vectors == input_F.rows());
+    Eigen::MatrixXd reference_field(num_vectors, 3);
+    Eigen::VectorXd thetas(num_vectors);
+    Eigen::MatrixXi period_jumps(num_vectors, 3);
     inf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::string line{};
     while (std::getline(inf, line)) {
@@ -1271,10 +1270,12 @@ std::tuple<std::deque<int>, Eigen::VectorXi> ExtremeOpt::initialize_matchings(
     return { d, mark };
 }
 
-void ExtremeOpt::comb_matchings(const std::string& ffield_file)
+void ExtremeOpt::comb_matchings(
+    const Eigen::MatrixXd& reference_field,
+    const Eigen::VectorXd& thetas,
+    const Eigen::MatrixXi& period_jumps)
 {
     
-    auto [ reference_field, thetas, period_jumps ] = load_reference_field(ffield_file);
     Eigen::MatrixXd B1, B2, B3;
     igl::local_basis(input_V, input_F, B1, B2, B3);
     Eigen::MatrixXd frame_field = igl::rotate_vectors(reference_field, thetas, B1, B2);

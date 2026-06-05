@@ -370,7 +370,10 @@ int main(int argc, char** argv)
     if (ffield != "")
     {
         std::string ext = std::filesystem::path(ffield_path).extension().string();
-        if (ext == ".ffield") extremeopt.comb_matchings(ffield_path);
+        if (ext == ".ffield"){
+            auto [ reference_field, thetas, period_jumps ] = load_reference_field(ffield_path);
+            extremeopt.comb_matchings(reference_field, thetas, period_jumps);
+        }
         else if (ext == ".cfield") extremeopt.load_combed_field(ffield_path);
         else if (ext == ".h5")
         {
