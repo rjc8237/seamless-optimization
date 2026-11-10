@@ -20,7 +20,8 @@
 #include <igl/AABB.h>
 #include <Eigen/Sparse>
 #include "Parameters.h"
-#include "json.hpp"
+//#include "json.hpp"
+#include <nlohmann/json.hpp>
 #include "spdlog/spdlog.h"
 #include <fstream>
 #ifdef ENABLE_VISUALIZATION
